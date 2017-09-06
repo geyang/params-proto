@@ -1,5 +1,4 @@
-# params_proto, a collection of decorators that makes shell argument
-passing declarative
+# params_proto, a collection of decorators that makes shell argument passing declarative
 
 ## Todo
 
