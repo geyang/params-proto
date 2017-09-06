@@ -4,7 +4,7 @@ setup(name="params_proto",
       description="A command line argument parsing using python namespace",
       long_description="params_proto uses python namespace to make working with schema-based command line arguments "
                        "much easier.",
-      version="0.0.1",
+      version="0.5.0",
       url="https://github.com/episodeyang/params_proto",
       author="Ge Yang",
       author_email="yangge1987@gmail.com",
