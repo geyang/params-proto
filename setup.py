@@ -4,7 +4,7 @@ setup(name="params_proto",
       description="A command line argument parsing using python namespace",
       long_description="params_proto uses python namespace to make working with schema-based command line arguments "
                        "much easier.",
-      version="0.0.0",
+      version="0.0.1",
       url="https://github.com/episodeyang/params_proto",
       author="Ge Yang",
       author_email="yangge1987@gmail.com",
@@ -16,5 +16,5 @@ setup(name="params_proto",
           "Programming Language :: Python :: 3"
       ],
       packages=["params_proto"],
-      install_requires=[]
+      install_requires=["munch", "argparse", "typing"]
       )
