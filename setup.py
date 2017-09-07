@@ -9,7 +9,7 @@ setup(name="params_proto",
       description="A command line argument parsing utility using python class-based namespace for better IDE static "
                   "auto-completion",
       long_description=long_description,
-      version="0.5.4",
+      version="0.5.5",
       url="https://github.com/episodeyang/params_proto",
       author="Ge Yang",
       author_email="yangge1987@gmail.com",
@@ -21,5 +21,5 @@ setup(name="params_proto",
           "Programming Language :: Python :: 3"
       ],
       packages=["params_proto"],
-      install_requires=["munch", "argparse", "typing"]
+      install_requires=["waterbear", "argparse", "typing"]
       )
