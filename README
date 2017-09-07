@@ -36,14 +36,12 @@ Usage
             num_points_sampled: "effectively the k-shot" = 10
             fix_amp: "controls the sampling, fix the amplitude of the sample distribution if True" = False
 
-        # args = proto(ParamsProto)
+        assert G.npts == 100
         G.npts = 10
-        print(G)
-        G.npts = 101
-        print(G.npts)
-        print(G)
-        print("showing the dictionary from G: ", G.toDict())
-        print("showing G.__proto__: ", G.__proto__)
+        assert G.npts == 10
+        print("showing the dictionary from G: ", vars(G))
+        print("showing the original namespace class: ", G.__proto__)
+        print('showing the properties of G: ', G.__props__())
 
 
     def test_proto_signature():

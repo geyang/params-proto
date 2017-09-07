@@ -6,9 +6,10 @@ with open(path.join(path.abspath(path.dirname(__file__)), 'README'), encoding='u
     long_description = f.read()
 
 setup(name="params_proto",
-      description="A command line argument parsing using python namespace",
+      description="A command line argument parsing utility using python class-based namespace for better IDE static "
+                  "auto-completion",
       long_description=long_description,
-      version="0.5.2",
+      version="0.5.4",
       url="https://github.com/episodeyang/params_proto",
       author="Ge Yang",
       author_email="yangge1987@gmail.com",
