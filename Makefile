@@ -1,4 +1,4 @@
-# tips from https://stackoverflow.com/a/6922447/1560241
+# shell option to use extended glob from from https://stackoverflow.com/a/6922447/1560241
 SHELL:=/bin/bash -O extglob
 
 # VARIABLES
