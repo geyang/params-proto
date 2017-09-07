@@ -64,18 +64,16 @@ def props_to_dict(obj):
 T = TypeVar('T')
 
 
-class ParamsProto:
+class ParamsProto(DefaultBear):
     """Parameter Prototype Class, has toDict method and __proto__ attribute for the original namespace object."""
-    __proto__ = None
 
-    # noinspection PyPep8Naming
-    def __props__(self):
-        return props_to_dict(self)
+    def __init__(self, proto, **d):
+        super().__init__(None, **d)
+        self._proto = proto
 
-    # noinspection PyPep8Naming
-    @staticmethod
-    def toDict() -> dict:
-        pass  # raise NotImplementedError('should be overwritten')
+    @property
+    def __dict__(self):
+        return {k: v for k, v in super().__dict__.items() if not is_hidden(k)}
 
 
 # noinspection PyTypeChecker
@@ -105,15 +103,13 @@ def cli_parse(proto: T) -> T:
         parser.add_argument('--{k}'.format(k=k_normalized), default=default, type=data_type, help=help_str)
 
     if sys.version_info <= (3, 6):
-        params = DefaultBear(None, **{k: v[0] for k, v in vars(proto).items() if not is_hidden(k)})
+        params = ParamsProto(proto, **{k: v[0] for k, v in vars(proto).items() if not is_hidden(k)})
     else:
-        params = DefaultBear(None, **{k: v for k, v in vars(proto).items() if not is_hidden(k)})
+        params = ParamsProto(proto, **{k: v for k, v in vars(proto).items() if not is_hidden(k)})
 
     args, unknow_args = parser.parse_known_args()
     params.update(vars(args))
 
-    params.__proto__ = proto
-    params.__props__ = lambda: props_to_dict(params)
     return params
 
 

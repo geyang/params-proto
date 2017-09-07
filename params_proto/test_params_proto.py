@@ -18,14 +18,12 @@ def test_cli_proto():
         num_points_sampled: "effectively the k-shot" = 10
         fix_amp: "controls the sampling, fix the amplitude of the sample distribution if True" = False
 
-    # args = proto(ParamsProto)
+    assert G.npts == 100
     G.npts = 10
-    print(G)
-    G.npts = 101
-    print(G.npts)
-    print(G)
-    print("showing the dictionary from G: ", vars(G))
-    # print("showing G.__proto__: ", G.__proto__)
+    assert G.npts == 10
+    assert vars(G) == {'npts': 10, 'num_epochs': 70000, 'num_tasks': 10, 'num_grad_steps': 1,
+                       'num_points_sampled': 10, 'fix_amp': False}
+    assert G._proto is not None, '_proto should exist'
 
 
 def test_proto_signature():
@@ -34,7 +32,7 @@ def test_proto_signature():
         """some parameter proto"""
         npts: "number of points to sample from distribution" = 100
 
-    @proto_signature(G.__proto__)
+    @proto_signature(G._proto)
     def main_demo(**kwargs):
         print('npts = ', kwargs['npts'])
         return kwargs['npts']
@@ -54,5 +52,4 @@ def test_proto_to_dict():
         """some parameter proto"""
         npts: "number of points to sample from distribution" = 100
 
-    assert "__proto__" in vars(G)
-    assert G.__props__() == {'npts': 100}
+    assert vars(G) == {'npts': 100}
