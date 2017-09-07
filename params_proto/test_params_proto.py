@@ -24,8 +24,8 @@ def test_cli_proto():
     G.npts = 101
     print(G.npts)
     print(G)
-    print("showing the dictionary from G: ", G.toDict())
-    print("showing G.__proto__: ", G.__proto__)
+    print("showing the dictionary from G: ", vars(G))
+    # print("showing G.__proto__: ", G.__proto__)
 
 
 def test_proto_signature():
@@ -37,10 +37,22 @@ def test_proto_signature():
     @proto_signature(G.__proto__)
     def main_demo(**kwargs):
         print('npts = ', kwargs['npts'])
-        pass
+        return kwargs['npts']
 
     # First way is to use proto_signature decorator. The dynamically generated signature
     # however does not show up in pyCharm. It does however, show during run time.
     import inspect
+
+    assert main_demo(npts=10) == 10
     print("main_demo<Function> signature:", inspect.signature(main_demo))
-    main_demo(npts=10)
+    assert str(inspect.signature(main_demo)) == "(npts=100)"
+
+
+def test_proto_to_dict():
+    @cli_parse
+    class G(ParamsProto):
+        """some parameter proto"""
+        npts: "number of points to sample from distribution" = 100
+
+    assert "__proto__" in vars(G)
+    assert G.__props__() == {'npts': 100}

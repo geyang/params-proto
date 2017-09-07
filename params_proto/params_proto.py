@@ -4,12 +4,61 @@ import re
 import sys
 from typing import TypeVar
 
-from munch import DefaultMunch
+from waterbear import DefaultBear
 
 
 def is_hidden(k: str) -> bool:
     """return True is method is hidden"""
     return bool(re.match("^_.*$", k))
+
+
+def props_to_dict(obj):
+    """
+    takes class or instance object and returns the attributes that are not hidden.
+
+    :param obj:
+    :return:
+
+    Usage Example
+
+        Python 3.6.2 | packaged by conda-forge | (default, Jul 23 2017, 23:01:38)
+        [GCC 4.2.1 Compatible Apple LLVM 6.1.0 (clang-602.0.53)] on darwin
+
+    Take this namespace for example:
+
+    ```python
+    class Test():
+        name = 10
+        key = 100
+    ```
+
+    if you instantiate it, you see nothing.
+
+    ```python
+    t = Test()
+    vars(t)  # {}
+    t.__dict__  # {}
+    ```
+
+    but if you just use it as namespace, you can get the attributes:
+    ```python
+    t = Test
+    vars(t)  # {"name": 10, "key": 100}
+    ```
+
+    Attributes normally assigned to self inside `__init__` function shows up anyways.
+    ```python
+    class Test():
+        def __init__(self):
+            self.name = 10
+            self.key = 100
+
+    t = Test()
+    vars(t)  # {'name': 10, 'key': 100}
+    t.__dict__  # {'name': 10, 'key': 100}
+    ```
+    """
+    return {k: v for k, v in vars(obj).items() if not is_hidden(k)}
 
 
 T = TypeVar('T')
@@ -20,10 +69,13 @@ class ParamsProto:
     __proto__ = None
 
     # noinspection PyPep8Naming
+    def __props__(self):
+        return props_to_dict(self)
+
+    # noinspection PyPep8Naming
     @staticmethod
     def toDict() -> dict:
-        pass
-        # raise NotImplementedError('should be overwritten')
+        pass  # raise NotImplementedError('should be overwritten')
 
 
 # noinspection PyTypeChecker
@@ -38,25 +90,30 @@ def cli_parse(proto: T) -> T:
         k_normalized = k.replace('_', '-')
         if sys.version_info >= (3, 6):
             default = v
-            help_str = proto.__annotations__[k]
+            try:
+                help_str = proto.__annotations__[k]
+            except KeyError:  # todo: use proper python logging for debug
+                help_str = "N/A"
         else:  # use array as proto attribute value for python <= 3.5
             assert len(v) >= 1, "for python version <= 3.5, use a tuple to define the parameter prototype."
             default, *_ = v
             if len(_) > 0:
                 help_str = _[0]
             else:
-                help_str = None
+                help_str = "N/A"
         data_type = type(default)
         parser.add_argument('--{k}'.format(k=k_normalized), default=default, type=data_type, help=help_str)
 
     if sys.version_info <= (3, 6):
-        params = DefaultMunch(None, {k: v[0] for k, v in vars(proto).items() if not is_hidden(k)})
+        params = DefaultBear(None, **{k: v[0] for k, v in vars(proto).items() if not is_hidden(k)})
     else:
-        params = DefaultMunch(None, {k: v for k, v in vars(proto).items() if not is_hidden(k)})
+        params = DefaultBear(None, **{k: v for k, v in vars(proto).items() if not is_hidden(k)})
 
-    params.update(vars(parser.parse_args()))
+    args, unknow_args = parser.parse_known_args()
+    params.update(vars(args))
 
-    object.__setattr__(params, '__proto__', proto)
+    params.__proto__ = proto
+    params.__props__ = lambda: props_to_dict(params)
     return params
 
 

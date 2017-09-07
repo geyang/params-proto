@@ -1,10 +1,14 @@
+from os import path
+
 from setuptools import setup
+
+with open(path.join(path.abspath(path.dirname(__file__)), 'README'), encoding='utf-8') as f:
+    long_description = f.read()
 
 setup(name="params_proto",
       description="A command line argument parsing using python namespace",
-      long_description="params_proto uses python namespace to make working with schema-based command line arguments "
-                       "much easier.",
-      version="0.5.0",
+      long_description=long_description,
+      version="0.5.2",
       url="https://github.com/episodeyang/params_proto",
       author="Ge Yang",
       author_email="yangge1987@gmail.com",
