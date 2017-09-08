@@ -1,10 +1,14 @@
 # params_proto, a collection of decorators that makes shell argument passing declarative
 
+
+Now supports both python `3.52` as well as `3.6`!
+
 ## Todo
 
 ### Done
 - [x] publish
 - [x] add test
+- [x] add `python3.52` test on top of `python3.6` test.
 
 ## Installation
 ```bash
@@ -89,7 +93,7 @@ cd params_proto
 make dev
 ```
 
-To test, run
+To test, run the following under both python `3.52` and `3.6`.
 ```bash
 make test
 ```

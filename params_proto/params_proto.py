@@ -90,7 +90,7 @@ def cli_parse(proto: T) -> T:
             default = v
             try:
                 help_str = proto.__annotations__[k]
-            except KeyError:  # todo: use proper python logging for debug
+            except (KeyError, AttributeError):  # todo: use proper python logging for debug
                 help_str = "N/A"
         else:  # use array as proto attribute value for python <= 3.5
             assert len(v) >= 1, "for python version <= 3.5, use a tuple to define the parameter prototype."
@@ -120,10 +120,12 @@ def proto_signature(parameter_prototype, need_self=False):
             print('ha')
         # Need to have return type as well.
         __doc__ = f.__doc__
-        arg_spec = ', '.join(
-            ["{k}=parameter_prototype.__dict__['{k}']".format(k=k) for k in parameter_prototype.__dict__.keys() if
-             not is_hidden(k)])
-        # ["{k}=parameter_prototype.__dict__['{k}'][0]".format(k=k) for k in parameter_prototype.__dict__.keys() if not is_hidden(k)])
+
+        if sys.version_info <= (3, 6):
+            s_str = "{k}=parameter_prototype.__dict__['{k}'][0]"
+        else:
+            s_str = "{k}=parameter_prototype.__dict__['{k}']"
+        arg_spec = ', '.join([s_str.format(k=k) for k in parameter_prototype.__dict__.keys() if not is_hidden(k)])
         if need_self:
             arg_spec = "self, " + arg_spec
         expr = \
