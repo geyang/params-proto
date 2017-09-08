@@ -107,7 +107,7 @@ def cli_parse(proto: T) -> T:
     else:
         params = ParamsProto(proto, **{k: v for k, v in vars(proto).items() if not is_hidden(k)})
 
-    args, unknow_args = parser.parse_known_args()
+    args, unknown_args = parser.parse_known_args()
     params.update(vars(args))
 
     return params
