@@ -55,6 +55,7 @@ class G(ParamsProto):
     num_tasks: "number of tasks in the inner loop" = 10
     num_grad_steps: "number of gradient descent steps in the inner loop" = 1
     num_points_sampled: "effectively the k-shot" = 10
+    eval_grad_steps: "the grad steps evaluated with full sample" = [0, 1, 10]
     fix_amp: "controls the sampling, fix the amplitude of the sample distribution if True" = False
         """
     else:
@@ -67,6 +68,7 @@ class G(ParamsProto):
     num_tasks = 10, "number of tasks in the inner loop"
     num_grad_steps = 1, "number of gradient descent steps in the inner loop"
     num_points_sampled = 10, "effectively the k-shot"
+    eval_grad_steps = [0, 1, 10], "the grad steps evaluated with full sample"
     fix_amp = False, "controls the sampling, fix the amplitude of the sample distribution if True"
         """
     exec(script, globals())
@@ -75,7 +77,8 @@ class G(ParamsProto):
     G.npts = 10
     assert G.npts == 10
     assert vars(G) == {'npts': 10, 'num_epochs': 70000, 'num_tasks': 10, 'num_grad_steps': 1,
-                       'num_points_sampled': 10, 'fix_amp': False}
+                       'num_points_sampled': 10, 'fix_amp': False,
+                       'eval_grad_steps': [0, 1, 10]}
     assert G._proto is not None, '_proto should exist'
 
 

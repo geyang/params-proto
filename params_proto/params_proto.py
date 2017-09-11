@@ -100,8 +100,12 @@ def cli_parse(proto: T) -> T:
                 help_str = _[0]
             else:
                 help_str = "N/A"
+        extra_args = {}
         data_type = type(default)
-        parser.add_argument('--{k}'.format(k=k_normalized), default=default, type=data_type, help=help_str)
+        if data_type == list or data_type == tuple:
+            extra_args['nargs'] = '*'
+            data_type = None
+        parser.add_argument('--{k}'.format(k=k_normalized), default=default, type=data_type, help=help_str, **extra_args)
 
     if sys.version_info <= (3, 6):
         params = ParamsProto(proto, **{k: v[0] for k, v in vars(proto).items() if not is_hidden(k)})
