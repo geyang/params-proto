@@ -88,24 +88,27 @@ def cli_parse(proto: T) -> T:
             continue
         k_normalized = k.replace('_', '-')
         if sys.version_info >= (3, 6):
-            default = v
+            default_value = v
             try:
                 help_str = proto.__annotations__[k]
             except (KeyError, AttributeError):  # todo: use proper python logging for debug
                 help_str = "N/A"
         else:  # use array as proto attribute value for python <= 3.5
             assert len(v) >= 1, "for python version <= 3.5, use a tuple to define the parameter prototype."
-            default, *_ = v
+            default_value, *_ = v
             if len(_) > 0:
                 help_str = _[0]
             else:
                 help_str = "N/A"
         extra_args = {}
-        data_type = type(default)
+        data_type = type(default_value)
         if data_type == list or data_type == tuple:
             extra_args['nargs'] = '*'
-            data_type = None
-        parser.add_argument('--{k}'.format(k=k_normalized), default=default, type=data_type, help=help_str, **extra_args)
+            if len(default_value) > 0:
+                data_type = type(default_value[0])
+            else:
+                data_type = None
+        parser.add_argument('--{k}'.format(k=k_normalized), default=default_value, type=data_type, help=help_str, **extra_args)
 
     if sys.version_info <= (3, 6):
         params = ParamsProto(proto, **{k: v[0] for k, v in vars(proto).items() if not is_hidden(k)})
