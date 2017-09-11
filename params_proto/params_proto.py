@@ -4,6 +4,7 @@ import re
 import sys
 from typing import TypeVar
 
+import logging
 from waterbear import DefaultBear
 
 
@@ -107,7 +108,8 @@ def cli_parse(proto: T) -> T:
     else:
         params = ParamsProto(proto, **{k: v for k, v in vars(proto).items() if not is_hidden(k)})
 
-    args, unknown_args = parser.parse_known_args()
+    args, unknow_args = parser.parse_known_args()
+    logging.debug("params_proto: args: {}\n              unknow_args: {}", args, unknow_args)
     params.update(vars(args))
 
     return params
