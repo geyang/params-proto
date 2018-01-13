@@ -1,7 +1,7 @@
 params\_proto, a collection of decorators that makes shell argument passing declarative
 =======================================================================================
 
-Now supports both python ``3.52`` as well as ``3.6``!
+Now supports both python ``3.52`` as well as ``3.6``! :bangbang::star:
 
 Todo
 ----
@@ -26,38 +26,35 @@ Usage
 To use a python namespace to declare commandline argments
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-**Note that this is python >= 3.6 only**. The reason being the
-annotation syntax is only supported by python 3.6 an above. If you feel
-unhappy about this, just use javascript.
+**Updated** We now use a ``Proto`` helper function to declare the
+argparse arguments! See example below:
 
-For python <= 3.5, you can declare each default value as a tuple.
-``param_proto`` recognizes the python version that is being ran, and
-changes its behavior.
-
-Below is a simple example how to use python namespace to declare command
-line arguments:
+Simple example showing how to use python namespace to declare command line arguments:
+-------------------------------------------------------------------------------------
 
 .. code-block:: python
 
-    from .params_proto import cli_parse, is_hidden, ParamsProto, proto_signature
+    from .params_proto import cli_parse, is_hidden, Proto, ParamsProto, proto_signature
 
 
     def test_cli_proto():
         @cli_parse
         class G(ParamsProto):
             """Supervised MAML in tensorflow"""
-            npts: "number of points to sample from distribution" = 100
-            num_epochs: "number of epochs to train" = 70000
-            num_tasks: "number of tasks in the inner loop" = 10
-            num_grad_steps: "number of gradient descent steps in the inner loop" = 1
-            num_points_sampled: "effectively the k-shot" = 10
-            fix_amp: "controls the sampling, fix the amplitude of the sample distribution if True" = False
+            npts = Proto(100, help="number of points to sample from distribution")
+            num_epochs = Proto(70000, help="number of epochs to train")
+            num_tasks = Proto(10, help="number of tasks in the inner loop")
+            num_grad_steps = Proto(1, help="number of gradient descent steps in the inner loop")
+            num_points_sampled = Proto(10, help="effectively the k-shot")
+            eval_grad_steps = Proto([0, 1, 10], help="the grad steps evaluated with full sample")
+            fix_amp = Proto(False, help="controls the sampling, fix the amplitude of the sample distribution if True")
 
         assert G.npts == 100
         G.npts = 10
         assert G.npts == 10
         assert vars(G) == {'npts': 10, 'num_epochs': 70000, 'num_tasks': 10, 'num_grad_steps': 1,
-                           'num_points_sampled': 10, 'fix_amp': False}
+                           'num_points_sampled': 10, 'fix_amp': False,
+                           'eval_grad_steps': [0, 1, 10]}
         assert G._proto is not None, '_proto should exist'
 
 Setting Function Signatures using Python Namespace
@@ -79,7 +76,9 @@ Below si the usage example and the test case:
         @cli_parse
         class G(ParamsProto):
             """some parameter proto"""
-            npts: "number of points to sample from distribution" = 100
+            n = 1
+            npts = Proto(100, help="number of points to sample from distribution")
+            ok = True
 
         @proto_signature(G._proto)
         def main_demo(**kwargs):
@@ -92,7 +91,7 @@ Below si the usage example and the test case:
 
         assert main_demo(npts=10) == 10
         print("main_demo<Function> signature:", inspect.signature(main_demo))
-        assert str(inspect.signature(main_demo)) == "(npts=100)"
+        assert str(inspect.signature(main_demo)) == "(n=1, npts=100, ok=True)"
 
 To Develop
 ----------
