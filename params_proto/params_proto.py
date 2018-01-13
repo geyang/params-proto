@@ -5,7 +5,7 @@ import sys
 from typing import TypeVar
 
 import logging
-from waterbear import DefaultBear
+from waterbear import DefaultBear, Bear
 
 
 def is_hidden(k: str) -> bool:
@@ -77,49 +77,54 @@ class ParamsProto(DefaultBear):
         return {k: v for k, v in super().__dict__.items() if not is_hidden(k)}
 
 
+T = TypeVar('T')
+
+
+def Proto(default: T, help=None, dtype=None) -> T:
+    return DefaultBear(None, default=default, help_str=help, dtype=dtype)
+
+
 # noinspection PyTypeChecker
 def cli_parse(proto: T) -> T:
     """parser command line options, and repackage into a typed object.
     :type proto: T
     """
     parser = argparse.ArgumentParser(description=T.__doc__)
-    for k, v in proto.__dict__.items():
+    for k, p in proto.__dict__.items():
         if is_hidden(k):
             continue
         k_normalized = k.replace('_', '-')
-        if sys.version_info >= (3, 6):
-            default_value = v
-            try:
-                help_str = proto.__annotations__[k]
-            except (KeyError, AttributeError):  # todo: use proper python logging for debug
-                help_str = "N/A"
-        else:  # use array as proto attribute value for python <= 3.5
-            assert len(v) >= 1, "for python version <= 3.5, use a tuple to define the parameter prototype."
-            default_value, *_ = v
-            if len(_) > 0:
-                help_str = _[0]
-            else:
-                help_str = "N/A"
-        extra_args = {}
-        data_type = type(default_value)
-        if data_type == list or data_type == tuple:
-            extra_args['nargs'] = '*'
-            if len(default_value) > 0:
-                data_type = type(default_value[0])
-            else:
-                data_type = None
-        parser.add_argument('--{k}'.format(k=k_normalized), default=default_value, type=data_type, help=help_str, **extra_args)
+        if type(p) is DefaultBear:
+            default_value = p.default
+            help_str = p.help_str or "N/A"
+            data_type = p.dtype or type(default_value)
+        else:
+            default_value = p
+            help_str = "N/A"
+            data_type = type(p)
 
-    if sys.version_info <= (3, 6):
-        params = ParamsProto(proto, **{k: v[0] for k, v in vars(proto).items() if not is_hidden(k)})
-    else:
-        params = ParamsProto(proto, **{k: v for k, v in vars(proto).items() if not is_hidden(k)})
+        if data_type is list:
+            data_type = type(default_value[0]) if len(default_value) > 0 else None
+            parser.add_argument('--{k}'.format(k=k_normalized), default=default_value, nargs="*",
+                                type=data_type, help=help_str)
+        else:
+            parser.add_argument('--{k}'.format(k=k_normalized), default=default_value,
+                                type=data_type, help=help_str)
+
+    params = ParamsProto(proto, **{k: v for k, v in vars(proto).items() if not is_hidden(k)})
 
     args, unknow_args = parser.parse_known_args()
-    logging.debug("params_proto: args: {}\n              unknow_args: {}", args, unknow_args)
+    # logging.debug("params_proto: args: {}\n              unknow_args: {}", args, unknow_args)
     params.update(vars(args))
 
     return params
+
+
+def get_default(p):
+    if type(p) is DefaultBear:
+        return p.default
+    else:
+        return p
 
 
 # noinspection PyUnusedLocal
@@ -130,11 +135,9 @@ def proto_signature(parameter_prototype, need_self=False):
         # Need to have return type as well.
         __doc__ = f.__doc__
 
-        if sys.version_info <= (3, 6):
-            s_str = "{k}=parameter_prototype.__dict__['{k}'][0]"
-        else:
-            s_str = "{k}=parameter_prototype.__dict__['{k}']"
-        arg_spec = ', '.join([s_str.format(k=k) for k in parameter_prototype.__dict__.keys() if not is_hidden(k)])
+        s_str = "{k}={default}"
+        arg_spec = ', '.join([s_str.format(k=k, default=get_default(p))
+                              for k, p in parameter_prototype.__dict__.items() if not is_hidden(k)])
         if need_self:
             arg_spec = "self, " + arg_spec
         expr = \
