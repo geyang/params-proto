@@ -81,8 +81,8 @@ class ParamsProto(DefaultBear):
 T = TypeVar('T')
 
 
-def Proto(default: T, help=None, dtype=None, **kwargs) -> T:
-    return DefaultBear(None, default=default, help_str=help, dtype=dtype, kwargs=kwargs)
+def Proto(default: T, help=None, dtype=None, aliases=None, **kwargs) -> T:
+    return DefaultBear(None, default=default, help_str=help, dtype=dtype, aliases=aliases, kwargs=kwargs)
 
 
 _bool = lambda v: v if v is None else bool(util.strtobool(v))
@@ -103,20 +103,22 @@ def cli_parse(proto: T) -> T:
             help_str = p.help_str or "N/A"
             data_type = p.dtype or type(default_value)
             kwargs = p.kwargs
+            aliases = p.aliases or []
         else:
             default_value = p
             help_str = "N/A"
             data_type = type(p)
             kwargs = {}
+            aliases = []
 
         if data_type in [bool, 'bool']:
             data_type = _bool
 
         if data_type is list:
-            parser.add_argument('--{k}'.format(k=k_normalized), default=default_value, nargs="*",
+            parser.add_argument('--{k}'.format(k=k_normalized), *aliases, default=default_value, nargs="*",
                                 type=data_type, help=help_str, **kwargs)
         else:
-            parser.add_argument('--{k}'.format(k=k_normalized), default=default_value,
+            parser.add_argument('--{k}'.format(k=k_normalized), *aliases, default=default_value,
                                 type=data_type, help=help_str, **kwargs)
 
     params = ParamsProto(proto, **{k: v for k, v in vars(proto).items() if not is_hidden(k)})
