@@ -100,8 +100,10 @@ from subprocess import check_call, CalledProcessError, check_output
 def test_from_command_line():
     script = dedent("""
         # python -c "import os; print(os.getcwd())"
-        # echo "================================"
-        # pwd
+        echo "\n=============== std.out output ================="
+        pwd
+        source activate simulation &&
+        pip install -e . &&
         python ./params_proto/test_fixtures/main.py -h
         """)
     check_call(script, shell=True)
