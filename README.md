@@ -23,6 +23,8 @@ pip install params_proto
 
 ## Simple example showing how to use python namespace to declare command line arguments:
 
+**note**: for boolean, use `bool` or `"bool"`. `params_proto` will automatically use `distutils.util.strtobool` to parse it into `bool`. Details look [here](https://docs.python.org/2/distutils/apiref.html?highlight=distutils.util#distutils.util.strtobool)
+
 ```python
 from .params_proto import cli_parse, is_hidden, Proto, ParamsProto, proto_signature
 
@@ -36,7 +38,7 @@ def test_cli_proto():
         num_tasks = Proto(10, help="number of tasks in the inner loop")
         num_grad_steps = Proto(1, help="number of gradient descent steps in the inner loop")
         num_points_sampled = Proto(10, help="effectively the k-shot")
-        eval_grad_steps = Proto([0, 1, 10], help="the grad steps evaluated with full sample")
+        eval_grad_steps = Proto([0, 1, 10], type=bool, help="the grad steps evaluated with full sample")
         fix_amp = Proto(False, help="controls the sampling, fix the amplitude of the sample distribution if True")
 
     assert G.npts == 100
