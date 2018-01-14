@@ -33,4 +33,4 @@ publish: convert-rst
 	make wheel
 	twine upload dist/*
 test:
-	python -m pytest  --capture=no
+	python -m pytest  --capture=sys

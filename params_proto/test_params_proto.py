@@ -1,4 +1,5 @@
 import sys
+from pprint import pprint
 from textwrap import dedent
 
 from .params_proto import is_hidden, cli_parse, Proto, ParamsProto, proto_signature
@@ -90,3 +91,17 @@ def test_proto_to_dict():
         npts: "number of points to sample from distribution" = 100
 
     assert vars(G) == {'npts': 100}
+
+
+from textwrap import dedent
+from subprocess import check_call, CalledProcessError, check_output
+
+
+def test_from_command_line():
+    script = dedent("""
+        # python -c "import os; print(os.getcwd())"
+        # echo "================================"
+        # pwd
+        python ./params_proto/test_fixtures/main.py -h
+        """)
+    check_call(script, shell=True)
