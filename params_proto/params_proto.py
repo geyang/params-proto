@@ -90,7 +90,7 @@ def cli_parse(proto: T) -> T:
     """parser command line options, and repackage into a typed object.
     :type proto: T
     """
-    parser = argparse.ArgumentParser(description=T.__doc__)
+    parser = argparse.ArgumentParser(description=proto.__doc__)
     for k, p in proto.__dict__.items():
         if is_hidden(k):
             continue
