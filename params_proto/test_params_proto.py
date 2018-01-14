@@ -1,24 +1,25 @@
 import sys
+from textwrap import dedent
 
 from .params_proto import is_hidden, cli_parse, Proto, ParamsProto, proto_signature
 
 
 def test_decorator():
-    script = """
-def decorate(fn):
-    def wrapper(x):
-        return fn(x + 10)
-    return wrapper;
+    script = dedent("""
+    def decorate(fn):
+        def wrapper(x):
+            return fn(x + 10)
+        return wrapper;
+            
+    def original(x):
+        return x * 4
         
-def original(x):
-    return x * 4
-    
-@decorate
-def decorated(x):
-    return x * 4
-a = original(1)
-b = decorated(1)
-"""
+    @decorate
+    def decorated(x):
+        return x * 4
+    a = original(1)
+    b = decorated(1)
+    """)
     exec(script, globals())
     print("")
     assert a == 4
@@ -60,7 +61,6 @@ def test_cli_proto():
                        'num_points_sampled': 10, 'fix_amp': False,
                        'eval_grad_steps': [0, 1, 10]}
     assert G._proto is not None, '_proto should exist'
-
 
     @cli_parse
     class G(ParamsProto):
