@@ -1,4 +1,5 @@
 import argparse
+from distutils import util
 import inspect
 import re
 import sys
@@ -84,6 +85,9 @@ def Proto(default: T, help=None, dtype=None) -> T:
     return DefaultBear(None, default=default, help_str=help, dtype=dtype)
 
 
+_bool = lambda v: v if v is None else bool(util.strtobool(v))
+
+
 # noinspection PyTypeChecker
 def cli_parse(proto: T) -> T:
     """parser command line options, and repackage into a typed object.
@@ -103,8 +107,10 @@ def cli_parse(proto: T) -> T:
             help_str = "N/A"
             data_type = type(p)
 
+        if data_type in [bool, 'bool']:
+            data_type = _bool
+
         if data_type is list:
-            data_type = type(default_value[0]) if len(default_value) > 0 else None
             parser.add_argument('--{k}'.format(k=k_normalized), default=default_value, nargs="*",
                                 type=data_type, help=help_str)
         else:
