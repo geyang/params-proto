@@ -63,9 +63,6 @@ def props_to_dict(obj):
     return {k: v for k, v in vars(obj).items() if not is_hidden(k)}
 
 
-T = TypeVar('T')
-
-
 class ParamsProto(DefaultBear):
     """Parameter Prototype Class, has toDict method and __proto__ attribute for the original namespace object."""
 
@@ -140,8 +137,6 @@ def get_default(p):
 # noinspection PyUnusedLocal
 def proto_signature(parameter_prototype, need_self=False):
     def decorate(f):
-        if need_self is True:
-            print('ha')
         # Need to have return type as well.
         __doc__ = f.__doc__
 
