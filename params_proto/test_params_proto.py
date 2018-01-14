@@ -62,7 +62,6 @@ def test_cli_proto():
     assert G._proto is not None, '_proto should exist'
 
 
-def test_proto_signature():
     @cli_parse
     class G(ParamsProto):
         """some parameter proto"""
