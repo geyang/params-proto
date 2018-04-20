@@ -82,6 +82,15 @@ def Proto(default: T, help=None, dtype=None, aliases=None, **kwargs) -> T:
     return DefaultBear(None, default=default, help_str=help, dtype=dtype, aliases=aliases, kwargs=kwargs)
 
 
+def BoolFlag(default: bool, help=None, aliases=None, **kwargs) -> T:
+    """this one generates a boolean flag that requires no arguments.
+    The value of the flag is the opposite of the default.
+    if default is True, then --bool-flag (such as --no-flag) would return False.
+    if default is False, then (such as --render) would return True.
+    """
+    return Proto(default, help=help, dtype="bool-flag", aliases=aliases, **kwargs)
+
+
 _bool = lambda v: v if v is None else bool(util.strtobool(v))
 
 
@@ -111,7 +120,11 @@ def cli_parse(proto: T) -> T:
         if data_type in [bool, 'bool']:
             data_type = _bool
 
-        if data_type is list:
+        if data_type == "bool-flag":
+            parser.add_argument('--{k}'.format(k=k_normalized), *aliases, default=default_value,
+                                action="store_false" if default_value else "store_true",
+                                help=help_str, **kwargs)
+        elif data_type is list:
             parser.add_argument('--{k}'.format(k=k_normalized), *aliases, default=default_value, nargs="*",
                                 type=data_type, help=help_str, **kwargs)
         else:

@@ -2,7 +2,7 @@ import sys
 from pprint import pprint
 from textwrap import dedent
 
-from .params_proto import is_hidden, cli_parse, Proto, ParamsProto, proto_signature
+from params_proto import is_hidden, cli_parse, Proto, ParamsProto, proto_signature, BoolFlag
 
 
 def test_decorator():
@@ -54,13 +54,16 @@ def test_cli_proto():
         num_points_sampled = Proto(10, help="effectively the k-shot")
         eval_grad_steps = Proto([0, 1, 10], help="the grad steps evaluated with full sample")
         fix_amp = Proto(False, help="controls the sampling, fix the amplitude of the sample distribution if True")
+        render = BoolFlag(False, help="turn on the rendering")
+        no_dump = BoolFlag(True, help="turn off the data dump. By default dump when no flag is present.")
 
     assert G.npts == 100
     G.npts = 10
     assert G.npts == 10
     assert vars(G) == {'npts': 10, 'num_epochs': 70000, 'num_tasks': 10, 'num_grad_steps': 1,
                        'num_points_sampled': 10, 'fix_amp': False,
-                       'eval_grad_steps': [0, 1, 10]}
+                       'eval_grad_steps': [0, 1, 10],
+                       "render": False, "no_dump": True}
     assert G._proto is not None, '_proto should exist'
 
     @cli_parse
@@ -98,12 +101,23 @@ from subprocess import check_call, CalledProcessError, check_output
 
 
 def test_from_command_line():
+    """this is not used in the actual testing."""
     script = dedent("""
         # python -c "import os; print(os.getcwd())"
-        echo "\n=============== std.out output ================="
+        echo "\n----------- .py:test_from_command_line() ---------------"
+        echo "\n=================== std.out output ====================="
+        echo "\n>>>>>>>>>>>> do this in parent directory <<<<<<<<<<<<<<<"
         pwd
         source activate simulation &&
         pip install -e . &&
         python ./params_proto/test_fixtures/main.py -h
         """)
     check_call(script, shell=True)
+
+
+if __name__ == "__main__":
+    test_decorator()
+    test_is_hidden()
+    test_cli_proto()
+    test_cli_proto_simple()
+    test_proto_to_dict()
