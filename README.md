@@ -3,6 +3,71 @@
 
 Now supports both python `3.52` as well as `3.6`! :bangbang::star:
 
+## Why Use Params_Proto Instead of Click or Argparse?
+
+**Because this is declarative**, which makes it easy to refactor your code and find variable references.
+
+- You want to place all of the arguments under a namespace that can be statically checked.
+- This allows your IDE to:
+    1. Find usage of each argument
+    2. jump from *anywhere* in your code base to the declaration of that argument
+    3. refactor your argument name **in the entire code base** automatically
+
+`Params_proto` is the declarative way to write command line arguments, and is the way to go for ML projects.
+
+## Simple Example (with batteries included!!):battery:
+
+```python
+# this.code.py
+from params_proto import cli_parse, BoolFlag, Proto
+
+@cli_parse
+class Args:
+    """
+    [README]
+        Generator for the 2D Particle Map Dataset. See Usage help below:
+    """
+    load = Proto(None, dtype=str, help="to visualize existing data located at this path")
+    x_dim = Proto(2, help="The dimension for the observation space")
+    data_size = Proto(20, help="The size of the dataset. Note we x2 because we generate transitions.")
+    show_plot = BoolFlag(True, help="Shows the plot when true.")
+
+def train():
+    D = Discriminator(Args.x_dim)
+
+def launch(**kwargs):
+    Args.update(kwargs)
+
+if __name__ == "__main__":
+    launch(show_plot=True)
+```
+
+now, if you run this code, it gives you this help in the command line:
+```python
+(/Users/ge/anaconda/envs/some-project) ➜ git:(master) python -m this.code.py -h
+usage: generate.py [-h] [--load LOAD] [--x-dim X_DIM] [--data-size DATA_SIZE]
+                   [--show-plot]
+
+[README] Generator for the 2D Particle Map Dataset. See Usage help below:
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --load LOAD           to visualize existing data located at this path
+  --x-dim X_DIM         The dimension for the observation space
+  --data-size DATA_SIZE
+                        The size of the dataset. Note we x2 because we
+                        generate transitions.
+  --show-plot           Shows the plot when true.
+```
+
+Now, isn't this awesome? :bang::stars:
+
+## How to override the code in your ML launch script
+
+It is very easy to over-ride the parameters when you call your function: have most of your training code **directly** reference the parser namespace (your configuration namespace really), and just monkey patch the attribute.
+
+`params-proto` works very well with the clound ML launch tool [jaynes](https://github.com/episodeyang/jaynes). Take a look at the automagic awesomeness of [jaynes](https://github.com/episodeyang/jaynes):)
+
 ## Todo
 
 ### Done
@@ -12,7 +77,7 @@ Now supports both python `3.52` as well as `3.6`! :bangbang::star:
 
 ## Installation
 ```bash
-pip install params_proto
+pip install params-proto
 ```
 
 ## Usage
