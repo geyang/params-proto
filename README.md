@@ -1,7 +1,14 @@
 # params_proto, a collection of decorators that makes shell argument passing declarative
 
-
 Now supports both python `3.52` as well as `3.6`! :bangbang::star:
+
+## What is "Experiment Parameter Hell"?
+
+"Experiemnt Parameter Hell" occurs when you have more than twenty parameters for your ML project that are all defined as string/function parameters with `click` or `argparse`. Sometimes these parameters are defined in a launch script and passes through five layers of function calls during an experiment.
+
+Your Python IDEs work very hard on static code analysis to intelligently make you more productive, and the "parameter hell" breaks all of that.
+
+In your ML project, you want to avoid using dictionaries or opaque argparse definitions as much as you can. You want to write those parameters **declaratively** instead. This way, your IDE can actually help you navigate through-out layers of function calls.
 
 ## Why Use Params_Proto Instead of Click or Argparse?
 
