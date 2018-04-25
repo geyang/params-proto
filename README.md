@@ -10,6 +10,14 @@ Your Python IDEs work very hard on static code analysis to intelligently make yo
 
 In your ML project, you want to avoid using dictionaries or opaque argparse definitions as much as you can. You want to write those parameters **declaratively** instead. This way, your IDE can actually help you navigate through-out layers of function calls.
 
+## Writing documentation as uhm..., man page?
+
+`Params-Proto` exposes your argument namespace's doc string as the usage note. For users of your code, there is no better help than the one that comes with the script itself!
+
+With `params-proto`, your help is only one `-h` away :)
+
+Your code becomes the documentation.
+
 ## Why Use Params_Proto Instead of Click or Argparse?
 
 **Because this is declarative**, which makes it easy to refactor your code and find variable references.
