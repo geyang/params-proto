@@ -2,11 +2,11 @@
 
 Now supports both python `3.52` as well as `3.6`! :bangbang::star:
 
-<img width="50%" align="right" alt="autocompletion demo" src="./figures/params-proto-autocompletion.gif"></img>
-
 ## What is "Experiment Parameter Hell"?
 
 "Experiemnt Parameter Hell" occurs when you have more than twenty parameters for your ML project that are all defined as string/function parameters with `click` or `argparse`. Sometimes these parameters are defined in a launch script and passes through five layers of function calls during an experiment.
+
+<img width="50%" align="right" alt="autocompletion demo" src="./figures/params-proto-autocompletion.gif"></img>
 
 Your Python IDEs work very hard on static code analysis to intelligently make you more productive, and the "parameter hell" breaks all of that.
 
@@ -59,9 +59,9 @@ if __name__ == "__main__":
     launch(show_plot=True)
 ```
 
-<img width="50%" align="right" alt="man page" src="./figures/man-page.png"></img>
 
 now, if you run this code, it gives you this help in the command line:
+<img width="70%" align="right" alt="man page" src="./figures/man-page.png"></img>
 ```python
 (/Users/ge/anaconda/envs/some-project) ➜ git:(master) python -m this.code.py -h
 usage: generate.py [-h] [--load LOAD] [--x-dim X_DIM] [--data-size DATA_SIZE]
