@@ -6,14 +6,14 @@ Now supports both python `3.52` as well as `3.6`! :bangbang::star:
 
 "Experiemnt Parameter Hell" occurs when you have more than twenty parameters for your ML project that are all defined as string/function parameters with `click` or `argparse`. Sometimes these parameters are defined in a launch script and passes through five layers of function calls during an experiment.
 
-<img width="50%" align="right" alt="autocompletion demo" src="./figures/params-proto-autocompletion.gif"></img>
+<img width="60%" align="right" alt="autocompletion demo" src="./figures/params-proto-autocompletion.gif"></img>
 
 Your Python IDEs work very hard on static code analysis to intelligently make you more productive, and the "parameter hell" breaks all of that.
 
 In your ML project, you want to avoid using dictionaries or opaque argparse definitions as much as you can. You want to write those parameters **declaratively** instead. This way, your IDE can actually help you navigate through those layers of function calls.
 
 ## Writing documentation as uhm..., man page?
-<img width="70%" align="right" alt="man page" src="./figures/man-page.png"></img>
+<img width="60%" align="right" alt="man page" src="./figures/man-page.png"></img>
 `Params-Proto` exposes your argument namespace's doc string as the usage note. For users of your code, there is no better help than the one that comes with the script itself!
 
 > With `params-proto`, your help is only one `-h` away :)
