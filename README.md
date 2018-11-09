@@ -13,7 +13,7 @@ Your Python IDEs work very hard on static code analysis to intelligently make yo
 In your ML project, you want to avoid using dictionaries or opaque argparse definitions as much as you can. You want to write those parameters **declaratively** instead. This way, your IDE can actually help you navigate through those layers of function calls.
 
 ## Writing documentation as uhm..., man page?
-
+<img width="70%" align="right" alt="man page" src="./figures/man-page.png"></img>
 `Params-Proto` exposes your argument namespace's doc string as the usage note. For users of your code, there is no better help than the one that comes with the script itself!
 
 > With `params-proto`, your help is only one `-h` away :)
@@ -61,7 +61,6 @@ if __name__ == "__main__":
 
 
 now, if you run this code, it gives you this help in the command line:
-<img width="70%" align="right" alt="man page" src="./figures/man-page.png"></img>
 ```python
 (/Users/ge/anaconda/envs/some-project) ➜ git:(master) python -m this.code.py -h
 usage: generate.py [-h] [--load LOAD] [--x-dim X_DIM] [--data-size DATA_SIZE]
