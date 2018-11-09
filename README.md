@@ -1,6 +1,10 @@
-# params_proto, a collection of decorators that makes shell argument passing declarative
+# `params-proto`, A Python Decorator That Gives Your Model Parameters Super-power
 
 Now supports both python `3.52` as well as `3.6`! :bangbang::star:
+
+Let's first look at the demo:
+
+<img width="50%" src="./figures/params-proto-autocompletion.gif"></img>
 
 ## What is "Experiment Parameter Hell"?
 
