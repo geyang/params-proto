@@ -2,9 +2,7 @@
 
 Now supports both python `3.52` as well as `3.6`! :bangbang::star:
 
-Let's first look at the demo:
-
-<img width="50%" align="right" src="./figures/params-proto-autocompletion.gif"></img>
+<img width="50%" align="right" alt="autocompletion demo" src="./figures/params-proto-autocompletion.gif"></img>
 
 ## What is "Experiment Parameter Hell"?
 
@@ -12,15 +10,15 @@ Let's first look at the demo:
 
 Your Python IDEs work very hard on static code analysis to intelligently make you more productive, and the "parameter hell" breaks all of that.
 
-In your ML project, you want to avoid using dictionaries or opaque argparse definitions as much as you can. You want to write those parameters **declaratively** instead. This way, your IDE can actually help you navigate through-out layers of function calls.
+In your ML project, you want to avoid using dictionaries or opaque argparse definitions as much as you can. You want to write those parameters **declaratively** instead. This way, your IDE can actually help you navigate through those layers of function calls.
 
 ## Writing documentation as uhm..., man page?
 
 `Params-Proto` exposes your argument namespace's doc string as the usage note. For users of your code, there is no better help than the one that comes with the script itself!
 
-With `params-proto`, your help is only one `-h` away :)
+> With `params-proto`, your help is only one `-h` away :)
 
-Your code becomes the documentation.
+And **Your code becomes the documentation.**
 
 ## Why Use Params_Proto Instead of Click or Argparse?
 
@@ -60,6 +58,8 @@ def launch(**kwargs):
 if __name__ == "__main__":
     launch(show_plot=True)
 ```
+
+<img width="50%" align="right" alt="man page" src="./figures/man-page.png"></img>
 
 now, if you run this code, it gives you this help in the command line:
 ```python
