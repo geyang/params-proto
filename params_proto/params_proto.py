@@ -1,11 +1,11 @@
 import argparse
+from argcomplete import argcomplete
 from distutils import util
 import inspect
 import re
-import sys
+
 from typing import TypeVar
 
-import logging
 from waterbear import DefaultBear, Bear
 
 
@@ -136,6 +136,8 @@ def cli_parse(proto: T) -> T:
     args, unknow_args = parser.parse_known_args()
     # logging.debug("params_proto: args: {}\n              unknow_args: {}", args, unknow_args)
     params.update(vars(args))
+
+    argcomplete(parser)
 
     return params
 

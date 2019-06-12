@@ -16,12 +16,13 @@ setup(name="params_proto",
       author="Ge Yang",
       author_email="yangge1987@gmail.com",
       license=None,
-      keywords=["params_proto", "decorator", "argparse", "shell arguments", "argument parser"],
+      keywords=["params_proto", "decorator", "argparse", "argcomplete", "auto-completion", "autocomplete",
+                "shell arguments", "argument parser"],
       classifiers=[
           "Development Status :: 4 - Beta",
           "Intended Audience :: Science/Research",
           "Programming Language :: Python :: 3"
       ],
       packages=["params_proto"],
-      install_requires=["waterbear", "argparse", "typing"]
+      install_requires=["waterbear", "argparse", "argcomplete", "typing"]
       )
