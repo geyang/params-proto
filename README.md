@@ -1,6 +1,7 @@
 # `params-proto`, A Python Decorator That Gives Your Model Parameters Super-power
 
-Now supports both python `3.52` as well as `3.6`! :bangbang::star:
+- 2019/06/11: Now supports `tab-completion` at the command line!
+- 2018/11/08: Now supports both python `3.52` as well as `3.6`! :bangbang::star:
 
 ## What is "Experiment Parameter Hell"?
 
@@ -31,6 +32,18 @@ And **Your code becomes the documentation.**
     3. refactor your argument name **in the entire code base** automatically
 
 `Params_proto` is the declarative way to write command line arguments, and is the way to go for ML projects.
+
+## Tab-completion for your script!
+
+`params_proto` uses `argparse` together with `argcomplete`, which enables command line autocomplete on tabs! To enable run
+
+```python
+pip install params-proto
+# then:
+activate-global-python-argcomplete
+```
+
+For details, see [`argcomplete`'s documentation](https://github.com/kislyuk/argcomplete#installation).
 
 ## Simple Example (with batteries included!!):battery:
 
