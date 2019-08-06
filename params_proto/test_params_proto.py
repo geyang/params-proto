@@ -108,7 +108,7 @@ def test_from_command_line():
         echo "\n=================== std.out output ====================="
         echo "\n>>>>>>>>>>>> do this in parent directory <<<<<<<<<<<<<<<"
         pwd
-        source activate simulation &&
+        source activate plan2vec &&
         pip install -e . &&
         python ./params_proto/test_fixtures/main.py -h
         """)

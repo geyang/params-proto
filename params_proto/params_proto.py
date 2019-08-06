@@ -1,5 +1,5 @@
 import argparse
-from argcomplete import argcomplete
+from argcomplete import autocomplete
 from distutils import util
 import inspect
 import re
@@ -137,7 +137,7 @@ def cli_parse(proto: T) -> T:
     # logging.debug("params_proto: args: {}\n              unknow_args: {}", args, unknow_args)
     params.update(vars(args))
 
-    argcomplete(parser)
+    autocomplete(parser)
 
     return params
 
