@@ -93,7 +93,7 @@ optional arguments:
 
 Now, isn't this awesome? :bang::stars:
 
-## How to override the code in your ML launch script
+## How to override when calling from python
 
 It is very easy to over-ride the parameters when you call your function: have most of your training code **directly** reference the parser namespace (your configuration namespace really), and just monkey patch the attribute.
 
