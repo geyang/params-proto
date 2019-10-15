@@ -22,6 +22,9 @@ convert-rst:
 	# B/c of the complexity, use perl instead.
 	perl -p -i -e 's/\.(jpg|png)/_resized.$$1?raw=true\n   :width: 355px\n   :height: 266px\n   :scale: 50%/' README
 	rst-lint README
+release:
+	git tag v`< VERSION` -m '$(msg)'
+	git push origin --tags
 resize:
 	# from https://stackoverflow.com/a/28221795/1560241
 	echo ./figures/!(*resized).jpg
