@@ -2,7 +2,8 @@ import sys
 from pprint import pprint
 from textwrap import dedent
 
-from params_proto import is_hidden, cli_parse, Proto, ParamsProto, proto_signature, BoolFlag
+from params_proto import is_hidden, cli_parse, prefix_proto, proto_partial, Proto, ParamsProto, proto_signature, \
+    BoolFlag
 
 
 def test_decorator():
@@ -115,9 +116,58 @@ def test_from_command_line():
     check_call(script, shell=True)
 
 
+def test_function_partial():
+    @prefix_proto
+    class G:
+        a = 23
+        b = 29
+        c = Proto(default=31, help="this is working")
+        d = Proto(default=None, help="this is working")
+
+    @proto_partial(G)
+    def some_func(a, b, c, d, e="some_path"):
+        assert a == 23, "the a entry should be 23."
+        assert b == 29, "the a entry should be 29."
+        assert c == 31, "the a entry should be 31."
+        assert d is None, "the a entry should be None."
+        assert e is 'some_path', "use literal default"
+
+    some_func()
+
+
+def test_function_partial_with_keyword_only_arguments():
+    @prefix_proto
+    class G_2:
+        a = 23
+        b = 29
+        c = Proto(default=31, help="this is working")
+        d = Proto(default=None, help="this is working")
+        e = True
+
+    # note: in this case a should not get
+    #  the value from G. And E should not
+    #  get the value from G either.
+    @proto_partial(G_2)
+    def some_func(a, *, b, c, d, e=None):
+        assert a == 23, "the a entry should be 23."
+        assert b == 29, "the a entry should be 29."
+        assert c == 31, "the a entry should be 31."
+        assert d is None, "the a entry should be None."
+        assert e is None, "e should not get the value from G"
+
+    e = None
+    try:
+        some_func()
+    except Exception as _e:
+        e = _e
+    assert str(e) == "some_func() missing 1 required positional argument: 'a'"
+
+
 if __name__ == "__main__":
     test_decorator()
     test_is_hidden()
     test_cli_proto()
     test_cli_proto_simple()
     test_proto_to_dict()
+    test_function_partial()
+    test_function_partial_with_keyword_only_arguments()
