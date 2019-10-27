@@ -36,6 +36,9 @@ def test_is_hidden():
 
 
 def test_cli_proto_simple():
+    import params_proto as params_proto
+    params_proto.PARSER = None
+
     @cli_parse
     class G(ParamsProto):
         """Supervised MAML in tensorflow"""
@@ -45,6 +48,9 @@ def test_cli_proto_simple():
 
 
 def test_cli_proto():
+    from params_proto import params_proto
+    params_proto.PARSER = None
+
     @cli_parse
     class G(ParamsProto):
         """Supervised MAML in tensorflow"""
@@ -66,6 +72,9 @@ def test_cli_proto():
                        'eval_grad_steps': [0, 1, 10],
                        "render": False, "no_dump": True}
     assert G._proto is not None, '_proto should exist'
+
+    from params_proto import params_proto
+    params_proto.PARSER = None
 
     @cli_parse
     class G(ParamsProto):
@@ -89,6 +98,9 @@ def test_cli_proto():
 
 
 def test_proto_to_dict():
+    from params_proto import params_proto
+    params_proto.PARSER = None
+
     @cli_parse
     class G(ParamsProto):
         """some parameter proto"""
@@ -98,25 +110,33 @@ def test_proto_to_dict():
 
 
 from textwrap import dedent
-from subprocess import check_call, CalledProcessError, check_output
+from subprocess import check_output
 
 
 def test_from_command_line():
     """this is not used in the actual testing."""
+    import os
     script = dedent("""
-        # python -c "import os; print(os.getcwd())"
-        echo "\n----------- .py:test_from_command_line() ---------------"
-        echo "\n=================== std.out output ====================="
-        echo "\n>>>>>>>>>>>> do this in parent directory <<<<<<<<<<<<<<<"
-        pwd
-        source activate plan2vec &&
-        pip install -e . &&
-        python ./params_proto/test_fixtures/main.py -h
+        PYTHON_PATH=.:$PYTHON_PATH
+        python3 ./test_params_proto/test_fixtures/main.py -h
         """)
-    check_call(script, shell=True)
+    out = check_output(script, shell=True, env=os.environ)
+    a = out.decode('ascii')
+    print(a)
+    assert a == dedent(""" 
+            usage: main.py [-h] [--some-arg SOME_ARG]
+            
+            optional arguments:
+              -h, --help            show this help message and exit
+              --some-arg SOME_ARG, -s SOME_ARG
+                                    N/A
+            """)[1:]
 
 
 def test_function_partial():
+    from params_proto import params_proto
+    params_proto.PARSER = None
+
     @prefix_proto
     class G:
         a = 23
@@ -136,6 +156,9 @@ def test_function_partial():
 
 
 def test_function_partial_with_keyword_only_arguments():
+    import params_proto as params_proto
+    params_proto.PARSER = None
+
     @prefix_proto
     class G_2:
         a = 23

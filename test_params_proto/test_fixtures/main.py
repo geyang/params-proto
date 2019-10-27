@@ -1,4 +1,4 @@
-from params_proto import cli_parse, Proto, ParamsProto
+from params_proto import cli_parse, Proto
 
 @cli_parse
 class G:

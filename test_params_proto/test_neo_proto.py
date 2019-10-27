@@ -67,17 +67,17 @@ def test_prefix():
             r = Root(_deps)
             print(children)
             self.item = children.get('teacher', None)
-            self.teacher = Teacher(_deps, replicas_hint=26 if r.launch_type == 'borg' else 1)
-            self.bad_teacher = Teacher(_deps, _prefix="bad_teacher")
+            self.teacher = Teacher(_deps,)
+            self.bad_teacher = Teacher(_deps, _prefix="resources.bad_teacher")
 
     sweep_param = {
         "root.launch_type": "local",
-        "resources.teacher.replica_hint": 10,
+        "resources.teacher.replicas_hint": 10,
     }
 
     gd = Resources(sweep_param)
     assert set(vars(gd).keys()) == {"item", "teacher", "bad_teacher"}
-    assert vars(gd.teacher) == {'cell': None, 'autopilot': False, 'replicas_hint': 1}
+    assert vars(gd.teacher) == {'cell': None, 'autopilot': False, 'replicas_hint': 10}
     assert vars(gd.bad_teacher) == {'cell': None, 'autopilot': False}
     assert gd.bad_teacher.cell is None
     assert gd.bad_teacher.autopilot is False
