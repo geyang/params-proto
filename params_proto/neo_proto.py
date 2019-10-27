@@ -35,7 +35,7 @@ class Meta(type):
     def __init__(cls, name, bases, namespace, **kwargs):
         cls.__d = {k: v for k, v in namespace.items() if not k.startswith("__")}
 
-    @property
+    @property # has to be class property on ParamsProto
     def __dict__(cls):
         """
             recurrently return dictionary, only when the child has the same type.
@@ -62,12 +62,16 @@ class ParamsProto(Bear, metaclass=Meta):
     def __new__(cls, _deps=None, _prefix=None, **children):
         ins = super(ParamsProto, cls).__new__(cls)
         # Note: initialize Bear without passing the children,
-        #  because children might contain nexted configs.
-        super(ParamsProto, ins).__init__()
+        #  because children might contain nested configs.
+        super(ParamsProto, ins).__init__(**vars(cls))
         return ins
 
     @get_children
     def __init__(self, _deps=None, **children):
         """default init function, called after __new__."""
-        super().__init__(**children)
+        # Note: grab the keys from Meta class--this is very clever. - Ge
+        # Note: in fact we might not need to Bear class anymore.
+        _ = vars(self.__class__)
+        _.update(children)
+        super().__init__(**_)
 

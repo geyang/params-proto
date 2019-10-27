@@ -4,7 +4,6 @@ from params_proto.neo_proto import ParamsProto, get_children
 def test_class():
     """The class should be usable as a namespace directly."""
 
-    print("*************************************")
     class Root(ParamsProto, prefix='root'):
         launch_type = 'borg'
 
@@ -16,7 +15,7 @@ def test_class():
     # Note: If you override the value on the master class
     #  it gets updated and propagates to the instance.
     Root.launch_type = "others"
-    assert Root.launch_type == "others", "same usage as before"
+    assert Root.launch_type == "others"
     r = Root()
     assert r.launch_type == "others"
 
@@ -57,8 +56,8 @@ def test_prefix():
 
         @get_children
         def __init__(self, _deps, **children):
-            # if Root(_deps).launch_type != 'local':
-            #     self.replicas_hint = children.get('replicas_hint', 26)
+            if Root(_deps).launch_type != 'local':
+                self.replicas_hint = children.get('replicas_hint', 26)
             super().__init__(**children)
 
     class Resources(ParamsProto):
@@ -69,7 +68,7 @@ def test_prefix():
             print(children)
             self.item = children.get('teacher', None)
             self.teacher = Teacher(_deps, replicas_hint=26 if r.launch_type == 'borg' else 1)
-            self.bad_teacher = Teacher(_deps, _prefix="bad_teacher", replicas_hint=26 if r.launch_type == 'borg' else 1)
+            self.bad_teacher = Teacher(_deps, _prefix="bad_teacher")
 
     sweep_param = {
         "root.launch_type": "local",
@@ -77,6 +76,8 @@ def test_prefix():
     }
 
     gd = Resources(sweep_param)
-    print(vars(gd))
-    print(gd.teacher)
-    print(gd.bad_teacher)
+    assert set(vars(gd).keys()) == {"item", "teacher", "bad_teacher"}
+    assert vars(gd.teacher) == {'cell': None, 'autopilot': False, 'replicas_hint': 1}
+    assert vars(gd.bad_teacher) == {'cell': None, 'autopilot': False}
+    assert gd.bad_teacher.cell is None
+    assert gd.bad_teacher.autopilot is False
