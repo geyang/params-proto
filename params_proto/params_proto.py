@@ -127,7 +127,7 @@ _bool = lambda v: v if v is None else bool(util.strtobool(v))
 
 PREFIXES = []
 LAZY = None
-parser = None
+PARSER = None
 
 
 def prefix_proto(prefix_or_fn: Union[str, None, Callable] = None, parse=False, **ext):
@@ -196,8 +196,8 @@ def cli_parse(proto: T) -> T:
 
       :type proto: T
       """
-    global parser
-    parser = parser or argparse.ArgumentParser(description=proto.__doc__)
+    global PARSER
+    PARSER = PARSER or argparse.ArgumentParser(description=proto.__doc__)
 
     for k, p in proto.__dict__.items():
         if is_hidden(k):
@@ -227,13 +227,13 @@ def cli_parse(proto: T) -> T:
         k_prefixed = ".".join(list(PREFIXES) + [k_normalized])
 
         if data_type == "bool-flag":
-            parser.add_argument("--{k}".format(k=k_prefixed), *aliases, default=default_value,
+            PARSER.add_argument("--{k}".format(k=k_prefixed), *aliases, default=default_value,
                                 action="store_false" if default_value else "store_true", help=help_str, **kwargs)
         elif data_type is list:
-            parser.add_argument("--{k}".format(k=k_prefixed), *aliases, default=default_value,
+            PARSER.add_argument("--{k}".format(k=k_prefixed), *aliases, default=default_value,
                                 nargs="*", type=data_type, help=help_str, **kwargs)
         else:
-            parser.add_argument("--{k}".format(k=k_prefixed), *aliases, default=default_value,
+            PARSER.add_argument("--{k}".format(k=k_prefixed), *aliases, default=default_value,
                                 type=data_type, help=help_str, **kwargs)
 
     params = ParamsProto(
@@ -249,7 +249,7 @@ proto = partial(prefix_proto, prefix=None, parse=False)
 
 
 def parse(params, *prefixes):
-    args, unknow_args = parser.parse_known_args()
+    args, unknow_args = PARSER.parse_known_args()
 
     prefix = ".".join(prefixes)
 
@@ -259,7 +259,7 @@ def parse(params, *prefixes):
 
     try:
         from argcomplete import autocomplete
-        autocomplete(parser)
+        autocomplete(PARSER)
     except ImportError as e:
         print("failed to import argcomplete:", e)
 

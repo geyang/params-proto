@@ -1,15 +1,18 @@
 def dot_to_deps(dot_dict, *prefixes):
     for p in prefixes:
         assert p, f"prefix {[p]} can not be empty."
-    prefix = ".".join(prefixes)
+
+    # Note: regularize for prefixes that contain dots
+    prefixes: list = ".".join(prefixes).split('.')
     l = len(prefixes)
     child_deps = {}
     for k, v in dot_dict.items():
-        path = tuple(k.split('.'))
         if k == ".":
             child_deps['.'] = v
             continue
-        elif path[:l] == prefixes:
+
+        path: list = k.split('.')
+        if path[:l] == prefixes:
             rest = path[l:]
             if len(rest) == 1:
                 child_deps[rest[0]] = v
@@ -21,23 +24,22 @@ def dot_to_deps(dot_dict, *prefixes):
     return child_deps
 
 
-class Examples:
-    empty = {}
-    set_self = {".": 10}  # should preserve
-    set_bunch = { "resources.teacher.replica_hint": 10, }
-
-
 if __name__ == "__main__":
-    _ = dot_to_deps(Examples.empty)
+    empty = {}
+    _ = dot_to_deps(empty)
     assert _ == {}, "result should be empty"
-    print(_)
-    _ = dot_to_deps(Examples.set_self)
+
+    set_self = {".": 10}  # should preserve
+    _ = dot_to_deps(set_self)
     assert _ == {'.': 10}, "should contain dot"
+
+    set_bunch = {"resources.teacher.replica_hint": 10, }
+    _ = dot_to_deps(set_bunch, 'resources')
     print(_)
-    _ = dot_to_deps(Examples.set_bunch, 'resources')
     assert _ == {'teacher': {'replica_hint': 10}}, "should contain nested dict"
-    print(_)
 
     _ = dot_to_deps({'root.launch_type': 'local'}, "root")
     assert _ == {"launch_type": 'local'}
-    print(_)
+
+    _ = dot_to_deps({'resources.teacher.replicas_hint': 10}, "resources.teacher")
+    assert _ == {"replicas_hint": 10}
