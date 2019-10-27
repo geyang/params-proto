@@ -10,6 +10,12 @@ def is_hidden(k: str) -> bool:
     return bool(re.match("^_.*$", k))
 
 
+def is_private(k: str) -> bool:
+    return k.startswith("_ParamsProto_") or \
+           k.startswith("_Meta_") or \
+           k.startswith("__")
+
+
 def get_children(__init__):
     """decorator to parse the dependencies into current scope,
     using the cls._prefix attribute of the namespace.
@@ -18,7 +24,7 @@ def get_children(__init__):
     """
 
     def deco(self, _deps=None, _prefix=None, **overrides):
-        _ = dot_to_deps(_deps or {}, _prefix or self.__class__._prefix)
+        _ = dot_to_deps(_deps or {}, _prefix or self.__class__._ParamsProto__prefix)
         _.update(overrides)
         return __init__(self, _deps, **_)
 
@@ -31,13 +37,25 @@ class Meta(type):
 
     @property
     def __dict__(cls):
-        return cls.__d
+        """
+            recurrently return dictionary, only when the child has the same type.
+            Only returns dictionary of children (but not grand children) if
+            the child type is not ParamsProto.
+
+            Returns: Nested Dict.
+            """
+        return {
+            k: v.__dict__ if isinstance(v, ParamsProto) else v
+            for k, v in super().__dict__.items()
+            if not is_private(k)
+        }
 
 
 class ParamsProto(Bear, metaclass=Meta):
 
     def __init_subclass__(cls, prefix=None):
-        cls._prefix = prefix or cls.__name__
+        super().__init_subclass__()
+        cls.__prefix = prefix or cls.__name__
         # This allows as to initialize ParamsProto on the class itself.
         # super(ParamsProto, cls).__init__(cls)
 
@@ -53,17 +71,3 @@ class ParamsProto(Bear, metaclass=Meta):
         """default init function, called after __new__."""
         super().__init__(**children)
 
-    @property
-    def __dict__(self):
-        """
-            recurrently return dictionary, only when the child has the same type.
-            Only returns dictionary of children (but not grand children) if
-            the child type is not ParamsProto.
-
-            Returns: Nested Dict.
-            """
-        return {
-            k: v.__dict__ if isinstance(v, ParamsProto) else v
-            for k, v in super().__dict__.items()
-            if not is_hidden(k)
-        }
