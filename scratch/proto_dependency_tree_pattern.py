@@ -35,8 +35,8 @@ if __name__ == "__main__":
     s = SomeConfig({"root.launch_type": 'local'})
     assert s.some_item == "default_value"
 
-    # s = SomeConfig({"root.launch_type": 'borg'})
-    # assert s.some_item == "default value"
+    s = SomeConfig({"root.launch_type": 'borg'})
+    assert s.some_item == "new_value"
 
 
 class Teacher(ParamsProto, prefix="resources.teacher"):
