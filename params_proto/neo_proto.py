@@ -2,13 +2,6 @@ from waterbear import Bear
 
 from params_proto.utils import dot_to_deps
 
-import re
-
-
-def is_hidden(k: str) -> bool:
-    """return True is method is hidden"""
-    return bool(re.match("^_.*$", k))
-
 
 def is_private(k: str) -> bool:
     return k.startswith("_ParamsProto_") or \
@@ -33,9 +26,16 @@ def get_children(__init__):
 
 class Meta(type):
     def __init__(cls, name, bases, namespace, **kwargs):
-        cls.__d = {k: v for k, v in namespace.items() if not k.startswith("__")}
+        cls.__namespace = {k: v for k, v in namespace.items() if not k.startswith("__")}
 
-    @property # has to be class property on ParamsProto
+    @property  # falls back to the
+    def __vars__(cls):
+        """this is the original vars, return a dictionary of
+        children, without recursively converting descendents
+        to a dictionary."""
+        return {k: v for k, v in super().__dict__.items() if not is_private(k)}
+
+    @property  # has to be class property on ParamsProto
     def __dict__(cls):
         """
             recurrently return dictionary, only when the child has the same type.
@@ -44,11 +44,21 @@ class Meta(type):
 
             Returns: Nested Dict.
             """
-        return {
-            k: v.__dict__ if isinstance(v, ParamsProto) else v
-            for k, v in super().__dict__.items()
-            if not is_private(k)
-        }
+        _ = {}
+        for k, v in super().__dict__.items():
+            if is_private(k):
+                continue
+            if isinstance(v, ParamsProto):
+                _[k] = v.__dict__
+            else:
+                try:
+                    if issubclass(v, ParamsProto):
+                        _[k] = vars(v)
+                    else:
+                        _[k] = v
+                except:
+                    _[k] = v
+        return _
 
 
 class ParamsProto(Bear, metaclass=Meta):
@@ -63,7 +73,7 @@ class ParamsProto(Bear, metaclass=Meta):
         ins = super(ParamsProto, cls).__new__(cls)
         # Note: initialize Bear without passing the children,
         #  because children might contain nested configs.
-        super(ParamsProto, ins).__init__(**vars(cls))
+        super(ParamsProto, ins).__init__(**cls.__vars__)
         return ins
 
     @get_children
@@ -71,7 +81,31 @@ class ParamsProto(Bear, metaclass=Meta):
         """default init function, called after __new__."""
         # Note: grab the keys from Meta class--this is very clever. - Ge
         # Note: in fact we might not need to Bear class anymore.
-        _ = vars(self.__class__)
+        _ = self.__class__.__vars__
         _.update(children)
         super().__init__(**_)
 
+    @property  # has to be class property on ParamsProto
+    def __dict__(self):
+        """
+            recurrently return dictionary, only when the child has the same type.
+            Only returns dictionary of children (but not grand children) if
+            the child type is not ParamsProto.
+
+            Returns: Nested Dict.
+            """
+        _ = {}
+        for k, v in super().__dict__.items():
+            if is_private(k):
+                continue
+            if isinstance(v, ParamsProto):
+                _[k] = v.__dict__
+            else:
+                try:
+                    if issubclass(v, ParamsProto):
+                        _[k] = vars(v)
+                    else:
+                        _[k] = v
+                except:
+                    _[k] = v
+        return _
