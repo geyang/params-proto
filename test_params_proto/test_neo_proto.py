@@ -15,8 +15,21 @@ def test_namespace():
     class Root(ParamsProto, prefix='root'):
         launch_type = 'borg'
 
+    assert Root.__prefix == "root"
     assert vars(Root) == {'launch_type': 'borg'}
     assert Root.launch_type == "borg"
+
+    r = Root(_prefix="other")
+    assert r.__prefix == "other"
+
+    class Root2(ParamsProto):
+        __prefix = "not_root2"
+
+    assert Root2.__prefix == 'Root2'
+    assert Root2._ParamsProto__prefix == "Root2", "double underscore are protected."
+    assert Root2._Root2__prefix == "not_root2", "double underscore are protected."
+    assert Root2()._Root2__prefix == "not_root2", "double underscore are protected."
+    assert Root2().__prefix == "Root2", "double underscore are protected."
 
     # now test call the constructor.
     r = Root()
@@ -110,6 +123,8 @@ def test_prefix():
     }
 
     r = Resources(sweep_param)
+    assert r.teacher.__prefix == "resources.teacher"
+    assert r.bad_teacher.__prefix == "resources.bad_teacher"
     # this is problematic--default does not exist.
     assert set(vars(r).keys()) == {"item", "default", "teacher", "bad_teacher"}
     # assert vars(r) ==
@@ -126,3 +141,30 @@ def test_prefix():
 
     assert r.bad_teacher.cell is None
     assert r.bad_teacher.autopilot is False
+
+
+def test_root_config():
+    """
+    For overrides, we should be able to directly modify the root configuration object.
+    """
+    from params_proto.neo_proto import ParamsProto, get_children
+
+    class Root(ParamsProto, prefix="."):
+        root_attribute = 10
+
+    override = {"root_attribute": 11}
+    r = Root(override)
+    assert r.root_attribute == 11
+
+# def test_singleton_overwrite():
+#     """
+#     For overrides, we should be able to directly modify the root configuration object.
+#     """
+#     from params_proto.neo_proto import ParamsProto, get_children
+#
+#     class Root(ParamsProto):
+#         root_attribute = 10
+#
+#     Root.update(root_attribute=11)
+#     # r = Root(override)
+#     assert Root.root_attribute == 11
