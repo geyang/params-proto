@@ -1,9 +1,13 @@
 def dot_to_deps(dot_dict, *prefixes):
+    # Note: regularize for prefixes that contain dots
     for p in prefixes:
         assert p, f"prefix {[p]} can not be empty."
-
-    # Note: regularize for prefixes that contain dots
-    prefixes: list = ".".join(prefixes).split('.')
+    if prefixes == (".",):
+        prefixes = []
+    else:
+        full_prefix = ".".join(prefixes)
+        assert ".." not in full_prefix
+        prefixes: list = full_prefix.split('.')
     l = len(prefixes)
     child_deps = {}
     for k, v in dot_dict.items():

@@ -17,6 +17,8 @@ def get_children(__init__):
     """
 
     def deco(self, _deps=None, _prefix=None, **overrides):
+        if _prefix:
+            self.__prefix = _prefix
         _ = dot_to_deps(_deps or {}, _prefix or self.__class__._ParamsProto__prefix)
         _.update(overrides)
         return __init__(self, _deps, **_)
@@ -34,6 +36,12 @@ class Meta(type):
         children, without recursively converting descendents
         to a dictionary."""
         return {k: v for k, v in super().__dict__.items() if not is_private(k)}
+
+    def __getattr__(self, item):
+        if item == "__prefix":
+            return self._ParamsProto__prefix
+        else:
+            return object.__getattribute__(self, item)
 
     @property  # has to be class property on ParamsProto
     def __dict__(cls):
@@ -62,10 +70,11 @@ class Meta(type):
 
 
 class ParamsProto(Bear, metaclass=Meta):
+    __prefix = None
 
     def __init_subclass__(cls, prefix=None):
         super().__init_subclass__()
-        cls.__prefix = prefix or cls.__name__
+        cls.__prefix = cls.__name__ if prefix is None else prefix
         # This allows as to initialize ParamsProto on the class itself.
         # super(ParamsProto, cls).__init__(cls)
 
@@ -77,13 +86,19 @@ class ParamsProto(Bear, metaclass=Meta):
         return ins
 
     @get_children
-    def __init__(self, _deps=None, **children):
+    def __init__(self, _deps=None, _prefix=None, **children):
         """default init function, called after __new__."""
         # Note: grab the keys from Meta class--this is very clever. - Ge
         # Note: in fact we might not need to Bear class anymore.
         _ = self.__class__.__vars__
         _.update(children)
         super().__init__(**_)
+
+    def __getattr__(self, item):
+        if item == "__prefix":
+            return self.__prefix
+        else:
+            return super().__getattr__(item)
 
     @property  # has to be class property on ParamsProto
     def __dict__(self):

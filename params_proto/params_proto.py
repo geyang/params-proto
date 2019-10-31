@@ -249,7 +249,7 @@ proto = partial(prefix_proto, prefix=None, parse=False)
 
 
 def parse(params, *prefixes):
-    args, unknow_args = PARSER.parse_known_args()
+    args, unknown_args = PARSER.parse_known_args()
 
     prefix = ".".join(prefixes)
 
