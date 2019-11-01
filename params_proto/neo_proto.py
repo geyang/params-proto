@@ -4,31 +4,35 @@ from params_proto.utils import dot_to_deps
 
 
 def is_private(k: str) -> bool:
-    return k.startswith("_ParamsProto_") or \
+    return k.startswith('_prefix') or \
+           k.startswith("_ParamsProto_") or \
            k.startswith("_Meta_") or \
            k.startswith("__")
 
 
 def get_children(__init__):
     """decorator to parse the dependencies into current scope,
-    using the cls._prefix attribute of the namespace.
+    using the cls.__prefix attribute of the namespace.
 
     Allows one to use _prefix to override to original class._prefix
     """
 
-    def deco(self, _deps=None, _prefix=None, **overrides):
-        if _prefix:
-            self.__prefix = _prefix
-        _ = dot_to_deps(_deps or {}, _prefix or self.__class__._ParamsProto__prefix)
+    def deco(self, _deps=None, **overrides):
+        _prefix = overrides.get("_prefix", None)
+        _ = dot_to_deps(_deps or {}, _prefix or self.__class__._prefix)
         _.update(overrides)
-        return __init__(self, _deps, **_)
+        res = __init__(self, _deps, **_)
+        return res
 
     return deco
 
 
 class Meta(type):
     def __init__(cls, name, bases, namespace, **kwargs):
-        cls.__namespace = {k: v for k, v in namespace.items() if not k.startswith("__")}
+        # cls.__namespace = {k: v for k, v in namespace.items() if not k.startswith("__")}
+        for k, v in namespace.items():
+            if not k.startswith('__'):
+                setattr(cls, k, v)
 
     @property  # falls back to the
     def __vars__(cls):
@@ -37,11 +41,17 @@ class Meta(type):
         to a dictionary."""
         return {k: v for k, v in super().__dict__.items() if not is_private(k)}
 
-    def __getattr__(self, item):
-        if item == "__prefix":
-            return self._ParamsProto__prefix
-        else:
-            return object.__getattribute__(self, item)
+    # Note: type and object do not have __getattr__. They only
+    #  have __getattribute__.
+    # def __getattribute__(self, item):
+    #     try:
+    #         return type.__getattribute__(self, item)
+    #     except AttributeError:
+    #         return self.__namespace['_prefix']
+    #     # if item == "_prefix":
+    #     #     return self.__namespace['_prefix']
+    #     # else:
+    #     #     return type.__getattribute__(self, item)
 
     @property  # has to be class property on ParamsProto
     def __dict__(cls):
@@ -70,11 +80,9 @@ class Meta(type):
 
 
 class ParamsProto(Bear, metaclass=Meta):
-    __prefix = None
-
     def __init_subclass__(cls, prefix=None):
         super().__init_subclass__()
-        cls.__prefix = cls.__name__ if prefix is None else prefix
+        cls._prefix = cls.__name__ if prefix is None else prefix
         # This allows as to initialize ParamsProto on the class itself.
         # super(ParamsProto, cls).__init__(cls)
 
@@ -86,7 +94,7 @@ class ParamsProto(Bear, metaclass=Meta):
         return ins
 
     @get_children
-    def __init__(self, _deps=None, _prefix=None, **children):
+    def __init__(self, _deps=None, **children):
         """default init function, called after __new__."""
         # Note: grab the keys from Meta class--this is very clever. - Ge
         # Note: in fact we might not need to Bear class anymore.
@@ -95,8 +103,8 @@ class ParamsProto(Bear, metaclass=Meta):
         super().__init__(**_)
 
     def __getattr__(self, item):
-        if item == "__prefix":
-            return self.__prefix
+        if item == "_prefix":
+            return self._prefix
         else:
             return super().__getattr__(item)
 
