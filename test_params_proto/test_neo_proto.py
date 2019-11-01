@@ -1,3 +1,19 @@
+def test_simple_prefix():
+    from params_proto.neo_proto import ParamsProto, get_children
+
+    class Root(ParamsProto):
+        _prefix = "not_root"
+
+    assert Root._prefix == "not_root"
+    assert Root(_prefix='yo')._prefix == "yo"
+
+    class Root2(ParamsProto, prefix="this"):
+        pass
+
+    assert Root2._prefix == "this"
+    assert Root(_prefix='yo')._prefix == "yo"
+
+
 def test_namespace():
     """The class should be usable as a namespace directly. This
     would be the singleton pattern:
@@ -15,21 +31,12 @@ def test_namespace():
     class Root(ParamsProto, prefix='root'):
         launch_type = 'borg'
 
-    assert Root.__prefix == "root"
+    assert Root._prefix == "root"
     assert vars(Root) == {'launch_type': 'borg'}
     assert Root.launch_type == "borg"
 
     r = Root(_prefix="other")
-    assert r.__prefix == "other"
-
-    class Root2(ParamsProto):
-        __prefix = "not_root2"
-
-    assert Root2.__prefix == 'Root2'
-    assert Root2._ParamsProto__prefix == "Root2", "double underscore are protected."
-    assert Root2._Root2__prefix == "not_root2", "double underscore are protected."
-    assert Root2()._Root2__prefix == "not_root2", "double underscore are protected."
-    assert Root2().__prefix == "Root2", "double underscore are protected."
+    assert r._prefix == "other"
 
     # now test call the constructor.
     r = Root()
@@ -123,8 +130,8 @@ def test_prefix():
     }
 
     r = Resources(sweep_param)
-    assert r.teacher.__prefix == "resources.teacher"
-    assert r.bad_teacher.__prefix == "resources.bad_teacher"
+    assert r.teacher._prefix == "resources.teacher"
+    assert r.bad_teacher._prefix == "resources.bad_teacher"
     # this is problematic--default does not exist.
     assert set(vars(r).keys()) == {"item", "default", "teacher", "bad_teacher"}
     # assert vars(r) ==
