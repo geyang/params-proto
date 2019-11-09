@@ -127,7 +127,7 @@ _bool = lambda v: v if v is None else bool(util.strtobool(v))
 
 PREFIXES = []
 LAZY = None
-PARSER = None
+parser = None
 
 
 def prefix_proto(prefix_or_fn: Union[str, None, Callable] = None, parse=False, **ext):
@@ -196,8 +196,7 @@ def cli_parse(proto: T) -> T:
 
       :type proto: T
       """
-    global PARSER
-    PARSER = PARSER or argparse.ArgumentParser(description=proto.__doc__)
+    parser = argparse.ArgumentParser(description=proto.__doc__)
 
     for k, p in proto.__dict__.items():
         if is_hidden(k):
@@ -227,18 +226,20 @@ def cli_parse(proto: T) -> T:
         k_prefixed = ".".join(list(PREFIXES) + [k_normalized])
 
         if data_type == "bool-flag":
-            PARSER.add_argument("--{k}".format(k=k_prefixed), *aliases, default=default_value,
+            parser.add_argument("--{k}".format(k=k_prefixed), *aliases, default=default_value,
                                 action="store_false" if default_value else "store_true", help=help_str, **kwargs)
         elif data_type is list:
-            PARSER.add_argument("--{k}".format(k=k_prefixed), *aliases, default=default_value,
+            parser.add_argument("--{k}".format(k=k_prefixed), *aliases, default=default_value,
                                 nargs="*", type=data_type, help=help_str, **kwargs)
         else:
-            PARSER.add_argument("--{k}".format(k=k_prefixed), *aliases, default=default_value,
+            parser.add_argument("--{k}".format(k=k_prefixed), *aliases, default=default_value,
                                 type=data_type, help=help_str, **kwargs)
 
     params = ParamsProto(
         proto, **{k: v for k, v in vars(proto).items() if not is_hidden(k)})
 
+    params.__parser = parser
+    
     if not LAZY:
         parse(params, *PREFIXES)
 
@@ -249,7 +250,8 @@ proto = partial(prefix_proto, prefix=None, parse=False)
 
 
 def parse(params, *prefixes):
-    args, unknown_args = PARSER.parse_known_args()
+    parser = params.__parser
+    args, unknown_args = parser.parse_known_args()
 
     prefix = ".".join(prefixes)
 
@@ -259,7 +261,7 @@ def parse(params, *prefixes):
 
     try:
         from argcomplete import autocomplete
-        autocomplete(PARSER)
+        autocomplete(parser)
     except ImportError as e:
         print("failed to import argcomplete:", e)
 
