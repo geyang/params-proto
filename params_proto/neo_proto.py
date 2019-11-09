@@ -80,6 +80,8 @@ class Meta(type):
 
 
 class ParamsProto(Bear, metaclass=Meta):
+    _prefix = "ParamsProto"  # b/c cls._prefix only created in subclass.
+
     def __init_subclass__(cls, prefix=None):
         super().__init_subclass__()
         cls._prefix = cls.__name__ if prefix is None else prefix

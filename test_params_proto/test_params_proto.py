@@ -49,7 +49,7 @@ def test_cli_proto_simple():
 
 def test_cli_proto():
     from params_proto import params_proto
-    params_proto.PARSER = None
+    params_proto.parser = None
 
     @cli_parse
     class G(ParamsProto):
@@ -74,7 +74,7 @@ def test_cli_proto():
     assert G._proto is not None, '_proto should exist'
 
     from params_proto import params_proto
-    params_proto.PARSER = None
+    params_proto.parser = None
 
     @cli_parse
     class G(ParamsProto):
@@ -99,7 +99,7 @@ def test_cli_proto():
 
 def test_proto_to_dict():
     from params_proto import params_proto
-    params_proto.PARSER = None
+    params_proto.parser = None
 
     @cli_parse
     class G(ParamsProto):
@@ -135,7 +135,7 @@ def test_from_command_line():
 
 def test_function_partial():
     from params_proto import params_proto
-    params_proto.PARSER = None
+    params_proto.parser = None
 
     @prefix_proto
     class G:
