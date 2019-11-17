@@ -14,6 +14,17 @@ def test_simple_prefix():
     assert Root(_prefix='yo')._prefix == "yo"
 
 
+def test_update():
+    from params_proto.neo_proto import ParamsProto, get_children
+
+    class G(ParamsProto):
+        seed = 10
+
+    d = {"G.seed": 20}
+    G._update(d)
+    assert G.seed == 20
+
+
 def test_namespace():
     """The class should be usable as a namespace directly. This
     would be the singleton pattern:
@@ -163,7 +174,8 @@ def test_root_config():
     r = Root(override)
     print(f"{vars(r)}")
     print(r.root_attribute)
-    import sys; print(sys.executable)
+    import sys;
+    print(sys.executable)
     assert r.root_attribute == 11
 
 # def test_singleton_overwrite():

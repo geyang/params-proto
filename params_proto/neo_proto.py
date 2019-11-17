@@ -28,11 +28,42 @@ def get_children(__init__):
 
 
 class Meta(type):
+    __set_hook = []
+    __get_hook = []
+
+    # Note: These are the new methods supporting custom setter and getter override.
+    def _add_hook(cls, hook):
+        cls.__set_hook.append(hook)
+
+    def _pop_hooks(cls):
+        cls.__set_hook.pop()
+
+    def __setattr__(cls, item, value):
+        if cls.__set_hook:
+            return cls.__set_hook[-1](cls, item, value)
+        else:
+            return type.__setattr__(cls, item, value)
+
+    def __getattr__(cls, item):
+        # effectively not used, because the cls.__get_hook is empty.
+        if cls.__get_hook:
+            return cls.__get_hook[-1](cls, item)
+        else:
+            return type.__getattribute__(cls, item)
+
+    # ================================================================
+
     def __init__(cls, name, bases, namespace, **kwargs):
         # cls.__namespace = {k: v for k, v in namespace.items() if not k.startswith("__")}
         for k, v in namespace.items():
             if not k.startswith('__'):
                 setattr(cls, k, v)
+
+    def _update(cls, d: dict):
+        # todo: support nested update.
+        for k, v in d.items():
+            if k.startswith(cls._prefix + "."):
+                setattr(cls, k[len(cls._prefix) + 1:], v)
 
     @property  # falls back to the
     def __vars__(cls):
@@ -40,18 +71,6 @@ class Meta(type):
         children, without recursively converting descendents
         to a dictionary."""
         return {k: v for k, v in super().__dict__.items() if not is_private(k)}
-
-    # Note: type and object do not have __getattr__. They only
-    #  have __getattribute__.
-    # def __getattribute__(self, item):
-    #     try:
-    #         return type.__getattribute__(self, item)
-    #     except AttributeError:
-    #         return self.__namespace['_prefix']
-    #     # if item == "_prefix":
-    #     #     return self.__namespace['_prefix']
-    #     # else:
-    #     #     return type.__getattribute__(self, item)
 
     @property  # has to be class property on ParamsProto
     def __dict__(cls):
@@ -138,7 +157,7 @@ def update(Config: Union[type, Meta, ParamsProto], override):
     """Update a ParamsProto namespace, or instance
 
       by the override dictionary. Note the dictionary
-      is dot.separated
+          is dot.separated
 
       dot-keys are not yet implemented.
 
