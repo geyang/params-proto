@@ -161,6 +161,9 @@ def test_root_config():
 
     override = {"root_attribute": 11}
     r = Root(override)
+    print(f"{vars(r)}")
+    print(r.root_attribute)
+    import sys; print(sys.executable)
     assert r.root_attribute == 11
 
 # def test_singleton_overwrite():
