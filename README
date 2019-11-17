@@ -135,9 +135,9 @@ Todo
 Done
 ~~~~
 
--  ☒ publish
--  ☒ add test
--  ☒ add ``python3.52`` test on top of ``python3.6`` test.
+-  [x] publish
+-  [x] add test
+-  [x] add ``python3.52`` test on top of ``python3.6`` test.
 
 Installation
 ------------
