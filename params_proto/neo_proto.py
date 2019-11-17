@@ -100,15 +100,10 @@ class ParamsProto(Bear, metaclass=Meta):
         """default init function, called after __new__."""
         # Note: grab the keys from Meta class--this is very clever. - Ge
         # Note: in fact we might not need to Bear class anymore.
+        # todo: really want to change this behavior -- make children override by default??
         _ = self.__class__.__vars__
         _.update(children)
         super().__init__(**_)
-
-    def __getattr__(self, item):
-        if item == "_prefix":
-            return self._prefix
-        else:
-            return super().__getattr__(item)
 
     @property  # has to be class property on ParamsProto
     def __dict__(self):
@@ -134,3 +129,26 @@ class ParamsProto(Bear, metaclass=Meta):
                 except:
                     _[k] = v
         return _
+
+
+from typing import Union
+
+
+def update(Config: Union[type, Meta, ParamsProto], override):
+    """Update a ParamsProto namespace, or instance
+
+      by the override dictionary. Note the dictionary
+      is dot.separated
+
+      dot-keys are not yet implemented.
+
+      Args:
+          Config:
+          override:
+
+      Returns:
+
+      """
+    for k, v in override.items():
+        if k.startswith(Config._prefix + "."):
+            setattr(Config, k[len(Config._prefix) + 1:], v)
