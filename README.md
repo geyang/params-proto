@@ -15,6 +15,7 @@ In your ML project, you want to avoid using dictionaries or opaque argparse defi
 
 ## Writing documentation as uhm..., man page?
 <img width="60%" align="right" alt="man page" src="./figures/man-page.png"></img>
+
 `Params-Proto` exposes your argument namespace's doc string as the usage note. For users of your code, there is no better help than the one that comes with the script itself!
 
 > With `params-proto`, your help is only one `-h` away :)
