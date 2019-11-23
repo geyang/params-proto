@@ -59,11 +59,23 @@ class Meta(type):
             if not k.startswith('__'):
                 setattr(cls, k, v)
 
-    def _update(cls, d: dict):
+    def _update(cls, __d: dict = None, **kwargs):
+        """
+        In-place update for the namespace. Useful for single-ton pattern.
+
+        @param __d: positional-only argument, as a dot-separated dictionary.
+        @param **kwargs: non-dot-separated keys (regular attribute), making it
+           easy to update the data directly.
+        @return:
+        """
         # todo: support nested update.
-        for k, v in d.items():
-            if k.startswith(cls._prefix + "."):
-                setattr(cls, k[len(cls._prefix) + 1:], v)
+        if __d:
+            for k, v in __d.items():
+                if k.startswith(cls._prefix + "."):
+                    setattr(cls, k[len(cls._prefix) + 1:], v)
+
+        for k, v in kwargs.items():
+            setattr(cls, k, v)
 
     @property  # falls back to the
     def __vars__(cls):

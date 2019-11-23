@@ -25,6 +25,30 @@ def test_update():
     assert G.seed == 20
 
 
+def test_update_by_key():
+    from params_proto.neo_proto import ParamsProto, get_children
+
+    class G(ParamsProto):
+        seed = 10
+
+    G._update(seed=20)
+    assert G.seed == 20
+
+
+def test_update_by_object_directly():
+    from params_proto.neo_proto import ParamsProto, get_children
+
+    class G(ParamsProto):
+        seed = 10
+
+    g_updated = G(seed=20)
+
+    print(vars(g_updated))
+    assert vars(g_updated) == {"seed": 20}
+    G._update(**vars(g_updated))
+    assert G.seed == 20
+
+
 def test_namespace():
     """The class should be usable as a namespace directly. This
     would be the singleton pattern:
