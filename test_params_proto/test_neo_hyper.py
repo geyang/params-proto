@@ -209,6 +209,5 @@ def test_chaining_with_shared_root_set():
                     G.start_seed = range(15)
 
     all = [*sweep]
-    print(len(all))
-    assert len(set(all)) == 30
+    assert len(all) == 30
 
