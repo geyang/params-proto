@@ -1,5 +1,5 @@
 import itertools
-from collections import namedtuple
+from collections import namedtuple, defaultdict
 from contextlib import contextmanager
 from functools import partial
 from typing import TypeVar, ContextManager, Iterable
@@ -7,7 +7,7 @@ from typing import TypeVar, ContextManager, Iterable
 
 def dot_join(*keys):
     """remove Nones from the keys, but not '', """
-    _ = [k for k in keys if k is not None]
+    _ = [k for k in keys if k]
     if not _:
         return None
     return ".".join(_)
@@ -41,10 +41,21 @@ T = TypeVar('ParamsProto')
 
 class Sweep:
     root = {}
+    _d = None
 
     def __init__(self, *args: type):
         self.root = {p._prefix: p for p in args}
         self.stack = [[]]  # root stack frame
+
+    @property
+    def __dict__(self):
+        if self._d:
+            return self._d
+        self._d = defaultdict(list)
+        for config in self:
+            for k, v in config.items():
+                self._d[k].append(v)
+        return self._d
 
     def __enter__(self):
         self.stack.append([])
@@ -65,16 +76,16 @@ class Sweep:
 
     def __iter__(self):
         root_stack = self.stack[-1]
-        key, rows = root_stack[0]
-        assert key is None, "this is the root stack"
-        for row in rows:
-            override = dict(flatten_items(row))
+        for key, rows in root_stack:
+            assert key is None, "this is the root stack"
+            for row in rows:
+                override = dict(flatten_items(row))
 
-            # Override the original object
-            for proto in self.root.values():
-                proto._update(override)
+                # Override the original object
+                for proto in self.root.values():
+                    proto._update(override)
 
-            yield override
+                yield override
 
     def set_param(self, name, params, prefix=None):
         item = Item(dot_join(prefix, name), params)
@@ -119,3 +130,19 @@ class Sweep:
             yield self.__enter__()
         finally:
             self.__exit__()
+
+    @property
+    @contextmanager
+    def chain(self) -> ContextManager[T]:
+        self.stack.append([])
+        try:
+            for proto in self.root.values():
+                proto._add_hook(lambda _, *args: self.set_param(*args, prefix=proto._prefix))
+            yield None
+        finally:
+            for proto in self.root.values():
+                proto._pop_hooks()
+
+            frame = self.stack.pop(-1)
+            result = itertools.chain(*(value for k, value in frame))
+            self.set_param(None, result)

@@ -157,3 +157,58 @@ def test_set_advanced_2():
     assert len(all) == 45
 
 
+def test_chaining():
+    # usage
+    class G(ParamsProto):
+        level_name = "dmlab"
+        some_prefix = f"{level_name}/1"
+        start_seed = 10
+
+    with Sweep(G) as sweep:
+        G.level_name = "gotham"
+        G.some_prefix = f"gotham/1"
+        with sweep.product:
+            G.start_seed = range(15)
+
+    with sweep.set:
+        G.level_name = "dmlab"
+        G.some_prefix = f"dmlab/1"
+        with sweep.product:
+            G.start_seed = range(15)
+
+    all = [*sweep]
+    print(len(all))
+    assert len(all) == 30
+
+
+def test_chaining_with_shared_root_set():
+    # usage
+    class G(ParamsProto):
+        root_set = False
+        level_name = "dmlab"
+        some_prefix = f"{level_name}/1"
+        start_seed = 10
+
+    with Sweep(G) as sweep:
+        G.root_set = True
+
+        with sweep.chain:
+
+            with sweep.set:
+                G.level_name = "gotham"
+                G.some_prefix = f"gotham/1"
+
+                with sweep.product:
+                    G.start_seed = range(15)
+
+            with sweep.set:
+                G.level_name = "dmlab"
+                G.some_prefix = f"dmlab/1"
+
+                with sweep.product:
+                    G.start_seed = range(15)
+
+    all = [*sweep]
+    print(len(all))
+    assert len(set(all)) == 30
+
