@@ -1,6 +1,28 @@
-from waterbear import Bear
+from types import SimpleNamespace
 
+from waterbear import Bear
 from params_proto.utils import dot_to_deps
+
+
+class Proto(SimpleNamespace):
+    default = None
+    help = None
+    dtype = None
+    aliases = None
+    kwargs = dict()
+
+    def __init__(self, **kwargs):
+        value = kwargs.pop("value", None)
+        super().__init__(**kwargs)
+        self.value = value
+
+    @property
+    def value(self):
+        return self.__value or self.default or None
+
+    @value.setter
+    def value(self, value):
+        self.__value = value
 
 
 def is_private(k: str) -> bool:
@@ -51,7 +73,10 @@ class Meta(type):
         else:
             return type.__getattribute__(cls, item)
 
-    # ================================================================
+    def __getattribute__(self, item):
+        # todo: Makes more sense to do at compile time.
+        value = type.__getattribute__(self, item)
+        return value.value if isinstance(value, Proto) else value
 
     def __init__(cls, name, bases, namespace, **kwargs):
         # cls.__namespace = {k: v for k, v in namespace.items() if not k.startswith("__")}
@@ -98,7 +123,7 @@ class Meta(type):
             if is_private(k):
                 continue
             if isinstance(v, ParamsProto):
-                _[k] = v.__dict__
+                _[k] = vars(v)
             else:
                 try:
                     if issubclass(v, ParamsProto):
@@ -135,6 +160,11 @@ class ParamsProto(Bear, metaclass=Meta):
         _ = self.__class__.__vars__
         _.update(children)
         super().__init__(**_)
+
+    def __getattribute__(self, item):
+        # todo: Makes more sense to do at compile time.
+        value = Bear.__getattribute__(self, item)
+        return value.value if isinstance(value, Proto) else value
 
     @property  # has to be class property on ParamsProto
     def __dict__(self):
