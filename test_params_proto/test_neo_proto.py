@@ -198,9 +198,25 @@ def test_root_config():
     r = Root(override)
     print(f"{vars(r)}")
     print(r.root_attribute)
-    import sys;
+    import sys
     print(sys.executable)
     assert r.root_attribute == 11
+
+
+# noinspection PyPep8Naming
+def test_Proto_default():
+    from params_proto.neo_proto import ParamsProto, Proto
+
+    class Root(ParamsProto, prefix="."):
+        root_attribute = Proto(default=10)
+
+    assert Root.root_attribute == 10
+    assert Root().root_attribute == 10
+    Root.root_attribute = 20
+    assert Root.root_attribute == 20
+    r = Root()
+    r.root_attribute = 30
+    assert r.root_attribute == 30
 
 # def test_singleton_overwrite():
 #     """
