@@ -1,0 +1,3 @@
+pytest   
+restructuredtext-lint
+twine
