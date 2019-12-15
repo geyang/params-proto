@@ -11,10 +11,8 @@ class Proto(SimpleNamespace):
     aliases = None
     kwargs = dict()
 
-    def __init__(self, **kwargs):
-        value = kwargs.pop("value", None)
-        super().__init__(**kwargs)
-        self.value = value
+    def __init__(self, default, help=None, dtype=None, aliases=None, kwargs=None):
+        super().__init__(default=default, help=help, dtype=dtype or type(default), aliases=aliases, kwargs=kwargs or {})
 
     @property
     def value(self):

@@ -209,6 +209,7 @@ def test_Proto_default():
 
     class Root(ParamsProto, prefix="."):
         root_attribute = Proto(default=10)
+        other_1 = Proto(20, "this is help text")
 
     assert Root.root_attribute == 10
     assert Root().root_attribute == 10
