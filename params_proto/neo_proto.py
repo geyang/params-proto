@@ -5,6 +5,7 @@ from params_proto.utils import dot_to_deps
 
 
 class Proto(SimpleNamespace):
+    __value = None
     default = None
     help = None
     dtype = None
@@ -122,6 +123,8 @@ class Meta(type):
                 continue
             if isinstance(v, ParamsProto):
                 _[k] = vars(v)
+            elif isinstance(v, Proto):
+                _[k] = v.value
             else:
                 try:
                     if issubclass(v, ParamsProto):
@@ -179,6 +182,8 @@ class ParamsProto(Bear, metaclass=Meta):
                 continue
             if isinstance(v, ParamsProto):
                 _[k] = v.__dict__
+            elif isinstance(v, Proto):
+                _[k] = v.value
             else:
                 try:
                     if issubclass(v, ParamsProto):

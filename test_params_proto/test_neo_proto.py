@@ -207,12 +207,19 @@ def test_root_config():
 def test_Proto_default():
     from params_proto.neo_proto import ParamsProto, Proto
 
+    a = Proto(default=10)
+    assert a.default == 10, "default should be correct"
+    assert a.value == 10, "value should default to the original value"
+
     class Root(ParamsProto, prefix="."):
         root_attribute = Proto(default=10)
         other_1 = Proto(20, "this is help text")
 
+    print(vars(Root))
+    assert vars(Root) == {'other_1': 20, 'root_attribute': 10}
     assert Root.root_attribute == 10
     assert Root().root_attribute == 10
+
     Root.root_attribute = 20
     assert Root.root_attribute == 20
     r = Root()
