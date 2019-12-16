@@ -2,7 +2,7 @@ import itertools
 from collections import namedtuple, defaultdict
 from contextlib import contextmanager
 from functools import partial
-from typing import TypeVar, ContextManager, Iterable
+from typing import TypeVar, ContextManager, Iterable, Union
 
 
 def dot_join(*keys):
@@ -42,10 +42,43 @@ T = TypeVar('ParamsProto')
 class Sweep:
     root = {}
     _d = None
+    __list = None
 
     def __init__(self, *args: type):
         self.root = {p._prefix: p for p in args}
         self.stack = [[]]  # root stack frame
+
+    def __getitem__(self, item: Union[slice, int, float]):
+        if isinstance(item, slice):
+            assert item.step != 0, "step can not be zero."
+            if (item.start and item.start < 0) or (item.stop and item.stop < 0) or (item.step and item.step < 0):
+                yield from self.list[item]
+            for i, el in enumerate(self):
+                if item.start is not None and i < item.start:
+                    continue
+                if item.step is None or (i - item.start) % item.step == 0:
+                    yield el
+                if item.stop is None:
+                    continue
+                if i >= item.stop - 1:
+                    break
+        elif isinstance(item, int):
+            if item < 0:
+                yield from self.list[item]
+            for i, el in enumerate(self):
+                if i == item:
+                    yield el
+                    break
+        else:
+            raise NotImplementedError(f"slicing is not implemented for {item}")
+
+    @property
+    def list(self):
+        """returns self as a list."""
+        if self.__list:
+            return self.__list
+        self.__list = list(self)
+        return self.__list
 
     @property
     def __dict__(self):

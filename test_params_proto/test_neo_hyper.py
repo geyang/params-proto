@@ -7,7 +7,6 @@ def test_dot_join():
 
 
 def test_setter_and_getter_hook():
-    # usage
     class G(ParamsProto):
         start_seed = 10
         discern_flag = True
@@ -24,6 +23,33 @@ def test_setter_and_getter_hook():
     assert G.start_seed == 10
     G.start_seed = 20
     G._pop_hooks()
+
+
+def test_subscription():
+    class G(ParamsProto):
+        start_seed = 10
+
+    with Sweep(G) as sweep:
+        with sweep.product:
+            G.start_seed = list(range(100))
+
+    # using sweep as a sliced generator.
+    assert list(sweep[:5]) == [{"G.start_seed": i} for i in range(5)]
+    assert list(sweep[10:20:3]) == [{"G.start_seed": i} for i in range(15, 25, 3)]
+    assert list(sweep[30]) == [{"G.start_seed": 55}]
+    assert list(sweep[1:]) == [{"G.start_seed": i} for i in range(57, 100)]
+
+
+def test_negative_subscription():
+    class G(ParamsProto):
+        start_seed = 10
+
+    with Sweep(G) as sweep:
+        with sweep.product:
+            G.start_seed = list(range(100))
+
+    # using sweep as a sliced generator.
+    assert list(sweep[-10:-5]) == [{"G.start_seed": i} for i in range(90, 95)]
 
 
 def test_product():
@@ -193,7 +219,6 @@ def test_chaining_with_shared_root_set():
         G.root_set = True
 
         with sweep.chain:
-
             with sweep.set:
                 G.level_name = "gotham"
                 G.some_prefix = f"gotham/1"
@@ -210,4 +235,3 @@ def test_chaining_with_shared_root_set():
 
     all = [*sweep]
     assert len(all) == 30
-
