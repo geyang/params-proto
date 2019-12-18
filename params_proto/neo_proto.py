@@ -17,7 +17,7 @@ class Proto(SimpleNamespace):
 
     @property
     def value(self):
-        return self.__value or self.default or None
+        return self.__value or self.default
 
     @value.setter
     def value(self, value):
