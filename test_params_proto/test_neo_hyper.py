@@ -33,13 +33,11 @@ def test_multiple_configs():
         b = 10
 
     with Sweep(G, DEBUG) as sweep:
-        with sweep.product:
+        with sweep.zip:
             G.a = range(100)
             DEBUG.b = range(100)
 
-    for i, (_G, _DEBUG) in enumerate(sweep):
-        assert _G == {"G.a": i}
-        assert _DEBUG == {"DEBUG.b": i}
+    for i, all_deps in enumerate(sweep):
         assert G.a == i
         assert DEBUG.b == i
 
@@ -48,8 +46,8 @@ def test_multiple_configs():
         with sweep.product:
             DEBUG.b = range(100)
 
-    for i, (_G, _DEBUG) in enumerate(sweep):
-        assert _DEBUG == {"DEBUG.b": i}
+    for i, deps in enumerate(sweep):
+        assert deps == {"DEBUG.b": i}
         assert DEBUG.b == i
 
 
