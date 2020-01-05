@@ -43,11 +43,11 @@ def test_update_by_object_directly():
 
     g_updated = G(seed=20)
 
-    print(vars(g_updated))
     assert vars(g_updated) == {"seed": 20}
 
     g_updated = G(seed=30)
-    G._update(vars(g_updated))
+    # vars(g) has no prefix, which is why we need to expand w/ **vars()
+    G._update(**vars(g_updated))
     assert G.seed == 30
 
 
