@@ -45,8 +45,10 @@ def test_update_by_object_directly():
 
     print(vars(g_updated))
     assert vars(g_updated) == {"seed": 20}
-    G._update(**vars(g_updated))
-    assert G.seed == 20
+
+    g_updated = G(seed=30)
+    G._update(vars(g_updated))
+    assert G.seed == 30
 
 
 def test_namespace():
