@@ -4,6 +4,8 @@ from contextlib import contextmanager
 from functools import partial
 from typing import TypeVar, ContextManager, Iterable, Union
 
+from params_proto.neo_proto import Meta
+
 
 def dot_join(*keys):
     """remove Nones from the keys, but not '', """
@@ -40,13 +42,13 @@ T = TypeVar('ParamsProto')
 
 
 class Sweep:
-    root = {}
     _d = None
     __list = None
 
-    def __init__(self, *args: type):
-        self.root = {p._prefix: p for p in args}
-        self.stack = [[]]  # root stack frame
+    # noinspection PyProtectedMember
+    def __init__(self, *protos: Meta):
+        self.root = {p._prefix: p for p in protos}
+        self.stack = [{p._prefix: [] for p in protos}]
 
     def __getitem__(self, item: Union[slice, int, float]):
         if isinstance(item, slice):
@@ -91,10 +93,10 @@ class Sweep:
         return self._d
 
     def __enter__(self):
-        self.stack.append([])
+        self.stack.append({p._prefix: [] for p in self.root.values()})
 
-        set_hook = lambda _, k, v: self.set_param(k, [v], prefix=proto._prefix)
         for proto in self.root.values():
+            set_hook = lambda _, k, v, p=proto._prefix: self.set_param(k, [v], prefix=p)
             proto._add_hook(set_hook)
 
         return self
@@ -103,58 +105,59 @@ class Sweep:
         for proto in self.root.values():
             proto._pop_hooks()
 
-        frame = self.stack.pop(-1)
-        result = itertools.product(*key_items(frame))
-        self.set_param(None, result)
+        for prefix, frame in self.stack.pop(-1).items():
+            result = itertools.product(*key_items(frame))
+            self.set_param(None, result, prefix)
 
     def __iter__(self):
-        root_stack = self.stack[-1]
-        for key, rows in root_stack:
-            assert key is None, "this is the root stack"
-            for row in rows:
-                override = dict(flatten_items(row))
+        for rows in zip(*[it[0].value for it in self.stack[-1].values()]):
+            overrides = [dict(flatten_items(row[0].value)) for row in rows]
+            for proto, override in zip(self.root.values(), overrides):
+                proto._update(override)
 
-                # Override the original object
-                for proto in self.root.values():
-                    proto._update(override)
-
-                yield override
+            if len(overrides) == 1:
+                yield overrides[0]
+            else:
+                yield overrides
 
     def set_param(self, name, params, prefix=None):
         item = Item(dot_join(prefix, name), params)
-        self.stack[-1].append(item)
+        self.stack[-1][prefix].append(item)
 
     @property
     @contextmanager
     def product(self) -> ContextManager[None]:
-        self.stack.append([])
+        self.stack.append({p._prefix: [] for p in self.root.values()})
+        print()
         try:
             for proto in self.root.values():
-                proto._add_hook(lambda _, *args: self.set_param(*args, prefix=proto._prefix))
+                prefix = proto._prefix
+                proto._add_hook(lambda _, *args, p=prefix: self.set_param(*args, prefix=p))
+                print("hook stack", proto._Meta__set_hook)
             yield None
         finally:
             for proto in self.root.values():
                 proto._pop_hooks()
 
-            frame = self.stack.pop(-1)
-            result = itertools.product(*key_items(frame))
-            self.set_param(None, result)
+            for prefix, frame in self.stack.pop(-1).items():
+                result = itertools.product(*key_items(frame))
+                self.set_param(None, result, prefix)
 
     @property
     @contextmanager
     def zip(self) -> ContextManager[T]:
-        self.stack.append([])
+        self.stack.append({p._prefix: [] for p in self.root.values()})
         try:
             for proto in self.root.values():
-                proto._add_hook(lambda _, *args: self.set_param(*args, prefix=proto._prefix))
+                proto._add_hook(lambda _, *args, p=proto._prefix: self.set_param(*args, prefix=p))
             yield None
         finally:
             for proto in self.root.values():
                 proto._pop_hooks()
 
-            frame = self.stack.pop(-1)
-            result = zip(*key_items(frame))
-            self.set_param(None, result)
+            for prefix, frame in self.stack.pop(-1).items():
+                result = zip(*key_items(frame))
+                self.set_param(None, result, prefix)
 
     @property
     @contextmanager
@@ -167,15 +170,15 @@ class Sweep:
     @property
     @contextmanager
     def chain(self) -> ContextManager[T]:
-        self.stack.append([])
+        self.stack.append({p._prefix: [] for p in self.root.values()})
         try:
             for proto in self.root.values():
-                proto._add_hook(lambda _, *args: self.set_param(*args, prefix=proto._prefix))
+                proto._add_hook(lambda _, *args, p=proto._prefix: self.set_param(*args, prefix=p))
             yield None
         finally:
             for proto in self.root.values():
                 proto._pop_hooks()
 
-            frame = self.stack.pop(-1)
-            result = itertools.chain(*(value for k, value in frame))
-            self.set_param(None, result)
+            for prefix, frame in self.stack.pop(-1).items():
+                result = itertools.chain(*(value for k, value in frame))
+                self.set_param(None, result, prefix)

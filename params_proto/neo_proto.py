@@ -49,18 +49,21 @@ def get_children(__init__):
 
 
 class Meta(type):
-    __set_hook = []
-    __get_hook = []
+    _prefix: str
+    __set_hook = tuple()
+    __get_hook = tuple()
 
     # Note: These are the new methods supporting custom setter and getter override.
     def _add_hook(cls, hook):
-        cls.__set_hook.append(hook)
+        cls.__set_hook = (*cls.__set_hook, hook)
 
     def _pop_hooks(cls):
-        cls.__set_hook.pop()
+        cls.__set_hook = cls.__set_hook[:-1]
 
     def __setattr__(cls, item, value):
-        if cls.__set_hook:
+        if item == "_Meta__set_hook":
+            return type.__setattr__(cls, item, value)
+        elif cls.__set_hook:
             return cls.__set_hook[-1](cls, item, value)
         else:
             return type.__setattr__(cls, item, value)

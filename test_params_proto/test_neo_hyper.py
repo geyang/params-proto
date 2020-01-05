@@ -25,6 +25,34 @@ def test_setter_and_getter_hook():
     G._pop_hooks()
 
 
+def test_multiple_configs():
+    class G(ParamsProto):
+        a = 5
+
+    class DEBUG(ParamsProto):
+        b = 10
+
+    with Sweep(G, DEBUG) as sweep:
+        with sweep.product:
+            G.a = range(100)
+            DEBUG.b = range(100)
+
+    for i, (_G, _DEBUG) in enumerate(sweep):
+        assert _G == {"G.a": i}
+        assert _DEBUG == {"DEBUG.b": i}
+        assert G.a == i
+        assert DEBUG.b == i
+
+    # only one still works
+    with Sweep(G, DEBUG) as sweep:
+        with sweep.product:
+            DEBUG.b = range(100)
+
+    for i, (_G, _DEBUG) in enumerate(sweep):
+        assert _DEBUG == {"DEBUG.b": i}
+        assert DEBUG.b == i
+
+
 def test_subscription():
     class G(ParamsProto):
         start_seed = 10
