@@ -2,9 +2,9 @@ import itertools
 from collections import namedtuple, defaultdict
 from contextlib import contextmanager
 from functools import partial
-from typing import TypeVar, ContextManager, Iterable, Union
+from typing import TypeVar, ContextManager, Iterable, Union, Dict
 
-from params_proto.neo_proto import Meta
+from params_proto.neo_proto import Meta, ParamsProto
 
 
 def dot_join(*keys):
@@ -47,18 +47,24 @@ class Sweep:
 
     # noinspection PyProtectedMember
     def __init__(self, *protos: Meta):
-        self.root = {p._prefix: p for p in protos}
+        # the ParamsProto is updatable via proto._update(dot_dict)
+        self.root: Dict[str, ParamsProto] = {p._prefix: p for p in protos}
         self.stack = [[]]
 
     def __getitem__(self, item: Union[slice, int, float]):
         if isinstance(item, slice):
             assert item.step != 0, "step can not be zero."
             if (item.start and item.start < 0) or (item.stop and item.stop < 0) or (item.step and item.step < 0):
-                yield from self.list[item]
+                for override in self.list[item]:
+                    for proto in self.root.values():
+                        proto._update(override)
+                    yield override
             for i, el in enumerate(self):
                 if item.start is not None and i < item.start:
                     continue
                 if item.step is None or (i - item.start) % item.step == 0:
+                    for proto in self.root.values():
+                        proto._update(el)
                     yield el
                 if item.stop is None:
                     continue
@@ -66,9 +72,14 @@ class Sweep:
                     break
         elif isinstance(item, int):
             if item < 0:
-                yield from self.list[item]
+                for override in self.list[item]:
+                    for proto in self.root.values():
+                        proto._update(override)
+                    yield override
             for i, el in enumerate(self):
                 if i == item:
+                    for proto in self.root.values():
+                        proto._update(el)
                     yield el
                     break
         else:
