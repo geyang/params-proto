@@ -1,6 +1,5 @@
 from os import path
-
-from setuptools import setup
+from setuptools import setup, find_packages
 
 with open(path.join(path.abspath(path.dirname(__file__)), 'README'), encoding='utf-8') as f:
     LONG_DESCRIPTION = f.read()
@@ -23,6 +22,6 @@ setup(name="params_proto",
           "Intended Audience :: Science/Research",
           "Programming Language :: Python :: 3"
       ],
-      packages=["params_proto"],
+      packages=find_packages(),
       install_requires=["waterbear", "argparse", "argcomplete", "typing"]
       )
