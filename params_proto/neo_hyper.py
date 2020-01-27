@@ -62,7 +62,7 @@ class Sweep:
             for i, el in enumerate(self):
                 if item.start is not None and i < item.start:
                     continue
-                if item.step is None or (i - item.start) % item.step == 0:
+                if item.step is None or (i - (item.start or 0)) % item.step == 0:
                     for proto in self.root.values():
                         proto._update(el)
                     yield el
