@@ -185,7 +185,7 @@ def prefix_proto(prefix_or_fn: Union[str, None, Callable] = None, parse=False, *
         return _thunk
 
 
-from functools import partial
+from functools import partial, partialmethod
 
 prefix_parse = partial(prefix_proto, parse=True)
 
@@ -194,7 +194,7 @@ prefix_parse = partial(prefix_proto, parse=True)
 def cli_parse(proto: T) -> T:
     """parser command line options, and repackage into a typed object.
 
-      :type proto: T
+      :param proto: T
       """
     parser = argparse.ArgumentParser(description=proto.__doc__)
 
@@ -239,7 +239,7 @@ def cli_parse(proto: T) -> T:
         proto, **{k: v for k, v in vars(proto).items() if not is_hidden(k)})
 
     params.__parser = parser
-    
+
     if not LAZY:
         parse(params, *PREFIXES)
 
@@ -295,11 +295,14 @@ def proto_signature(parameter_prototype, need_self=False):
     return decorate
 
 
-def proto_partial(proto: ParamsProto):
+def proto_partial(proto: ParamsProto, method=False):
     """Overrides the function with values from the Proto Object."""
 
     # todo(Ge): add support for fn(a, *, b, c...) for better control of
     #  the default values. Only the keyword arguments gets the default.
+    #  ~
+    #  replace partial and partialmethod with wrapper that updates the
+    #  values.
 
     def wrap(f):
         ps = inspect.signature(f).parameters
@@ -321,6 +324,6 @@ def proto_partial(proto: ParamsProto):
             _ = getattr(proto, k)
             overrides[k] = _.default if hasattr(_, 'default') else _
 
-        return partial(f, **overrides)
+        return (partialmethod if method else partial)(f, **overrides)
 
     return wrap
