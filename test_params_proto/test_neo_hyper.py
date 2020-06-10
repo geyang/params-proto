@@ -61,9 +61,9 @@ def test_subscription():
 
     # using sweep as a sliced generator.
     assert list(sweep[:5]) == [{"G.start_seed": i} for i in range(5)]
-    assert list(sweep[10:20:3]) == [{"G.start_seed": i} for i in range(15, 25, 3)]
-    assert list(sweep[30]) == [{"G.start_seed": 55}]
-    assert list(sweep[1:]) == [{"G.start_seed": i} for i in range(57, 100)]
+    assert list(sweep[10:20:3]) == [{"G.start_seed": i} for i in range(10, 20, 3)]
+    assert list(sweep[30]) == [{"G.start_seed": 30}]
+    assert list(sweep[1:]) == [{"G.start_seed": i} for i in range(1, 100)]
 
 
 def test_negative_subscription():
@@ -75,7 +75,8 @@ def test_negative_subscription():
             G.start_seed = list(range(100))
 
     # using sweep as a sliced generator.
-    assert list(sweep[-10:-5]) == [{"G.start_seed": i} for i in range(90, 95)]
+    for a, b in zip(list(sweep[-10:-5]), [{"G.start_seed": i} for i in range(90, 95)]):
+        assert a == b
 
 
 def test_product():
@@ -261,3 +262,29 @@ def test_chaining_with_shared_root_set():
 
     all = [*sweep]
     assert len(all) == 30
+
+
+def test_jagged():
+    """the point of this test is to make sure different config with different keys
+    always rewrite from the original."""
+
+    # usage
+    class G(ParamsProto):
+        config_1 = False
+        config_2 = False
+
+    with Sweep(G) as sweep:
+
+        with sweep.chain:
+            with sweep.set:
+                G.config_1 = 10
+            with sweep.set:
+                G.config_2 = 20
+
+    for i, deps in enumerate(sweep):
+        if i == 0:
+            assert G.config_1 == 10
+            assert G.config_2 is False
+        if i == 1:
+            assert G.config_1 is False
+            assert G.config_2 == 20

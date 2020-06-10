@@ -228,6 +228,17 @@ def test_Proto_default():
     r.root_attribute = 30
     assert r.root_attribute == 30
 
+
+def test_non_overwrite():
+    """The point of this test is to make sure None values also gets written."""
+    from params_proto.neo_proto import ParamsProto, Proto
+
+    class A(ParamsProto):
+        key = 10
+
+    A._update({'A.key': None})
+    assert A.key is None, "key should not be `None`."
+
 # def test_singleton_overwrite():
 #     """
 #     For overrides, we should be able to directly modify the root configuration object.

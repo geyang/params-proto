@@ -43,7 +43,8 @@ T = TypeVar('ParamsProto')
 
 class Sweep:
     _d = None
-    __list = None
+    __original = None
+    __noot = None
 
     # noinspection PyProtectedMember
     def __init__(self, *protos: Meta):
@@ -51,34 +52,39 @@ class Sweep:
         self.root: Dict[str, ParamsProto] = {p._prefix: p for p in protos}
         self.stack = [[]]
 
+    def __len__(self):
+        return len(self.list)
+
     def __getitem__(self, item: Union[slice, int, float]):
         if isinstance(item, slice):
             assert item.step != 0, "step can not be zero."
             if (item.start and item.start < 0) or (item.stop and item.stop < 0) or (item.step and item.step < 0):
                 for override in self.list[item]:
-                    for proto in self.root.values():
+                    for org, proto in zip(self.original, self.noot.values()):
+                        proto._update(**org)
                         proto._update(override)
                     yield override
             for i, el in enumerate(self):
                 if item.start is not None and i < item.start:
                     continue
                 if item.step is None or (i - (item.start or 0)) % item.step == 0:
-                    for proto in self.root.values():
-                        proto._update(el)
                     yield el
                 if item.stop is None:
                     continue
                 if i >= item.stop - 1:
                     break
         elif isinstance(item, int):
+            # need-test: Not tested from a quick glance.
             if item < 0:
                 for override in self.list[item]:
-                    for proto in self.root.values():
+                    for org, proto in zip(self.original, self.noot.values()):
+                        proto._update(**org)
                         proto._update(override)
                     yield override
             for i, el in enumerate(self):
                 if i == item:
-                    for proto in self.root.values():
+                    for org, proto in zip(self.original, self.noot.values()):
+                        proto._update(**org)
                         proto._update(el)
                     yield el
                     break
@@ -87,11 +93,8 @@ class Sweep:
 
     @property
     def list(self):
-        """returns self as a list."""
-        if self.__list:
-            return self.__list
-        self.__list = list(self)
-        return self.__list
+        """returns self as a list. Currently not idempotent. Might become idempotent in the future."""
+        return [*iter(self)]
 
     @property
     def __dict__(self):
@@ -102,6 +105,16 @@ class Sweep:
             for k, v in config.items():
                 self._d[k].append(v)
         return self._d
+
+    @property
+    def noot(self):
+        from copy import deepcopy
+        return deepcopy(self.root)
+
+    @property
+    def snack(self):
+        from copy import deepcopy
+        return deepcopy(self.stack)
 
     def __enter__(self):
         self.stack.append([])
@@ -119,13 +132,21 @@ class Sweep:
         result = itertools.product(*key_items(frame))
         self.set_param(None, result)
 
+    @property
+    def original(self):
+        if self.__original is None:
+            self.__original = []
+            for proto in self.noot.values():
+                self.__original.append(vars(proto))
+        return self.__original
+
     def __iter__(self):
-        for row in itertools.chain(*[it.value for it in self.stack[-1]]):
+        # the issue is that the update does not comprehensive.
+        for row in itertools.chain(*[it.value for it in self.snack[-1]]):
             override = dict(flatten_items(row))
-
-            for proto in self.root.values():
+            for org, proto in zip(self.original, self.noot.values()):
+                proto._update(**org)
                 proto._update(override)
-
             yield override
 
     def set_param(self, name, params, prefix=None):
