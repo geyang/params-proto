@@ -4,7 +4,7 @@ from contextlib import contextmanager
 from functools import partial
 from typing import TypeVar, ContextManager, Iterable, Union, Dict
 
-from params_proto.neo_proto import Meta, ParamsProto
+from params_proto.neo_proto import Meta, ParamsProto, Accumulant
 
 
 def dot_join(*keys):
@@ -134,10 +134,18 @@ class Sweep:
 
     @property
     def original(self):
+
         if self.__original is None:
             self.__original = []
             for proto in self.noot.values():
-                self.__original.append(vars(proto))
+
+                # noinspection PyCallByClass
+                def no_reset(k):
+                    return getattr(type.__getattribute__(proto, k), "accumulant", False)
+
+                self.__original.append({k: v
+                                        for k, v in vars(proto).items()
+                                        if not no_reset(k)})
         return self.__original
 
     def __iter__(self):
