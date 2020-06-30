@@ -43,12 +43,44 @@ def test_multiple_configs():
 
     # only one still works
     with Sweep(G, DEBUG) as sweep:
+        with sweep.set:
+            DEBUG.prefix = "hey"
         with sweep.product:
             DEBUG.b = range(100)
 
+    # note: does not support "_" (underscore) prefix.
     for i, deps in enumerate(sweep):
-        assert deps == {"DEBUG.b": i}
+        assert deps == {"DEBUG.b": i, "DEBUG.prefix": "hey"}
         assert DEBUG.b == i
+        assert DEBUG.prefix == "hey"
+
+
+def test_incrementation():
+    """The Sweep resets the configuration at each step,
+    to make sure that local overrides do not propagate
+    to the next step. This also means that you can not
+    imperatively mutate the value step-by-step, such
+    as incrementing a counter.
+
+    There are a few patterns for accomplishing this.
+    """
+
+    class G(ParamsProto):
+        static_counter = 10
+
+        @classmethod
+        def __init__(cls, ):
+            cls.static_counter += 1
+            cls.dynamic_counter = getattr(cls, "dynamic_counter", -1) + 1
+
+    with Sweep(G) as sweep:
+        with sweep.product:
+            G.seed = [i for i in range(10)]
+
+    for deps in sweep:
+        G()
+        assert G.static_counter == 10
+        assert G.dynamic_counter == G.seed
 
 
 def test_subscription():
