@@ -24,6 +24,15 @@ class Proto(SimpleNamespace):
         self.__value = value
 
 
+class Accumulant(Proto):
+    """used by neo_hyper to avoid reset."""
+
+    accumulant = True
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+
 def is_private(k: str) -> bool:
     return k.startswith('_prefix') or \
            k.startswith("_ParamsProto_") or \
@@ -173,12 +182,12 @@ class ParamsProto(Bear, metaclass=Meta):
     @property  # has to be class property on ParamsProto
     def __dict__(self):
         """
-            recurrently return dictionary, only when the child has the same type.
-            Only returns dictionary of children (but not grand children) if
-            the child type is not ParamsProto.
+        recurrently return dictionary, only when the child has the same type.
+        Only returns dictionary of children (but not grand children) if
+        the child type is not ParamsProto.
 
-            Returns: Nested Dict.
-            """
+        Returns: Nested Dict.
+        """
         _ = {}
         for k, v in super().__dict__.items():
             if is_private(k):

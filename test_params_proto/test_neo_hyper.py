@@ -64,14 +64,17 @@ def test_incrementation():
 
     There are a few patterns for accomplishing this.
     """
+    from params_proto.neo_proto import Accumulant
 
     class G(ParamsProto):
         static_counter = 10
+        dynamic_accumulant = Accumulant(10 - 1)
 
         @classmethod
         def __init__(cls, ):
             cls.static_counter += 1
             cls.dynamic_counter = getattr(cls, "dynamic_counter", -1) + 1
+            cls.dynamic_accumulant += 1
 
     with Sweep(G) as sweep:
         with sweep.product:
@@ -79,8 +82,9 @@ def test_incrementation():
 
     for deps in sweep:
         G()
-        assert G.static_counter == 10
+        assert G.static_counter == 11
         assert G.dynamic_counter == G.seed
+        assert G.dynamic_accumulant == 10 + G.seed
 
 
 def test_subscription():
