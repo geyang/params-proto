@@ -46,6 +46,11 @@ class Sweep:
     __original = None
     __noot = None
 
+    __each_fn = None
+
+    def each(self, fn):
+        self.__each_fn = fn
+
     # noinspection PyProtectedMember
     def __init__(self, *protos: Meta):
         # the ParamsProto is updatable via proto._update(dot_dict)
@@ -138,7 +143,6 @@ class Sweep:
         if self.__original is None:
             self.__original = []
             for proto in self.noot.values():
-
                 # noinspection PyCallByClass
                 def no_reset(k):
                     return getattr(type.__getattribute__(proto, k), "accumulant", False)
@@ -149,13 +153,18 @@ class Sweep:
         return self.__original
 
     def __iter__(self):
-        # the issue is that the update does not comprehensive.
         for row in itertools.chain(*[it.value for it in self.snack[-1]]):
             override = dict(flatten_items(row))
             for org, proto in zip(self.original, self.noot.values()):
                 proto._update(**org)
                 proto._update(override)
-            yield override
+            if callable(self.__each_fn):
+                with Sweep(*self.noot.values()) as sweep:
+                    self.__each_fn(*self.noot.values())
+                for deps in sweep:
+                    yield {k: v for k, v in itertools.chain(override.items(), deps.items())}
+            else:
+                yield override
 
     def set_param(self, name, params, prefix=None):
         item = Item(dot_join(prefix, name), params)
@@ -169,7 +178,7 @@ class Sweep:
             for proto in self.root.values():
                 prefix = proto._prefix
                 proto._add_hook(lambda _, *args, p=prefix: self.set_param(*args, prefix=p))
-            yield None
+            yield self
         finally:
             for proto in self.root.values():
                 proto._pop_hooks()
@@ -186,7 +195,7 @@ class Sweep:
             for proto in self.root.values():
                 prefix = proto._prefix
                 proto._add_hook(lambda _, *args, p=prefix: self.set_param(*args, prefix=p))
-            yield None
+            yield self
         finally:
             for proto in self.root.values():
                 proto._pop_hooks()
@@ -211,7 +220,7 @@ class Sweep:
             for proto in self.root.values():
                 prefix = proto._prefix
                 proto._add_hook(lambda _, *args, p=prefix: self.set_param(*args, prefix=p))
-            yield None
+            yield self
         finally:
             for proto in self.root.values():
                 proto._pop_hooks()
