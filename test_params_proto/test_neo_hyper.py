@@ -324,3 +324,26 @@ def test_jagged():
         if i == 1:
             assert G.config_1 is False
             assert G.config_2 == 20
+
+
+def test_each():
+    """Can register a function to be ran for each configuration. Useful for
+    setting values that dynamically depend on other.s"""
+
+    class G(ParamsProto):
+        seed = 10
+        postfix = "seed-"
+
+    with Sweep(G).product as sweep:
+        G.seed = [10, 20, 30]
+
+    def each(G):
+        G.postfix = f"G.seed-({G.seed})"
+
+    sweep.each(each)
+
+    all = list(sweep)
+
+    assert all[0]['G.postfix'] == "G.seed-(10)"
+    assert all[1]['G.postfix'] == "G.seed-(20)"
+    assert all[2]['G.postfix'] == "G.seed-(30)"
