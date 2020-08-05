@@ -1,7 +1,7 @@
 from types import SimpleNamespace
 
-from waterbear import Bear
 from params_proto.utils import dot_to_deps
+from waterbear import Bear
 
 
 class Proto(SimpleNamespace):

@@ -1,5 +1,5 @@
-from params_proto.neo_proto import ParamsProto
 from params_proto.hyper import Sweep, dot_join
+from params_proto.neo_proto import ParamsProto
 
 
 def test_dot_join():

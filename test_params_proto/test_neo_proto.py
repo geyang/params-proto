@@ -1,5 +1,5 @@
 def test_simple_prefix():
-    from params_proto.neo_proto import ParamsProto, get_children
+    from params_proto.neo_proto import ParamsProto
 
     class Root(ParamsProto):
         _prefix = "not_root"
@@ -15,7 +15,7 @@ def test_simple_prefix():
 
 
 def test_update():
-    from params_proto.neo_proto import ParamsProto, get_children
+    from params_proto.neo_proto import ParamsProto
 
     class G(ParamsProto):
         seed = 10
@@ -26,7 +26,7 @@ def test_update():
 
 
 def test_update_by_key():
-    from params_proto.neo_proto import ParamsProto, get_children
+    from params_proto.neo_proto import ParamsProto
 
     class G(ParamsProto):
         seed = 10
@@ -36,7 +36,7 @@ def test_update_by_key():
 
 
 def test_update_by_object_directly():
-    from params_proto.neo_proto import ParamsProto, get_children
+    from params_proto.neo_proto import ParamsProto
 
     class G(ParamsProto):
         seed = 10
@@ -62,7 +62,7 @@ def test_namespace():
     have dependencies, you won't be able to dynamically re-compute
     the dependent attributes.
     """
-    from params_proto.neo_proto import ParamsProto, get_children
+    from params_proto.neo_proto import ParamsProto
 
     # prefix is for the argparse (not implemented).
     class Root(ParamsProto, prefix='root'):
@@ -191,7 +191,7 @@ def test_root_config():
     """
     For overrides, we should be able to directly modify the root configuration object.
     """
-    from params_proto.neo_proto import ParamsProto, get_children
+    from params_proto.neo_proto import ParamsProto
 
     class Root(ParamsProto, prefix="."):
         root_attribute = 10
@@ -231,7 +231,7 @@ def test_Proto_default():
 
 def test_non_overwrite():
     """The point of this test is to make sure None values also gets written."""
-    from params_proto.neo_proto import ParamsProto, Proto
+    from params_proto.neo_proto import ParamsProto
 
     class A(ParamsProto):
         key = 10

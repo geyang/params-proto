@@ -2,6 +2,7 @@ import itertools
 from collections import namedtuple
 from contextlib import contextmanager
 from typing import TypeVar, ContextManager, Iterable
+
 from params_proto.neo_proto import is_private
 
 

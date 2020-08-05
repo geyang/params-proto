@@ -98,3 +98,33 @@ def test_function_partial_override():
 
     G_2()
     some_func(c=100)
+
+
+def test_function_partial_class_method():
+    class G_2(ParamsProto):
+        a = 23
+        b = 29
+        c = Proto(default=31, help="this is working")
+        d = Proto(default=None, help="this is working")
+        e = True
+
+        @classmethod
+        def __init__(cls, _deps=None):
+            cls._update(_deps)
+            cls.a = 2
+            cls.b = 4
+
+    # note: in this case a should not get
+    #  the value from G. And E should not
+    #  get the value from G either.
+    class Yo:
+        @proto_partial(G_2, method=True)
+        def some_func(self, a, b, c, d, e=None):
+            assert self.__class__ == Yo, "First arg is self."
+            assert a == 2, "the a entry should be updated value"
+            assert b == 4, "the a entry should be updated value."
+            assert c == 100, "this is being overridden"
+
+    G_2()
+    yo = Yo()
+    yo.some_func(c=100)

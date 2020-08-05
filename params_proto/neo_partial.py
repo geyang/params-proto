@@ -1,6 +1,7 @@
 import inspect
+from functools import partialmethod, wraps
+
 from .neo_proto import ParamsProto
-from functools import partialmethod, partial, wraps
 
 
 def proto_partial(proto: ParamsProto, method=False):
@@ -27,9 +28,9 @@ def proto_partial(proto: ParamsProto, method=False):
                     continue
 
                 _ = getattr(proto, k)
-                value = _.default if hasattr(_, 'default') else _
-                overrides[k] = kwargs.get(k, None) or value
+                overrides[k] = _.default if hasattr(_, 'default') else _
 
+            overrides.update(kwargs)
             return f(*args, **overrides)
 
         if method:
