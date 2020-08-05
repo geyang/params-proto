@@ -1,11 +1,15 @@
+__all__ = [
+    "proto", "prefix_proto", "prefix_parse", "proto_partial", "PREFIXES", "cli_parse",
+    "Proto", "BoolFlag", "ParamsProto", "proto_signature", "is_hidden"
+]
+
 import argparse
-from distutils import util
 import inspect
 import re
-
+from distutils import util
 from typing import TypeVar, Union, Callable
 
-from waterbear import DefaultBear, Bear
+from waterbear import DefaultBear
 
 
 def is_hidden(k: str) -> bool:

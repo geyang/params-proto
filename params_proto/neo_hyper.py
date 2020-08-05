@@ -1,10 +1,9 @@
 import itertools
 from collections import namedtuple, defaultdict
 from contextlib import contextmanager
-from functools import partial
 from typing import TypeVar, ContextManager, Iterable, Union, Dict
 
-from params_proto.neo_proto import Meta, ParamsProto, Accumulant
+from params_proto.neo_proto import Meta, ParamsProto
 
 
 def dot_join(*keys):
