@@ -295,14 +295,11 @@ def proto_signature(parameter_prototype, need_self=False):
     return decorate
 
 
-def proto_partial(proto: ParamsProto, method=False):
-    """Overrides the function with values from the Proto Object."""
+from params_proto import neo_proto
 
-    # todo(Ge): add support for fn(a, *, b, c...) for better control of
-    #  the default values. Only the keyword arguments gets the default.
-    #  ~
-    #  replace partial and partialmethod with wrapper that updates the
-    #  values.
+
+def proto_partial(proto: Union[ParamsProto, neo_proto.ParamsProto], method=False):
+    """Overrides the function with values from the Proto Object."""
 
     def wrap(f):
         ps = inspect.signature(f).parameters
