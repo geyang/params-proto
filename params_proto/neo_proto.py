@@ -64,28 +64,45 @@ def get_children(__init__):
 
 class Meta(type):
     _prefix: str
-    __set_hook = tuple()
-    __get_hook = tuple()
+
+    def __init__(cls, name, bases, namespace, cli=True, cli_parse=True, **kwargs):
+        for k, v in namespace.items():
+            if not k.startswith('__'):
+                setattr(cls, k, v)
+
+        # note: This allows as to initialize ParamsProto on the class itself.
+        #  super(ParamsProto, cls).__init__(cls)
+        if cli:
+            cls._register_args()
+
+            # note: after this, the Meta.__init__ constructor is called.
+            #  for this reason, we parse the args inside the Meta.__init__
+            #  constructor.
+            if cli_parse:
+                ARGS.parse_args()
+
+    __set_hooks = tuple()
+    __get_hooks = tuple()
 
     # Note: These are the new methods supporting custom setter and getter override.
     def _add_hook(cls, hook):
-        cls.__set_hook = (*cls.__set_hook, hook)
+        cls.__set_hooks = (*cls.__set_hooks, hook)
 
     def _pop_hooks(cls):
-        cls.__set_hook = cls.__set_hook[:-1]
+        cls.__set_hooks = cls.__set_hooks[:-1]
 
     def __setattr__(cls, item, value):
-        if item == "_Meta__set_hook":
+        if item == "_Meta__set_hooks":
             return type.__setattr__(cls, item, value)
-        elif cls.__set_hook:
-            return cls.__set_hook[-1](cls, item, value)
+        elif cls.__set_hooks:
+            return cls.__set_hooks[-1](cls, item, value)
         else:
             return type.__setattr__(cls, item, value)
 
     def __getattr__(cls, item):
         # effectively not used, because the cls.__get_hook is empty.
-        if cls.__get_hook:
-            return cls.__get_hook[-1](cls, item)
+        if cls.__get_hooks:
+            return cls.__get_hooks[-1](cls, item)
         else:
             return type.__getattribute__(cls, item)
 
@@ -93,14 +110,6 @@ class Meta(type):
         # todo: Makes more sense to do at compile time.
         value = type.__getattribute__(self, item)
         return value.value if isinstance(value, Proto) else value
-
-    def __init__(cls, name, bases, namespace, parse_args=True, **kwargs):
-        for k, v in namespace.items():
-            if not k.startswith('__'):
-                setattr(cls, k, v)
-
-        if parse_args:
-            ARGS.parse_args()
 
     def _update(cls, __d: dict = None, **kwargs):
         """
@@ -114,7 +123,10 @@ class Meta(type):
         # todo: support nested update.
         if __d:
             for k, v in __d.items():
-                if k.startswith(cls._prefix + "."):
+                # when the prefix does not exist
+                if not cls._prefix:
+                    setattr(cls, k, v)
+                elif k.startswith(cls._prefix + "."):
                     setattr(cls, k[len(cls._prefix) + 1:], v)
 
         for k, v in kwargs.items():
@@ -174,7 +186,7 @@ class Meta(type):
             if isinstance(v, ParamsProto):
                 v._register_args(cls._prefix)
             elif isinstance(v, Proto):
-                ARGS.add_argument(k, k.replace('_', '-'), **vars(v))
+                ARGS.add_argument(cls, k, *keys, **vars(v))
             else:
                 try:
                     if issubclass(v, ParamsProto):
@@ -222,27 +234,28 @@ class ArgFactory:
         else:
             class ArgAction(argparse.Action):
                 def __call__(self, parser, namespace, values, option_string):
-                    setattr(proto, key, values)
+                    try:
+                        getattr(proto, key).value = values
+                    except AttributeError:
+                        setattr(proto, key, values)
 
-            parser.add_argument(*name_or_flags, default=default, type=dtype, action=ArgAction, **kwargs)
+            parser.add_argument(*name_or_flags, default=default, type=dtype, dest=key, action=ArgAction, **kwargs)
             self.__args.update(local_args)
 
     def add_argument_group(self, name, description):
         self.group = self.parser.add_argument_group(name, description)
 
     def parse_args(self, *args):
-        if "args" not in self.__args:
-            self.parser.add_argument("args", nargs="+")
-        return self.parser.parse_args(*args)
+        args, unknown = self.parser.parse_known_args()
 
 
 ARGS = ArgFactory()  # this is the global store
 
 
-class ParamsProto(Bear, metaclass=Meta, parse_args=False):
+class ParamsProto(Bear, metaclass=Meta, cli=False):
     _prefix = "ParamsProto"  # b/c cls._prefix only created in subclass.
 
-    def __init_subclass__(cls, prefix=False, register_args=True, **kwargs):
+    def __init_subclass__(cls, prefix=False, **kwargs):
         super().__init_subclass__()
         if prefix is True:
             cls._prefix = cls.__name__
@@ -250,15 +263,6 @@ class ParamsProto(Bear, metaclass=Meta, parse_args=False):
             cls._prefix = prefix
         else:
             cls._prefix = None
-
-        # note: This allows as to initialize ParamsProto on the class itself.
-        #  super(ParamsProto, cls).__init__(cls)
-        if register_args:
-            cls._register_args()
-
-        # note: after this, the Meta.__init__ constructor is called.
-        #  for this reason, we parse the args inside the Meta.__init__
-        #  constructor.
 
     def __new__(cls, _deps=None, _prefix=None, **children):
         ins = super(ParamsProto, cls).__new__(cls)
@@ -308,6 +312,14 @@ class ParamsProto(Bear, metaclass=Meta, parse_args=False):
                 except:
                     _[k] = v
         return _
+
+
+class PrefixProto(ParamsProto):
+    """A ParamsProto class with prefix set to True."""
+    _prefix = "PrefixProto"
+
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(prefix=True, **kwargs)
 
 
 from typing import Union

@@ -1,23 +1,34 @@
 def test_simple_prefix():
     from params_proto.neo_proto import ParamsProto
 
-    class Root(ParamsProto):
+    class Root(ParamsProto, cli=False):
         _prefix = "not_root"
 
     assert Root._prefix == "not_root"
     assert Root(_prefix='yo')._prefix == "yo"
 
-    class Root2(ParamsProto, prefix="this"):
+    class Root2(ParamsProto, prefix="this", cli=False):
         pass
 
     assert Root2._prefix == "this"
     assert Root(_prefix='yo')._prefix == "yo"
 
 
-def test_update():
+def test_update_no_prefix():
     from params_proto.neo_proto import ParamsProto
 
-    class G(ParamsProto):
+    class G(ParamsProto, cli=False):
+        seed = 10
+
+    d = {"seed": 20}
+    G._update(d)
+    assert G.seed == 20
+
+
+def test_update_with_prefix():
+    from params_proto.neo_proto import ParamsProto
+
+    class G(ParamsProto, cli=False, prefix=True):
         seed = 10
 
     d = {"G.seed": 20}
@@ -28,7 +39,7 @@ def test_update():
 def test_update_by_key():
     from params_proto.neo_proto import ParamsProto
 
-    class G(ParamsProto):
+    class G(ParamsProto, cli=False):
         seed = 10
 
     G._update(seed=20)
@@ -38,7 +49,7 @@ def test_update_by_key():
 def test_update_by_object_directly():
     from params_proto.neo_proto import ParamsProto
 
-    class G(ParamsProto):
+    class G(ParamsProto, cli=False, prefix=True):
         seed = 10
 
     g_updated = G(seed=20)
@@ -65,7 +76,7 @@ def test_namespace():
     from params_proto.neo_proto import ParamsProto
 
     # prefix is for the argparse (not implemented).
-    class Root(ParamsProto, prefix='root'):
+    class Root(ParamsProto, cli=False, prefix='root'):
         launch_type = 'borg'
 
     assert Root._prefix == "root"
@@ -112,10 +123,10 @@ def test_dependency():
 
     from params_proto.neo_proto import ParamsProto, get_children
 
-    class Root(ParamsProto, prefix='root'):
+    class Root(ParamsProto, cli=False, prefix='root'):
         launch_type = 'borg'
 
-    class SomeConfig(ParamsProto, prefix='resource'):
+    class SomeConfig(ParamsProto, cli=False, prefix='resource'):
         fixed = "default"
         some_item = "default_value"
 
@@ -138,10 +149,10 @@ def test_prefix():
     """Testing """
     from params_proto.neo_proto import ParamsProto, get_children
 
-    class Root(ParamsProto, prefix='root'):
+    class Root(ParamsProto, cli=False, prefix='root'):
         launch_type = 'borg'
 
-    class Teacher(ParamsProto, prefix="resources.teacher"):
+    class Teacher(ParamsProto, cli=False, prefix="resources.teacher"):
         cell = None
         autopilot = False
 
@@ -150,8 +161,8 @@ def test_prefix():
             self.replicas_hint = 1 if Root(_deps).launch_type == 'local' else 26
             super().__init__(**children)
 
-    class Resources(ParamsProto, prefix="resources"):
-        class default(ParamsProto):
+    class Resources(ParamsProto, cli=False, prefix="resources"):
+        class default(ParamsProto, cli=False):
             replicas_hint = 1
 
         @get_children
@@ -193,7 +204,7 @@ def test_root_config():
     """
     from params_proto.neo_proto import ParamsProto
 
-    class Root(ParamsProto, prefix="."):
+    class Root(ParamsProto, cli=False, prefix="."):
         root_attribute = 10
 
     override = {"root_attribute": 11}
@@ -213,7 +224,7 @@ def test_Proto_default():
     assert a.default == 10, "default should be correct"
     assert a.value == 10, "value should default to the original value"
 
-    class Root(ParamsProto, prefix="."):
+    class Root(ParamsProto, cli=False, prefix="."):
         root_attribute = Proto(default=10)
         other_1 = Proto(20, "this is help text")
 
@@ -233,7 +244,7 @@ def test_non_overwrite():
     """The point of this test is to make sure None values also gets written."""
     from params_proto.neo_proto import ParamsProto
 
-    class A(ParamsProto):
+    class A(ParamsProto, cli=False, prefix=True):
         key = 10
 
     A._update({'A.key': None})
@@ -245,7 +256,7 @@ def test_non_overwrite():
 #     """
 #     from params_proto.neo_proto import ParamsProto, get_children
 #
-#     class Root(ParamsProto):
+#     class Root(ParamsProto, cli=False):
 #         root_attribute = 10
 #
 #     Root.update(root_attribute=11)
