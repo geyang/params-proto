@@ -1,13 +1,19 @@
+import pytest
 from params_proto.neo_partial import proto_partial
-from params_proto.neo_proto import Proto, ParamsProto
+from params_proto.neo_proto import Proto, ParamsProto, ARGS
 
 
-def test_function_partial():
+@pytest.fixture
+def clear_args():
+    ARGS.clear()
+
+
+def test_function_partial(clear_args):
     class G(ParamsProto):
         a = 23
         b = 29
         c = Proto(default=31, help="this is working")
-        d = Proto(default=None, help="this is working")
+        d = Proto(default=None, dtype=int, help="this is working")
 
     @proto_partial(G)
     def some_func(a, b, c, d, e="some_path"):
@@ -20,7 +26,7 @@ def test_function_partial():
     some_func()
 
 
-def test_function_partial_with_keyword_only_arguments():
+def test_function_partial_with_keyword_only_arguments(clear_args):
     class G_2(ParamsProto):
         a = 23
         b = 29
@@ -47,7 +53,7 @@ def test_function_partial_with_keyword_only_arguments():
     assert str(e) == "some_func() missing 1 required positional argument: 'a'"
 
 
-def test_function_partial_dynamic_values():
+def test_function_partial_dynamic_values(clear_args):
     class G_2(ParamsProto):
         a = 23
         b = 29
@@ -73,7 +79,7 @@ def test_function_partial_dynamic_values():
     some_func()
 
 
-def test_function_partial_override():
+def test_function_partial_override(clear_args):
     class G_2(ParamsProto):
         a = 23
         b = 29
@@ -100,7 +106,7 @@ def test_function_partial_override():
     some_func(c=100)
 
 
-def test_function_partial_class_method():
+def test_function_partial_class_method(clear_args):
     class G_2(ParamsProto):
         a = 23
         b = 29

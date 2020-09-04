@@ -1,16 +1,21 @@
+import pytest
 from params_proto.hyper import Sweep, dot_join
-from params_proto.neo_proto import ParamsProto
+from params_proto.neo_proto import PrefixProto, ARGS
 
 
 def test_dot_join():
     assert dot_join(None, None) is None
 
+@pytest.fixture
+def clear_args():
+    ARGS.clear()
 
-def test_set():
+
+def test_set(clear_args):
     sweep = Sweep()  # create a new sweep instance
 
     # usage
-    class G(ParamsProto):
+    class G(PrefixProto):
         start_seed = 10
         discern_flag = True
         env_name = "dm_lab"
@@ -25,11 +30,11 @@ def test_set():
     assert all == [{'G.discern_flag': False, 'G.start_seed': 10}]
 
 
-def test_set_advanced():
+def test_set_advanced(clear_args):
     sweep = Sweep()  # create a new sweep instance
 
     # usage
-    class G(ParamsProto):
+    class G(PrefixProto):
         start_seed = 10
         discern_flag = True
         env_name = "dm_lab"
@@ -47,11 +52,11 @@ def test_set_advanced():
     assert len(all) == 2
 
 
-def test_set_advanced_2():
+def test_set_advanced_2(clear_args):
     sweep = Sweep()  # create a new sweep instance
 
     # usage
-    class G(ParamsProto):
+    class G(PrefixProto):
         null_attribute = True
         start_seed = 10
         discern_flag = True
@@ -74,11 +79,11 @@ def test_set_advanced_2():
     assert len(all) == 45
 
 
-def test_product():
+def test_product(clear_args):
     sweep = Sweep()  # create a new sweep instance
 
     # usage
-    class G(ParamsProto):
+    class G(PrefixProto):
         start_seed = 10
         discern_flag = True
         env_name = "dm_lab"
@@ -96,11 +101,11 @@ def test_product():
                    {'G.discern_flag': False, 'G.start_seed': 1}]
 
 
-def test_zip():
+def test_zip(clear_args):
     sweep = Sweep()  # create a new sweep instance
 
     # usage
-    class G(ParamsProto):
+    class G(PrefixProto):
         start_seed = 10
         discern_flag = True
         env_name = "dm_lab"
@@ -116,10 +121,10 @@ def test_zip():
                    {'G.batch_size': 50, 'G.env_name': 'large_env'}]
 
 
-def test_product_zip():
+def test_product_zip(clear_args):
     sweep = Sweep()  # create a new sweep instance
 
-    class G(ParamsProto):
+    class G(PrefixProto):
         start_seed = 10
         discern_flag = True
         env_name = "dm_lab"

@@ -53,7 +53,8 @@ class Sweep:
     # noinspection PyProtectedMember
     def __init__(self, *protos: Meta):
         # the ParamsProto is updatable via proto._update(dot_dict)
-        self.root: Dict[str, ParamsProto] = {p._prefix: p for p in protos}
+        # use object itself as key if _prefix is missing
+        self.root: Dict[str, ParamsProto] = {p._prefix or p: p for p in protos}
         self.stack = [[]]
 
     def __len__(self):
@@ -156,7 +157,9 @@ class Sweep:
             override = dict(flatten_items(row))
             for org, proto in zip(self.original, self.noot.values()):
                 proto._update(**org)
-                proto._update(override)
+                # only apply those key-value pairs that appear in the original.
+                proto._update(override if proto._prefix else {k: v for k, v in override.items() if k in org})
+
             if callable(self.__each_fn):
                 with Sweep(*self.noot.values()) as sweep:
                     self.__each_fn(*self.noot.values())

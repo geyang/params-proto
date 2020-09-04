@@ -1,24 +1,33 @@
 import pytest
+import sys
 
 
 @pytest.fixture
 def single_config():
-    import sys
-    print(*sys.argv, sep="\n")
-    sys.argv.extend([
-        "--env_name", "FetchPickAndPlace-v1",
-        "--seed", "100",
-    ])
+    old_argv = sys.argv.copy()
+    for k, v in {
+        "--env_name": "FetchPickAndPlace-v1",
+        "--seed": "100",
+    }.items():
+        if k not in sys.argv:
+            sys.argv.extend([k, v])
+    yield
+    sys.argv[:] = old_argv
+
 
 
 @pytest.fixture
 def prefixed_config():
     import sys
-    print(*sys.argv, sep="\n")
-    sys.argv.extend([
-        "--Second.env_name", "FetchPickAndPlace-v1",
-        "--Second.seed", "100",
-    ])
+    old_argv = sys.argv.copy()
+    for k, v in {
+        "--Second.env_name": "FetchPickAndPlace-v1",
+        "--Second.seed": "100",
+    }.items():
+        if k not in sys.argv:
+            sys.argv.extend([k, v])
+    yield
+    sys.argv[:] = old_argv
 
 
 def test_argparse_override(single_config):
@@ -27,11 +36,11 @@ def test_argparse_override(single_config):
 
     parser.add_argument('--env_name', type=str, default='FetchReach-v1')
     parser.add_argument('--seed', type=int, default=123)
-    parser.add_argument("args", nargs="+")
+    # parser.add_argument("args", nargs="+")
     # help = parser.format_help()
     # print(help)
 
-    args = parser.parse_args()
+    args, unkown = parser.parse_known_args()
     assert args.env_name == "FetchPickAndPlace-v1"
     assert args.seed == 100
 

@@ -112,22 +112,19 @@ from subprocess import check_output
 
 def test_from_command_line():
     """this is not used in the actual testing."""
-    import os
-    script = dedent("""
-        PYTHON_PATH=.:$PYTHON_PATH
-        python3 ./test_params_proto/test_fixtures/main.py -h
-        """)
-    out = check_output(script, shell=True, env=os.environ)
-    a = out.decode('ascii')
-    print(a)
-    assert a == dedent(""" 
-            usage: main.py [-h] [--some-arg SOME_ARG]
-            
-            optional arguments:
-              -h, --help            show this help message and exit
-              --some-arg SOME_ARG, -s SOME_ARG
-                                    N/A
-            """)[1:]
+
+    @cli_parse
+    class G:
+        some_arg = Proto(0, aliases=['-s'])
+
+    assert G.__parser.format_help() == dedent(""" 
+        usage: __main__.py [-h] [--some-arg SOME_ARG]
+        
+        optional arguments:
+          -h, --help            show this help message and exit
+          --some-arg SOME_ARG, -s SOME_ARG
+                                N/A
+        """).lstrip()
 
 
 def test_function_partial():

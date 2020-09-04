@@ -1,12 +1,18 @@
+import pytest
 from params_proto.neo_hyper import Sweep, dot_join
-from params_proto.neo_proto import ParamsProto
+from params_proto.neo_proto import ParamsProto, ARGS, PrefixProto
 
 
-def test_dot_join():
+@pytest.fixture
+def clear_args():
+    ARGS.clear()
+
+
+def test_dot_join(clear_args):
     assert dot_join(None, None) is None
 
 
-def test_setter_and_getter_hook():
+def test_setter_and_getter_hook(clear_args):
     class G(ParamsProto):
         start_seed = 10
         discern_flag = True
@@ -25,8 +31,8 @@ def test_setter_and_getter_hook():
     G._pop_hooks()
 
 
-def test_multiple_configs():
-    class G(ParamsProto):
+def test_multiple_configs_no_prefix(clear_args):
+    class G(ParamsProto, cli_parse=False):
         a = 5
 
     class DEBUG(ParamsProto):
@@ -44,18 +50,50 @@ def test_multiple_configs():
     # only one still works
     with Sweep(G, DEBUG) as sweep:
         with sweep.set:
-            DEBUG.prefix = "hey"
+            DEBUG.does_not_exist = "hey"
         with sweep.product:
             DEBUG.b = range(100)
 
     # note: does not support "_" (underscore) prefix.
     for i, deps in enumerate(sweep):
-        assert deps == {"DEBUG.b": i, "DEBUG.prefix": "hey"}
+        assert deps == {"b": i, "does_not_exist": "hey"}
         assert DEBUG.b == i
-        assert DEBUG.prefix == "hey"
+        assert not hasattr(DEBUG, 'does_not_exist')
 
 
-def test_incrementation():
+def test_multiple_configs(clear_args):
+    """When using a prefix key, attribute keys that do not exists
+    gets written anyways."""
+    class G(ParamsProto, cli_parse=False, prefix=True):
+        a = 5
+
+    class DEBUG(ParamsProto, prefix=True):
+        b = 10
+
+    with Sweep(G, DEBUG) as sweep:
+        with sweep.zip:
+            G.a = range(100)
+            DEBUG.b = range(100)
+
+    for i, all_deps in enumerate(sweep):
+        assert G.a == i
+        assert DEBUG.b == i
+
+    # only one still works
+    with Sweep(G, DEBUG) as sweep:
+        with sweep.set:
+            DEBUG.nonexist_gets_written = "hey"
+        with sweep.product:
+            DEBUG.b = range(100)
+
+    # note: does not support "_" (underscore) prefix.
+    for i, deps in enumerate(sweep):
+        assert deps == {"DEBUG.b": i, "DEBUG.nonexist_gets_written": "hey"}
+        assert DEBUG.b == i
+        assert DEBUG.nonexist_gets_written == "hey"
+
+
+def test_incrementation(clear_args):
     """The Sweep resets the configuration at each step,
     to make sure that local overrides do not propagate
     to the next step. This also means that you can not
@@ -67,6 +105,7 @@ def test_incrementation():
     from params_proto.neo_proto import Accumulant
 
     class G(ParamsProto):
+        seed = None
         static_counter = 10
         dynamic_accumulant = Accumulant(10 - 1)
 
@@ -87,7 +126,7 @@ def test_incrementation():
         assert G.dynamic_accumulant == 10 + G.seed
 
 
-def test_subscription():
+def test_subscription(clear_args):
     class G(ParamsProto):
         start_seed = 10
 
@@ -96,13 +135,13 @@ def test_subscription():
             G.start_seed = list(range(100))
 
     # using sweep as a sliced generator.
-    assert list(sweep[:5]) == [{"G.start_seed": i} for i in range(5)]
-    assert list(sweep[10:20:3]) == [{"G.start_seed": i} for i in range(10, 20, 3)]
-    assert list(sweep[30]) == [{"G.start_seed": 30}]
-    assert list(sweep[1:]) == [{"G.start_seed": i} for i in range(1, 100)]
+    assert list(sweep[:5]) == [{"start_seed": i} for i in range(5)]
+    assert list(sweep[10:20:3]) == [{"start_seed": i} for i in range(10, 20, 3)]
+    assert list(sweep[30]) == [{"start_seed": 30}]
+    assert list(sweep[1:]) == [{"start_seed": i} for i in range(1, 100)]
 
 
-def test_negative_subscription():
+def test_negative_subscription(clear_args):
     class G(ParamsProto):
         start_seed = 10
 
@@ -111,11 +150,11 @@ def test_negative_subscription():
             G.start_seed = list(range(100))
 
     # using sweep as a sliced generator.
-    for a, b in zip(list(sweep[-10:-5]), [{"G.start_seed": i} for i in range(90, 95)]):
+    for a, b in zip(list(sweep[-10:-5]), [{"start_seed": i} for i in range(90, 95)]):
         assert a == b
 
 
-def test_product():
+def test_product(clear_args):
     # usage
     class G(ParamsProto):
         start_seed = 10
@@ -130,13 +169,13 @@ def test_product():
             G.discern_flag = [True, False]
 
     all = [*sweep]
-    assert all == [{'G.discern_flag': True, 'G.start_seed': 0},
-                   {'G.discern_flag': False, 'G.start_seed': 0},
-                   {'G.discern_flag': True, 'G.start_seed': 1},
-                   {'G.discern_flag': False, 'G.start_seed': 1}]
+    assert all == [{'discern_flag': True, 'start_seed': 0},
+                   {'discern_flag': False, 'start_seed': 0},
+                   {'discern_flag': True, 'start_seed': 1},
+                   {'discern_flag': False, 'start_seed': 1}]
 
 
-def test_zip():
+def test_zip(clear_args):
     # usage
     class G(ParamsProto):
         start_seed = 10
@@ -151,12 +190,12 @@ def test_zip():
             G.batch_size = [10, 50]
 
     all = [*sweep]
-    assert all == [{'G.batch_size': 10, 'G.env_name': 'small_env'},
-                   {'G.batch_size': 50, 'G.env_name': 'large_env'}]
+    assert all == [{'batch_size': 10, 'env_name': 'small_env'},
+                   {'batch_size': 50, 'env_name': 'large_env'}]
 
 
-def test_product_zip():
-    class G(ParamsProto):
+def test_product_zip(clear_args):
+    class G(PrefixProto):
         start_seed = 10
         discern_flag = True
         env_name = "dm_lab"
@@ -184,8 +223,8 @@ def test_product_zip():
                    {'G.batch_size': 50, 'G.discern_flag': False, 'G.env_name': 'large_env', 'G.start_seed': 1}]
 
 
-def test_set():
-    class G(ParamsProto):
+def test_set(clear_args):
+    class G(PrefixProto):
         start_seed = 10
         discern_flag = True
         env_name = "dm_lab"
@@ -201,7 +240,7 @@ def test_set():
         assert override == {'G.discern_flag': False, 'G.start_seed': 20}
 
 
-def test_set_advanced():
+def test_set_advanced(clear_args):
     # usage
     class G(ParamsProto):
         start_seed = 10
@@ -221,9 +260,9 @@ def test_set_advanced():
     assert len(all) == 2
 
 
-def test_set_advanced_2():
+def test_set_advanced_2(clear_args):
     # usage
-    class G(ParamsProto):
+    class G(PrefixProto):
         null_attribute = True
         start_seed = 10
         discern_flag = True
@@ -246,7 +285,7 @@ def test_set_advanced_2():
     assert len(all) == 45
 
 
-def test_chaining():
+def test_chaining(clear_args):
     # usage
     class G(ParamsProto):
         level_name = "dmlab"
@@ -270,7 +309,7 @@ def test_chaining():
     assert len(all) == 30
 
 
-def test_chaining_with_shared_root_set():
+def test_chaining_with_shared_root_set(clear_args):
     # usage
     class G(ParamsProto):
         root_set = False
@@ -300,7 +339,7 @@ def test_chaining_with_shared_root_set():
     assert len(all) == 30
 
 
-def test_jagged():
+def test_jagged(clear_args):
     """the point of this test is to make sure different config with different keys
     always rewrite from the original."""
 
@@ -326,11 +365,11 @@ def test_jagged():
             assert G.config_2 == 20
 
 
-def test_each():
+def test_each(clear_args):
     """Can register a function to be ran for each configuration. Useful for
-    setting values that dynamically depend on other.s"""
+    setting values that dynamically depend on others."""
 
-    class G(ParamsProto):
+    class G(PrefixProto):
         seed = 10
         postfix = "seed-"
 
