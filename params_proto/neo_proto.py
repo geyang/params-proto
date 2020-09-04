@@ -1,4 +1,5 @@
 from types import SimpleNamespace
+from warnings import warn
 
 from params_proto.utils import dot_to_deps
 from waterbear import Bear
@@ -9,11 +10,11 @@ class Proto(SimpleNamespace):
     default = None
     help = None
     dtype = None
-    aliases = None
-    kwargs = dict()
 
-    def __init__(self, default, help=None, dtype=None, aliases=None, kwargs=None):
-        super().__init__(default=default, help=help, dtype=dtype or type(default), aliases=aliases, kwargs=kwargs or {})
+    def __init__(self, default, help=None, dtype=None, metavar='\b', **kwargs):
+        dtype = dtype or type(default)
+        help = help or f"<{dtype.__name__}> {str([default])[1:-1]}"
+        super().__init__(default=default, help=help, dtype=dtype, metavar=metavar, **kwargs)
 
     @property
     def value(self):
@@ -22,6 +23,10 @@ class Proto(SimpleNamespace):
     @value.setter
     def value(self, value):
         self.__value = value
+
+    # @property
+    # def __dict__(self):
+    #     return {k: v for k, v in super().__dict__.items() if not is_private(k)}
 
 
 class Accumulant(Proto):
@@ -89,11 +94,13 @@ class Meta(type):
         value = type.__getattribute__(self, item)
         return value.value if isinstance(value, Proto) else value
 
-    def __init__(cls, name, bases, namespace, **kwargs):
-        # cls.__namespace = {k: v for k, v in namespace.items() if not k.startswith("__")}
+    def __init__(cls, name, bases, namespace, parse_args=True, **kwargs):
         for k, v in namespace.items():
             if not k.startswith('__'):
                 setattr(cls, k, v)
+
+        if parse_args:
+            ARGS.parse_args()
 
     def _update(cls, __d: dict = None, **kwargs):
         """
@@ -147,15 +154,111 @@ class Meta(type):
                     _[k] = v
         return _
 
+    def _register_args(cls, prefix=None):
 
-class ParamsProto(Bear, metaclass=Meta):
+        prefix = "" if not prefix else f"{prefix}."
+        if cls._prefix:
+            prefix = prefix + cls._prefix + "."
+
+        if prefix:
+            ARGS.add_argument_group(prefix, cls.__doc__)
+
+        for k, v in super().__dict__.items():
+            if is_private(k):
+                continue
+
+            keys = [f"--{prefix}{k}"]
+            if "_" in keys[-1]:
+                keys.append(f"--{prefix}{k.replace('_', '-')}")
+
+            if isinstance(v, ParamsProto):
+                v._register_args(cls._prefix)
+            elif isinstance(v, Proto):
+                ARGS.add_argument(k, k.replace('_', '-'), **vars(v))
+            else:
+                try:
+                    if issubclass(v, ParamsProto):
+                        v._register_args(cls._prefix)
+                    else:
+                        v = Proto(v)
+                        ARGS.add_argument(cls, k, *keys, **vars(v))
+                except:
+                    v = Proto(v)
+                    ARGS.add_argument(cls, k, *keys, **vars(v))
+
+        ARGS.group = None
+
+
+import argparse
+
+
+class ArgFactory:
+    """The reason we do not inherit from argparse, is because the
+    argument group returns new instances, so unless we patch those
+    classes as well, we will not be able to intercept these calls.
+    (I tried that first.)
+
+    For this reason we implement this as a funciton, with a stateful
+    context."""
+    group = None
+
+    def __init__(self, ):
+        self.parser = argparse.ArgumentParser()
+        self.__args = {}
+
+    clear = __init__
+
+    def add_argument(self, proto, key, *name_or_flags, default=None, dtype=None, **kwargs):
+        local_args = {}
+        parser = self.group or self.parser
+        for arg_key in name_or_flags:
+            if arg_key in self.__args:
+                warn(f"{arg_key} has already been registered. "
+                     f"This could be okay if intentional. Previous "
+                     f"value is {self.__args[arg_key]}. New value is "
+                     f"{kwargs}.")
+                local_args[arg_key] = kwargs
+                break
+        else:
+            class ArgAction(argparse.Action):
+                def __call__(self, parser, namespace, values, option_string):
+                    setattr(proto, key, values)
+
+            parser.add_argument(*name_or_flags, default=default, type=dtype, action=ArgAction, **kwargs)
+            self.__args.update(local_args)
+
+    def add_argument_group(self, name, description):
+        self.group = self.parser.add_argument_group(name, description)
+
+    def parse_args(self, *args):
+        if "args" not in self.__args:
+            self.parser.add_argument("args", nargs="+")
+        return self.parser.parse_args(*args)
+
+
+ARGS = ArgFactory()  # this is the global store
+
+
+class ParamsProto(Bear, metaclass=Meta, parse_args=False):
     _prefix = "ParamsProto"  # b/c cls._prefix only created in subclass.
 
-    def __init_subclass__(cls, prefix=None):
+    def __init_subclass__(cls, prefix=False, register_args=True, **kwargs):
         super().__init_subclass__()
-        cls._prefix = cls.__name__ if prefix is None else prefix
-        # This allows as to initialize ParamsProto on the class itself.
-        # super(ParamsProto, cls).__init__(cls)
+        if prefix is True:
+            cls._prefix = cls.__name__
+        elif isinstance(prefix, str):
+            cls._prefix = prefix
+        else:
+            cls._prefix = None
+
+        # note: This allows as to initialize ParamsProto on the class itself.
+        #  super(ParamsProto, cls).__init__(cls)
+        if register_args:
+            cls._register_args()
+
+        # note: after this, the Meta.__init__ constructor is called.
+        #  for this reason, we parse the args inside the Meta.__init__
+        #  constructor.
 
     def __new__(cls, _deps=None, _prefix=None, **children):
         ins = super(ParamsProto, cls).__new__(cls)
