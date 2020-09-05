@@ -1,6 +1,9 @@
 ``params-proto``, A Python Decorator That Gives Your Model Parameters Super-power
 =================================================================================
 
+-  2019/12/09: Just finished my DeepMind Internship. Now params_proto
+   contain a new proto implementation, and a complementary
+   hyperparameter search library! See ``neo_proto`` and ``neo_hyper``.
 -  2019/06/11: Now supports ``tab-completion`` at the command line!
 -  2018/11/08: Now supports both python ``3.52`` as well as ``3.6``!
    :bangbang::star:
