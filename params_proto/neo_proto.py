@@ -1,3 +1,4 @@
+from textwrap import dedent
 from types import SimpleNamespace
 from warnings import warn
 
@@ -13,7 +14,7 @@ class Proto(SimpleNamespace):
 
     def __init__(self, default, help=None, dtype=None, metavar='\b', **kwargs):
         dtype = dtype or type(default)
-        help = f"<{dtype.__name__}> {str([default])[1:-1]} {help}"
+        help = f"<{dtype.__name__}> {str([default])[1:-1]} {help or ''}"
         super().__init__(default=default, help=help, dtype=dtype, metavar=metavar, **kwargs)
 
     @property
@@ -31,7 +32,7 @@ class Proto(SimpleNamespace):
 
 class Flag(Proto):
     def __init__(self, help=None, to_value=True, default=None, dtype=None, **kwargs):
-        help = f"-> {str([to_value])[1:-1]} " + (help or "")
+        help = f"-> {str([to_value])[1:-1]} {help or ''}"
         dtype = dtype or type(to_value) or type(default)
         super().__init__(default=default, nargs=0, help=help, dtype=dtype, **kwargs)
         self.to_value = to_value
@@ -180,8 +181,13 @@ class Meta(type):
         if cls._prefix:
             prefix = prefix + cls._prefix + "."
 
+        doc_str = dedent(cls.__doc__ or "")
+
         if prefix:
-            ARGS.add_argument_group(prefix, cls.__doc__)
+            ARGS.add_argument_group(prefix, doc_str)
+        else:
+            desc = ARGS.parser.description or ""
+            ARGS.parser.description = desc + doc_str + "\n"
 
         for k, v in super().__dict__.items():
             if is_private(k):
@@ -223,7 +229,8 @@ class ArgFactory:
     group = None
 
     def __init__(self, ):
-        self.parser = argparse.ArgumentParser()
+        from argparse import RawTextHelpFormatter
+        self.parser = argparse.ArgumentParser(formatter_class=RawTextHelpFormatter)
         self.__args = {}
 
     clear = __init__
@@ -322,7 +329,7 @@ class ParamsProto(Bear, metaclass=Meta, cli=False):
         return _
 
 
-class PrefixProto(ParamsProto):
+class PrefixProto(ParamsProto, cli=False):
     """A ParamsProto class with prefix set to True."""
     _prefix = "PrefixProto"
 
