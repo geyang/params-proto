@@ -30,8 +30,8 @@ class Proto(SimpleNamespace):
 
 
 class Flag(Proto):
-    def __init__(self, to_value=True, default=None, dtype=None, help=None, **kwargs):
-        help = f"-> {str([to_value])[1:-1]}" + (help or "")
+    def __init__(self, help=None, to_value=True, default=None, dtype=None, **kwargs):
+        help = f"-> {str([to_value])[1:-1]} " + (help or "")
         dtype = dtype or type(to_value) or type(default)
         super().__init__(default=default, nargs=0, help=help, dtype=dtype, **kwargs)
         self.to_value = to_value
