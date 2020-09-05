@@ -14,7 +14,8 @@ class Proto(SimpleNamespace):
 
     def __init__(self, default, help=None, dtype=None, metavar='\b', **kwargs):
         dtype = dtype or type(default)
-        help = f"<{dtype.__name__}> {str([default])[1:-1]} {help or ''}"
+        default_str = str([default])[1:-1]
+        help = f"<{dtype.__name__}>" + (f" {default_str}" if default_str else "") + (f" {help}" if help else "")
         super().__init__(default=default, help=help, dtype=dtype, metavar=metavar, **kwargs)
 
     @property
@@ -32,7 +33,7 @@ class Proto(SimpleNamespace):
 
 class Flag(Proto):
     def __init__(self, help=None, to_value=True, default=None, dtype=None, **kwargs):
-        help = f"-> {str([to_value])[1:-1]} {help or ''}"
+        help = f"-> {str([to_value])[1:-1]}" + (f" {help}" if help else "")
         dtype = dtype or type(to_value) or type(default)
         super().__init__(default=default, nargs=0, help=help, dtype=dtype, **kwargs)
         self.to_value = to_value
@@ -230,7 +231,8 @@ class ArgFactory:
 
     def __init__(self, ):
         from argparse import RawTextHelpFormatter
-        self.parser = argparse.ArgumentParser(formatter_class=RawTextHelpFormatter)
+        fmt_cls = lambda prog: argparse.RawTextHelpFormatter(prog, indent_increment=4, max_help_position=50)
+        self.parser = argparse.ArgumentParser(formatter_class=fmt_cls)
         self.__args = {}
 
     clear = __init__

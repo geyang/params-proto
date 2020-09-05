@@ -1,5 +1,5 @@
 #!python3
-from params_proto.neo_proto import ParamsProto
+from params_proto.neo_proto import ParamsProto, Proto
 
 
 def get_indent(text):
@@ -26,7 +26,9 @@ class Root(ParamsProto, cli_parse=False):
     being initiated need to have the `cli_parse` flag
     set to `False`.
     """
-    launch_type = "borg"
+    launch_type = Proto("borg", help="sdfa sdfas fasd fas dfas df asdf sa df sdf asd fas df asdf sa f "
+                                     "asdf asdfas asdfasdfasdfasdf sdfa sdf asdf as dfas df asdf asdf"
+                                     " sdfasfsadfa sdfas df asdf asfd asf")
 
 
 class Config(ParamsProto):
