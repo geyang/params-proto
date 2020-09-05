@@ -102,11 +102,28 @@ def test_bool_flags(flag_config):
 
     class Root(ParamsProto):
         """
-        Root Configuration Object
+        Root Configuration Object with Flags
+
+        The `Flag` primitive allows one to set an attribute
+        to a specific value via `to_value` argument. `to_value`
+        is default to True, whereas the default value of this
+        `Flat` primitive is `None`.
+
+        [Usage]
+
+        ```python
+        class Args(PrefixProto):
+            some_feature = Flag(help="this is a feature flag for xxx",
+                                to_value=True, default=None)
+        ```
+
+        The first argument of the `Flag` primitive is the help string.
+        This is because in most cases, we can use the default `to_value=True`
         """
         env_name = "FetchReach-v1"
         seed = 123
-        some_feature = Flag("feature-is-on")
+        some_feature = Flag(help="This is a feature flag for xxx",
+                            to_value="feature-is-on", default=None)
 
     print(">>>2", Root.some_feature)
     print(ARGS.parser.format_help())
