@@ -13,7 +13,7 @@ class Proto(SimpleNamespace):
 
     def __init__(self, default, help=None, dtype=None, metavar='\b', **kwargs):
         dtype = dtype or type(default)
-        help = help or f"<{dtype.__name__}> {str([default])[1:-1]}"
+        help = f"<{dtype.__name__}> {str([default])[1:-1]} {help}"
         super().__init__(default=default, help=help, dtype=dtype, metavar=metavar, **kwargs)
 
     @property
@@ -27,6 +27,14 @@ class Proto(SimpleNamespace):
     # @property
     # def __dict__(self):
     #     return {k: v for k, v in super().__dict__.items() if not is_private(k)}
+
+
+class Flag(Proto):
+    def __init__(self, to_value, default=None, dtype=None, help=None, **kwargs):
+        help = f"-> {str([to_value])[1:-1]}" + (help or "")
+        dtype = dtype or type(to_value) or type(default)
+        super().__init__(default=default, nargs=0, help=help, dtype=dtype, **kwargs)
+        self.to_value = to_value
 
 
 class Accumulant(Proto):
@@ -220,7 +228,7 @@ class ArgFactory:
 
     clear = __init__
 
-    def add_argument(self, proto, key, *name_or_flags, default=None, dtype=None, **kwargs):
+    def add_argument(self, proto, key, *name_or_flags, default=None, dtype=None, to_value=None, **kwargs):
         local_args = {}
         parser = self.group or self.parser
         for arg_key in name_or_flags:
@@ -235,9 +243,9 @@ class ArgFactory:
             class ArgAction(argparse.Action):
                 def __call__(self, parser, namespace, values, option_string):
                     try:
-                        getattr(proto, key).value = values
+                        getattr(proto, key).value = to_value or values
                     except AttributeError:
-                        setattr(proto, key, values)
+                        setattr(proto, key, to_value or values)
 
             parser.add_argument(*name_or_flags, default=default, type=dtype, dest=key, action=ArgAction, **kwargs)
             self.__args.update(local_args)
