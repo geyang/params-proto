@@ -101,8 +101,7 @@ def test_bool_flags(flag_config):
     #   changes for these tests
 
     class Root(ParamsProto):
-        """
-        Root Configuration Object with Flags
+        """Root Configuration Object with Flags
 
         The `Flag` primitive allows one to set an attribute
         to a specific value via `to_value` argument. `to_value`
