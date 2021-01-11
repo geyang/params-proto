@@ -103,13 +103,13 @@ and it should print out a list of dictionaries that looks like:
 ...
 ```
 
-
-
+<img width="60%" align="right" alt="spec_files" src="figures/spec_files.png"></img>
 ## Where Can I find Documentation?
 
 Look at the specification file at [./test_params_proto/*.py](test_params_proto) , which is part of the integrated test. These scripts contains the most comprehensive set of usage patters!!
 
-![spec_files](figures/spec_files.png)
+The new version has a `neo_` prefix. We will deprecate the older (non-neo) version in a few month.
+
 
 ## Writing documentation as uhm..., man page?
 
