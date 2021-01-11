@@ -94,15 +94,22 @@ if __name__ == '__main__':
         print(deps)
 ```
 
-## Installation
-
-Just run
+and it should print out a list of dictionaries that looks like:
 
 ```bash
-pip install params-proto waterbear
+{Args.pi_lr: 3e-3, Args.clip_inputs: True, LfGR.visualization_interval: 40, Args.env_name: "FetchReach-v1", ... Args.seed: 100}
+{Args.pi_lr: 3e-3, Args.clip_inputs: True, LfGR.visualization_interval: 40, Args.env_name: "FetchReach-v1", ... Args.seed: 200}
+{Args.pi_lr: 3e-3, Args.clip_inputs: True, LfGR.visualization_interval: 40, Args.env_name: "FetchReach-v1", ... Args.seed: 300}
+...
 ```
 
 
+
+## Where Can I find Documentation?
+
+Look at the specification file at [./test_params_proto/*.py](test_params_proto) , which is part of the integrated test. These scripts contains the most comprehensive set of usage patters!!
+
+![spec_files](figures/spec_files.png)
 
 ## Writing documentation as uhm..., man page?
 
