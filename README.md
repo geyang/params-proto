@@ -18,7 +18,15 @@ Your Python IDEs work very hard on static code analysis to intelligently make yo
 
 For this reason, you want to avoid using dictionaries or opaque `argparse` definitions as much as possible. Instead, you want to write those declaratively, so that your IDE can actually help you navigate through those layers of function calls. The hyper-parameter library, `params_proto` makes this easy, by integrating python namespaces (a bare python class) with `argparse`,  so that on the python side you get auto-completion, and from the command line you can pass in changes.
 
-For example, in a `your_project/soft_ac/config.py` file, have the following:
+**Installation**
+
+First let's install `params-proto` and its supporting module `waterbear`
+
+```bash
+pip install params-proto waterbear
+```
+
+Then to declare your hyperparameters, you can write the following in a `your_project/soft_ac/config.py` file:
 
 ```python
 import sys
@@ -51,8 +59,6 @@ class LfGR(PrefixProto):
     store_interval = 10
     visualization_interval = 10
 ```
-
-
 
 ### Step 2: Sweeping Hyper-parameters 🔥
 
