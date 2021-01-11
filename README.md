@@ -155,20 +155,21 @@ if __name__ == '__main__':
     from lp_analysis import instr
 
     with Sweep(Args, LfGR) as sweep:
+	# override the default
+        Args.pi_lr = 3e-3
+        Args.clip_inputs = True # this was a flag
+        
+	# override the second config object
+	LfGR.visualization_interval = 40
 
-        Args.gamma = 0.99
-        Args.clip_inputs = True
-        Args.normalize_inputs = True
-
-				LfGR.visualization_interval = 40
-
+	# product between the zipped and the seed
         with sweep.product:
-
+	    # similar to python zip, unpacks a list of values.
             with sweep.zip:
                 Args.env_name = ['FetchReach-v1', 'FetchPush-v1', 'FetchPickAndPlace-v1', 'FetchSlide-v1']
                 Args.n_epochs = [4, 12, 12, 20]
                 Args.n_workers = [5, 150, 200, 500]
-
+	    # the seed is sweeped at last
             Args.seed = [100, 200, 300, 400, 500, 600]
 
     for i, deps in sweep.items():
