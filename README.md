@@ -14,9 +14,92 @@
 
 Your Python IDEs work very hard on static code analysis to intelligently make you more productive, and the "parameter hell" breaks all of that.
 
-In your ML project, you want to avoid using dictionaries or opaque argparse definitions as much as you can. You want to write those parameters **declaratively** instead. This way, your IDE can actually help you navigate through those layers of function calls.
+### Step 1: Declarative Pattern to the Rescue!
+
+For this reason, you want to avoid using dictionaries or opaque `argparse` definitions as much as possible. Instead, you want to write those declaratively, so that your IDE can actually help you navigate through those layers of function calls. The hyper-parameter library, `params_proto` makes this easy, by integrating python namespaces (a bare python class) with `argparse`,  so that on the python side you get auto-completion, and from the command line you can pass in changes.
+
+For example, in a `your_project/soft_ac/config.py` file, have the following:
+
+```python
+import sys
+from params_proto.neo_proto import ParamsProto, Flag, Proto, PrefixProto
+
+# this is the first config schema
+class Args(PrefixProto):
+    """Soft-actor Critic Implementation with SOTA Performance
+    """
+
+    debug = True if "pydevd" in sys.modules else False
+
+    cuda = Flag("cuda tend to be slower.")
+    seed = 42
+    env_name = "FetchReach-v1"
+    n_workers = 1 if debug else 12
+    v_lr = 1e-3
+    pi_lr = 1e-3
+    n_initial_rollouts = 0 if debug else 100
+    n_test_rollouts = 15
+    demo_length = 20
+    clip_inputs = Flag()
+    normalize_inputs = Flag()
+
+# this is the second schema
+class LfGR(PrefixProto):
+    # reporting
+    use_lfgr = True
+    start = 0 if Args.debug else 10
+    store_interval = 10
+    visualization_interval = 10
+```
+
+
+
+### Step 2: Sweeping Hyper-parameters 🔥
+
+Then you an sweep the hyperparameter via the following declarative pattern:
+
+```python
+from rl import main, Args
+from params_proto.neo_hyper import Sweep
+
+if __name__ == '__main__':
+    from lp_analysis import instr
+
+    with Sweep(Args, LfGR) as sweep:
+	# override the default
+        Args.pi_lr = 3e-3
+        Args.clip_inputs = True # this was a flag
+        
+	# override the second config object
+	LfGR.visualization_interval = 40
+
+	# product between the zipped and the seed
+        with sweep.product:
+	    # similar to python zip, unpacks a list of values.
+            with sweep.zip:
+                Args.env_name = ['FetchReach-v1', 'FetchPush-v1', 'FetchPickAndPlace-v1', 'FetchSlide-v1']
+                Args.n_epochs = [4, 12, 12, 20]
+                Args.n_workers = [5, 150, 200, 500]
+	    # the seed is sweeped at last
+            Args.seed = [100, 200, 300, 400, 500, 600]
+
+    for i, deps in sweep.items():
+        thunk = instr(main, deps, _job_postfix=f"{Args.env_name}")
+        print(deps)
+```
+
+## Installation
+
+Just run
+
+```bash
+pip install params-proto waterbear
+```
+
+
 
 ## Writing documentation as uhm..., man page?
+
 <img width="60%" align="right" alt="man page" src="./figures/man-page.png"></img>
 
 `Params-Proto` exposes your argument namespace's doc string as the usage note. For users of your code, there is no better help than the one that comes with the script itself!
@@ -103,80 +186,6 @@ It is very easy to over-ride the parameters when you call your function: have mo
 
 `params-proto` works very well with the clound ML launch tool [jaynes](https://github.com/episodeyang/jaynes). Take a look at the automagic awesomeness of [jaynes](https://github.com/episodeyang/jaynes):)
 
-## **NEW** Declaritive Sweep with `Neo_proto` (Advanced Example)
-
-Here is an advanced example, featuring:
-1. using multiple namespaces (each for a different part of your code)
-2. using the `params_proto.neo_proto.hyper` helper to define parameter sweeps declaratively.
-
-```python
-import sys
-from params_proto.neo_proto import ParamsProto, Flag, Proto, PrefixProto
-
-# this is the first config schema
-class Args(PrefixProto):
-    """Soft-actor Critic Implementation with SOTA Performance
-    """
-
-    debug = True if "pydevd" in sys.modules else False
-
-    cuda = Flag("cuda tend to be slower.")
-    seed = 42
-    env_name = "FetchReach-v1"
-    n_workers = 1 if debug else 12
-    v_lr = 1e-3
-    pi_lr = 1e-3
-    n_initial_rollouts = 0 if debug else 100
-    n_test_rollouts = 15
-    demo_length = 20
-    clip_inputs = Flag()
-    normalize_inputs = Flag()
-
-# this is the second schema
-class LfGR(PrefixProto):
-    # reporting
-    use_lfgr = True
-    start = 0 if Args.debug else 10
-    store_interval = 10
-    visualization_interval = 10
-```
-
-Then in training script, you can 
-
-### Sweeping Hyper-parameters 🔥
-
-`params_proto` also comes with the following declarative hyper-parameter sweep design pattern
-
-```python
-from rl import main, Args
-from params_proto.neo_hyper import Sweep
-
-if __name__ == '__main__':
-    from lp_analysis import instr
-
-    with Sweep(Args, LfGR) as sweep:
-	# override the default
-        Args.pi_lr = 3e-3
-        Args.clip_inputs = True # this was a flag
-        
-	# override the second config object
-	LfGR.visualization_interval = 40
-
-	# product between the zipped and the seed
-        with sweep.product:
-	    # similar to python zip, unpacks a list of values.
-            with sweep.zip:
-                Args.env_name = ['FetchReach-v1', 'FetchPush-v1', 'FetchPickAndPlace-v1', 'FetchSlide-v1']
-                Args.n_epochs = [4, 12, 12, 20]
-                Args.n_workers = [5, 150, 200, 500]
-	    # the seed is sweeped at last
-            Args.seed = [100, 200, 300, 400, 500, 600]
-
-    for i, deps in sweep.items():
-        thunk = instr(main, deps, _job_postfix=f"{Args.env_name}")
-        print(deps)
-```
-
 ## Todo
 
 ### Done
@@ -184,12 +193,9 @@ if __name__ == '__main__':
 - [x] add test
 - [x] add `python3.52` test on top of `python3.6` test.
 
-## Installation
-```bash
-pip install params-proto
-```
+-------------------
 
-## Usage
+## Old Usage
 
 ### To use a python namespace to declare commandline argments
 
