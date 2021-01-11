@@ -121,18 +121,6 @@ The new version has a `neo_` prefix. We will deprecate the older (non-neo) versi
 
 And **Your code becomes the documentation.**
 
-## Why Use Params_Proto Instead of Click or Argparse?
-
-**Because this is declarative**, which makes it easy to refactor your code and find variable references.
-
-- You want to place all of the arguments under a namespace that can be statically checked.
-- This allows your IDE to:
-    1. Find usage of each argument
-    2. jump from *anywhere* in your code base to the declaration of that argument
-    3. refactor your argument name **in the entire code base** automatically
-
-`Params_proto` is the declarative way to write command line arguments, and is the way to go for ML projects.
-
 ## Tab-completion for your script!
 
 `params_proto` uses `argparse` together with `argcomplete`, which enables command line autocomplete on tabs! To enable run
@@ -144,6 +132,33 @@ activate-global-python-argcomplete
 ```
 
 For details, see [`argcomplete`'s documentation](https://github.com/kislyuk/argcomplete#installation).
+
+
+## Why Use Params_Proto Instead of Click or Argparse?
+
+Because this declarative, singleton pattern allows you to:
+
+> Place all of the arguments under a namespace that can be statically checked.
+
+so that your IDE can:
+
+1. Find usage of each argument
+2. jump from *anywhere* in your code base to the declaration of that argument
+3. refactor your argument name **in the entire code base** automatically
+
+`Params_proto` is the declarative way to write command line arguments, and is the way to go for ML projects.
+
+
+## How to override when calling from python
+
+It is very easy to over-ride the parameters when you call your function: have most of your training code **directly** reference the parser namespace (your configuration namespace really), and just monkey patch the attribute.
+
+`params-proto` works very well with the clound ML launch tool [jaynes](https://github.com/episodeyang/jaynes). Take a look at the automagic awesomeness of [jaynes](https://github.com/episodeyang/jaynes):)
+
+
+-------------------
+
+## Old Usage
 
 ## Simple Example (with batteries included!!):battery:
 
@@ -192,23 +207,6 @@ optional arguments:
 ```
 
 Now, isn't this awesome? :bang::stars:
-
-## How to override when calling from python
-
-It is very easy to over-ride the parameters when you call your function: have most of your training code **directly** reference the parser namespace (your configuration namespace really), and just monkey patch the attribute.
-
-`params-proto` works very well with the clound ML launch tool [jaynes](https://github.com/episodeyang/jaynes). Take a look at the automagic awesomeness of [jaynes](https://github.com/episodeyang/jaynes):)
-
-## Todo
-
-### Done
-- [x] publish
-- [x] add test
-- [x] add `python3.52` test on top of `python3.6` test.
-
--------------------
-
-## Old Usage
 
 ### To use a python namespace to declare commandline argments
 
