@@ -96,6 +96,9 @@ class Sweep:
         else:
             raise NotImplementedError(f"slicing is not implemented for {item}")
 
+    def items(self):
+        return enumerate(self)
+
     @property
     def list(self):
         """returns self as a list. Currently not idempotent. Might become idempotent in the future."""
