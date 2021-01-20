@@ -1,6 +1,8 @@
-import pytest
 import sys
-from params_proto.neo_proto import ParamsProto, ARGS, Proto, Flag
+
+import pytest
+
+from params_proto.neo_proto import ParamsProto, ARGS, Flag
 
 
 @pytest.fixture
@@ -31,6 +33,7 @@ def prefixed_config():
     import sys
     old_argv = sys.argv.copy()
     for k, v in {
+        "--Second.bool": "False",
         "--Second.env_name": "FetchPickAndPlace-v1",
         "--Second.seed": "100",
     }.items():
@@ -87,13 +90,16 @@ def test_multiple_cli_args(prefixed_config):
         """
         env_name = "FetchReach-v1"
         seed = 123
+        bool = True
 
     print(">>>1", vars(Second))
-    # help = ARGS.parser.format_help()
-    # print(help)
+    help = ARGS.parser.format_help()
+    print(help)
 
     print(">>>2", Second.env_name)
     assert Second.env_name == "FetchPickAndPlace-v1"
+
+    assert Second.bool is False
 
 
 def test_bool_flags(flag_config):

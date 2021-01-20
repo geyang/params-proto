@@ -63,8 +63,8 @@ def get_children(__init__):
     """
 
     def deco(self, _deps=None, **overrides):
-        _prefix = overrides.get("_prefix", None)
-        _ = dot_to_deps(_deps or {}, _prefix or self.__class__._prefix)
+        _prefix = overrides.get("_prefix", self.__class__._prefix)
+        _ = dot_to_deps(_deps or {}, _prefix) if _prefix else dot_to_deps(_deps or {})
         _.update(overrides)
         res = __init__(self, _deps, **_)
         return res
@@ -247,22 +247,39 @@ class ArgFactory:
                      f"value is {self.__args[arg_key]}. New value is "
                      f"{kwargs}.")
                 local_args[arg_key] = kwargs
-                break
-        else:
-            class ArgAction(argparse.Action):
-                def __call__(self, parser, namespace, values, option_string):
-                    try:
-                        getattr(proto, key).value = to_value or values
-                    except AttributeError:
-                        setattr(proto, key, to_value or values)
 
+        class BoolAction(argparse.Action):
+            """parses 'true' to True, 'false' to False etc. """
+            def __call__(self, parser, namespace, values, option_string):
+                if values in ['false', 'False']:
+                    values = False
+                elif values in ['true', 'True']:
+                    values = True
+                elif values in ['none', 'null', 'None']:
+                    values = None
+                try:
+                    getattr(proto, key).value = to_value or values
+                except AttributeError:
+                    setattr(proto, key, to_value or values)
+
+        class ArgAction(argparse.Action):
+            def __call__(self, parser, namespace, values, option_string):
+                try:
+                    getattr(proto, key).value = to_value or values
+                except AttributeError:
+                    setattr(proto, key, to_value or values)
+
+        if dtype == bool:
+            parser.add_argument(*name_or_flags, default=default, type=str, dest=key, action=BoolAction, **kwargs)
+        else:
             parser.add_argument(*name_or_flags, default=default, type=dtype, dest=key, action=ArgAction, **kwargs)
-            self.__args.update(local_args)
+        self.__args.update(local_args)
 
     def add_argument_group(self, name, description):
         self.group = self.parser.add_argument_group(name, description)
 
     def parse_args(self, *args):
+        print('parse_args!!')
         args, unknown = self.parser.parse_known_args()
 
 
