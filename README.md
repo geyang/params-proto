@@ -60,7 +60,7 @@ class LfGR(PrefixProto):
     visualization_interval = 10
 ```
 
-### Step 2: Sweeping Hyper-parameters 🔥
+### Step 2: Sweeping Hyper-parameters :fire:
 
 Then you an sweep the hyperparameter via the following declarative pattern:
 
