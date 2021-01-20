@@ -75,8 +75,8 @@ Then to declare your hyperparameters, you can write the following in a
        store_interval = 10
        visualization_interval = 10
 
-Step 2: Sweeping Hyper-parameters 🔥
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Step 2: Sweeping Hyper-parameters :fire:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Then you an sweep the hyperparameter via the following declarative
 pattern:
