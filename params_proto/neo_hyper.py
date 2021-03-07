@@ -69,6 +69,7 @@ class Sweep:
                         proto._update(**org)
                         proto._update(override)
                     yield override
+                return
             for i, el in enumerate(self):
                 if item.start is not None and i < item.start:
                     continue

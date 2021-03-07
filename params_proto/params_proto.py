@@ -302,7 +302,7 @@ def proto_signature(parameter_prototype, need_self=False):
 from params_proto import neo_proto
 
 
-def proto_partial(proto: Union[ParamsProto, neo_proto.ParamsProto], method=False):
+def proto_partial(proto, method=False):
     """Overrides the function with values from the Proto Object."""
 
     def wrap(f):
