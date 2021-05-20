@@ -15,6 +15,9 @@ class Proto(SimpleNamespace):
     def __init__(self, default, help=None, dtype=None, metavar='\b', **kwargs):
         dtype = dtype or type(default)
         default_str = str([default])[1:-1]
+        if len(default_str) > 45:
+            default_str = default_str[:42] + "..."
+        default_str = default_str.replace('%', '%%')
         help = f"<{dtype.__name__}>" + (f" {default_str}" if default_str else "") + (f" {help}" if help else "")
         super().__init__(default=default, help=help, dtype=dtype, metavar=metavar, **kwargs)
 
@@ -230,7 +233,6 @@ class ArgFactory:
     group = None
 
     def __init__(self, ):
-        from argparse import RawTextHelpFormatter
         fmt_cls = lambda prog: argparse.RawTextHelpFormatter(prog, indent_increment=4, max_help_position=50)
         self.parser = argparse.ArgumentParser(formatter_class=fmt_cls)
         self.__args = {}
