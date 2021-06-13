@@ -1,9 +1,9 @@
 import itertools
 from collections import namedtuple, defaultdict
 from contextlib import contextmanager
+from typing import TypeVar, ContextManager, Iterable, Union, Dict
 
 from params_proto.neo_proto import Meta, ParamsProto
-from typing import TypeVar, ContextManager, Iterable, Union, Dict
 
 
 def dot_join(*keys):
@@ -235,12 +235,21 @@ class Sweep:
             result = itertools.chain(*(value for k, value in frame))
             self.set_param(None, result)
 
-    def save(self, filename="sweep.jsonl"):
+    def save(self, filename="sweep.jsonl", overwrite=True, verbose=True):
         import json
+        from termcolor import colored as c
         # todo: connect to ml-logger to setup managed sweep
-        with open(filename, 'a+') as f:
+        with open(filename, 'w' if overwrite else 'a+') as f:
             for item in self.list:
                 f.write(json.dumps(item) + '\n')
+
+        if verbose:
+            print(
+                c("saved", "blue"),
+                c(len(self.list), "green"),
+                c("items to", "blue"),
+                filename,
+            )
 
     # def load(self, filename="sweep.jsonl"):
     #     pass

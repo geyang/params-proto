@@ -1,6 +1,8 @@
 # `params-proto`, A Python Decorator That Gives Your Model Parameters Super-power
 
-- 2019/12/09: Just finished my DeepMind Internship. Now params_proto contain
+- 2021/06/13: 5 month into my postdoc at MIT, add `sweep.save("sweep.jsonl")` to dump
+    the sweep into a `jsonl` file for large scale experiments on AWS.
+- 2019/12/09: Just finished my DeepMind Internship. Now `params-proto` contain
     a new proto implementation, and a complementary hyperparameter search
     library! See `neo_proto` and `neo_hyper`.
 - 2019/06/11: Now supports `tab-completion` at the command line!
@@ -72,22 +74,27 @@ if __name__ == '__main__':
     from lp_analysis import instr
 
     with Sweep(Args, LfGR) as sweep:
-	# override the default
+	    # override the default
         Args.pi_lr = 3e-3
         Args.clip_inputs = True # this was a flag
         
-	# override the second config object
-	LfGR.visualization_interval = 40
+        # override the second config object
+        LfGR.visualization_interval = 40
 
-	# product between the zipped and the seed
+	    # product between the zipped and the seed
         with sweep.product:
-	    # similar to python zip, unpacks a list of values.
+
+	        # similar to python zip, unpacks a list of values.
             with sweep.zip:
                 Args.env_name = ['FetchReach-v1', 'FetchPush-v1', 'FetchPickAndPlace-v1', 'FetchSlide-v1']
                 Args.n_epochs = [4, 12, 12, 20]
                 Args.n_workers = [5, 150, 200, 500]
-	    # the seed is sweeped at last
+
+	        # the seed is sweeped at last
             Args.seed = [100, 200, 300, 400, 500, 600]
+    
+    # You can save the sweep into a `jsonl` file
+    sweep.save('sweep.jsonl')
 
     for i, deps in sweep.items():
         thunk = instr(main, deps, _job_postfix=f"{Args.env_name}")
