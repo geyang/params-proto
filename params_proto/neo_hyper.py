@@ -251,5 +251,62 @@ class Sweep:
                 filename,
             )
 
-    # def load(self, filename="sweep.jsonl"):
-    #     pass
+    def load(self, filename="sweep.jsonl", strict=True, silent=False):
+        """
+        Loading sweep state from a jsonl file:
+
+        Note: **Important Caveat** When multiple prefix-free ParamsProto objects are present,
+            We sweep through all of the proto objects and sets the attribute to the first
+            proto with the correct key. This first-attr approach works because the ParamsProto
+            object also generates argparse parameters, which means repetitive arguments are
+            not possible.
+            ~
+            However this would fail in cases where attributes are dynamically added to an
+            argument object. The `sweep.jsonl` file loses this type of information, therefore
+            there is no way to recover this type of attributes. So the user should try to
+            either use PrefixProto, or explicitly define the attributes.
+
+        Usage Pattern:
+
+            sweep = Sweep(Args, RUN).load('sweep.jsonl')
+            for i, deps in enumerate(sweep):
+                assert RUN.job_id == i + 1, "the job_id in that sweep.json should be 1-based."
+
+        """
+        import json
+        import pandas as pd
+        from termcolor import colored
+        sweep = []
+        with open(filename, 'r') as f:
+            l = f.readline().strip()
+            while l:
+                # need to handle end of line
+                if not l.startswith("#"):
+                    sweep.append(json.loads(l.strip()))
+                l = f.readline().strip()
+
+        # print(*sweep, sep="\n")
+        df = pd.DataFrame(sweep)
+
+        with self.zip:
+            for full_key in df:
+                first, *keys = full_key.split('.')
+                if first in self.root:
+                    setattr(self.root[first], '.'.join(keys), df[full_key].values.tolist())
+                else:
+                    for k, proto in self.root.items():
+                        if isinstance(k, str):
+                            continue
+                        if hasattr(proto, first):
+                            setattr(proto, full_key, df[full_key].values.tolist())
+                            break
+                    else:
+                        msg = colored(f'The key "', "red") + \
+                              colored(f'{full_key}', "green") + \
+                              colored(f'" ', "red") + \
+                              colored(f'does not appear in any of the Arguments', "red")
+                        if strict:
+                            raise KeyError(msg)
+                        if not silent:
+                            print(msg)
+        return self
