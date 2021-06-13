@@ -120,7 +120,7 @@ and it should print out a list of dictionaries that looks like:
    {Args.pi_lr: 3e-3, Args.clip_inputs: True, LfGR.visualization_interval: 40, Args.env_name: "FetchReach-v1", ... Args.seed: 300}
    ...
 
-## Where Can I find Documentation?
+ ## Where Can I find Documentation?
 
 Look at the specification file at
 `https://github.com/episodeyang/params_proto/blob/master/test_params_proto/*.py <test_params_proto>`__ , which is part of the
