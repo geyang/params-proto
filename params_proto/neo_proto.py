@@ -1,3 +1,4 @@
+import os
 from textwrap import dedent
 from types import SimpleNamespace
 from warnings import warn
@@ -25,15 +26,29 @@ class Proto(SimpleNamespace):
              automatically from the prefix of the class.
         :param kwargs:
         """
+        from termcolor import colored
         dtype = dtype or type(default)
-        default_str = str([default])[1:-1]
         if env:
-            default_str = os.environ.get(env, default_str)
+            default = os.environ.get(env, default)
+        if default:
+            default = dtype(default)
+
+        default_str = str([default])[1:-1]
         if len(default_str) > 45:
             default_str = default_str[:42] + "..."
         default_str = default_str.replace('%', '%%')
-        help = f"<{dtype.__name__}>" + (f" {default_str}" if default_str else "") + (f" {help}" if help else "")
-        super().__init__(default=default, help=help, dtype=dtype, metavar=metavar, **kwargs)
+        help_str = colored(f"\t<{dtype.__name__}> ", "blue")
+        if env and env in os.environ:
+            help_str += colored("$" + env, 'magenta') + '='
+        if default_str:
+            help_str += colored(default_str, 'cyan') + " "
+        if help:
+            if len(help_str + help) > 60:
+                help_str += '\n' + help
+            else:
+                help_str += help
+
+        super().__init__(default=default, help=help_str, dtype=dtype, metavar=metavar, **kwargs)
 
     @property
     def value(self):
@@ -266,6 +281,7 @@ class ArgFactory:
 
         class BoolAction(argparse.Action):
             """parses 'true' to True, 'false' to False etc. """
+
             def __call__(self, parser, namespace, values, option_string):
                 if values in ['false', 'False']:
                     values = False
