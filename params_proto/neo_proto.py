@@ -13,7 +13,7 @@ class Proto(SimpleNamespace):
     help = None
     dtype = None
 
-    def __init__(self, default, help=None, dtype=None, metavar='\b', env=None, **kwargs):
+    def __init__(self, default=None, help=None, dtype=None, metavar='\b', env=None, **kwargs):
         """
         The proto object. The env attribute allows one to set the environment variable
         from which this proto reads value from.
@@ -27,17 +27,17 @@ class Proto(SimpleNamespace):
         :param kwargs:
         """
         from termcolor import colored
-        dtype = dtype or type(default)
-        if env:
-            default = os.environ.get(env, default)
-        if default:
-            default = dtype(default)
+        if default and not dtype:
+            dtype = type(default)
+        # only apply dtype to ENV, and when dtype is not None.
+        if env and env in os.environ:
+            default = dtype(os.environ[env]) if dtype else os.environ[env]
 
         default_str = str([default])[1:-1]
         if len(default_str) > 45:
             default_str = default_str[:42] + "..."
         default_str = default_str.replace('%', '%%')
-        help_str = colored(f"\t<{dtype.__name__}> ", "blue")
+        help_str = colored(f"\t<{'any' if dtype is None else dtype.__name__}> ", "blue")
         if env and env in os.environ:
             help_str += colored("$" + env, 'magenta') + '='
         if default_str:
