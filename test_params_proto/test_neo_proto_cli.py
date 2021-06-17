@@ -144,6 +144,7 @@ def test_ENV_params(prefixed_config):
         env_name = Proto("FetchReach-v1", env="ENV_NAME", help="this is a very long readme and it goes on and one and on and never stops. The line breaks have a large indent and it is not really clear how the indentation actually works. It almost looks like the paragraph is right aligned.")
         seed = Proto(123, help="this is short and longer")
         home = Proto('ge', env="USER", help="this is short and longer")
+        some = Proto()
 
     help = ARGS.parser.format_help()
     print(help)
