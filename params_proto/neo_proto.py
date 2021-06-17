@@ -12,9 +12,23 @@ class Proto(SimpleNamespace):
     help = None
     dtype = None
 
-    def __init__(self, default, help=None, dtype=None, metavar='\b', **kwargs):
+    def __init__(self, default, help=None, dtype=None, metavar='\b', env=None, **kwargs):
+        """
+        The proto object. The env attribute allows one to set the environment variable
+        from which this proto reads value from.
+
+        :param default:
+        :param help:
+        :param dtype:
+        :param metavar:
+        :param env: the environment variable for the default value -- in the next version could be set
+             automatically from the prefix of the class.
+        :param kwargs:
+        """
         dtype = dtype or type(default)
         default_str = str([default])[1:-1]
+        if env:
+            default_str = os.environ.get(env, default_str)
         if len(default_str) > 45:
             default_str = default_str[:42] + "..."
         default_str = default_str.replace('%', '%%')
