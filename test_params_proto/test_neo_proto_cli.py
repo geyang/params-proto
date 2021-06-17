@@ -1,8 +1,6 @@
-import sys
-
 import pytest
-
-from params_proto.neo_proto import ParamsProto, ARGS, Flag
+import sys
+from params_proto.neo_proto import ParamsProto, Proto, ARGS, Flag
 
 
 @pytest.fixture
@@ -133,3 +131,19 @@ def test_bool_flags(flag_config):
     print(">>>2", Root.some_feature)
     print(ARGS.parser.format_help())
     assert Root.some_feature == "feature-is-on"
+
+
+def test_ENV_params(prefixed_config):
+    # todo: need to clear the ARGS command to isolate the
+    #   changes for these tests
+
+    class Root(ParamsProto, parse_args=False):
+        """
+        Root Configuration Object
+        """
+        env_name = Proto("FetchReach-v1", env="ENV_NAME", help="this is a very long readme and it goes on and one and on and never stops. The line breaks have a large indent and it is not really clear how the indentation actually works. It almost looks like the paragraph is right aligned.")
+        seed = Proto(123, help="this is short and longer")
+        home = Proto('ge', env="USER", help="this is short and longer")
+
+    help = ARGS.parser.format_help()
+    print(help)

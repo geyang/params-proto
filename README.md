@@ -1,5 +1,6 @@
 # `params-proto`, A Python Decorator That Gives Your Model Parameters Super-power
 
+- 2021/06/16: Proto now supports using environment variables as default.
 - 2021/06/13: 5 month into my postdoc at MIT, add `sweep.save("sweep.jsonl")` to dump
     the sweep into a `jsonl` file for large scale experiments on AWS.
 - 2019/12/09: Just finished my DeepMind Internship. Now `params-proto` contain
