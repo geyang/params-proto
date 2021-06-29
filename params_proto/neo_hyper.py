@@ -281,7 +281,7 @@ class Sweep:
             l = f.readline().strip()
             while l:
                 # need to handle end of line
-                if not l.startswith("#"):
+                if not l.startswith("//"):
                     sweep.append(json.loads(l.strip()))
                 l = f.readline().strip()
 
