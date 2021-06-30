@@ -23,7 +23,6 @@ def test_setter_and_getter_hook(clear_args):
     def setter(Proto, item, value):
         print(Proto, item, value)
 
-    print(vars(G))
     G._add_hooks(setter)
 
     assert G.start_seed == 10
@@ -306,7 +305,6 @@ def test_chaining(clear_args):
             G.start_seed = range(15)
 
     all = [*sweep]
-    print(len(all))
     assert len(all) == 30
 
 
