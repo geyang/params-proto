@@ -127,30 +127,40 @@ class Meta(type):
     __get_hooks = tuple()
 
     # Note: These are the new methods supporting custom setter and getter override.
-    def _add_hook(cls, hook):
+    def _add_hooks(cls, hook, get_hook=None):
         cls.__set_hooks = (*cls.__set_hooks, hook)
+        cls.__get_hooks = (*cls.__get_hooks, get_hook)
 
     def _pop_hooks(cls):
         cls.__set_hooks = cls.__set_hooks[:-1]
+        cls.__get_hooks = cls.__get_hooks[:-1]
 
     def __setattr__(cls, item, value):
-        if item == "_Meta__set_hooks":
+        if item.startswith("_Meta_"):
             return type.__setattr__(cls, item, value)
-        elif cls.__set_hooks:
-            return cls.__set_hooks[-1](cls, item, value)
-        else:
+        try:
+            set_hooks = type.__getattribute__(cls, "_Meta__set_hooks")
+            if callable(set_hooks[-1]):
+                return set_hooks[-1](cls, item, value)
+        except:
             return type.__setattr__(cls, item, value)
 
-    def __getattr__(cls, item):
-        # effectively not used, because the cls.__get_hook is empty.
-        if cls.__get_hooks:
-            return cls.__get_hooks[-1](cls, item)
-        else:
-            return type.__getattribute__(cls, item)
+    # def __getattr__(cls, item):
+    #     # effectively not used, because the cls.__get_hook is empty.
+    #     if cls.__get_hooks:
+    #         return cls.__get_hooks[-1](cls, item)
+    #     else:
+    #         return type.__getattribute__(cls, item)
 
     def __getattribute__(self, item):
-        # todo: Makes more sense to do at compile time.
-        value = type.__getattribute__(self, item)
+        if item.startswith("_Meta_"):
+            return type.__getattribute__(self, item)
+        try:
+            get_hooks = type.__getattribute__(self, "_Meta__get_hooks")
+            value = get_hooks[-1](self, item)
+            assert value is not None
+        except:
+            value = type.__getattribute__(self, item)
         return value.value if isinstance(value, Proto) else value
 
     def _update(cls, __d: dict = None, **kwargs):

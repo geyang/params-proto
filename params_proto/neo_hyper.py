@@ -3,7 +3,7 @@ from collections import namedtuple, defaultdict
 from contextlib import contextmanager
 from typing import TypeVar, ContextManager, Iterable, Union, Dict
 
-from params_proto.neo_proto import Meta, ParamsProto
+from params_proto.neo_proto import Meta, ParamsProto, Proto
 
 
 def dot_join(*keys):
@@ -128,8 +128,20 @@ class Sweep:
     def __enter__(self):
         self.stack.append([])
         for proto in self.root.values():
-            set_hook = lambda _, k, v, p=proto._prefix: self.set_param(k, [v], prefix=p)
-            proto._add_hook(set_hook)
+            data = {}
+
+            def set_hook(_, k, v, p=proto._prefix):
+                # note: we wrap this value in Proto, so that we can distinguish
+                #   between true None vs a None value set by the user.
+                data[k] = Proto(v)
+                return self.set_param(k, [v], prefix=p)
+
+            def get_hook(_, k, p=proto._prefix):
+                # note: This is intern used in the PraramsProto clas, to decide on
+                #   overwride without key string filtering which is prone to errors.
+                return data.get(k, None)
+
+            proto._add_hooks(set_hook, get_hook)
 
         return self
 
@@ -183,7 +195,7 @@ class Sweep:
         try:
             for proto in self.root.values():
                 prefix = proto._prefix
-                proto._add_hook(lambda _, *args, p=prefix: self.set_param(*args, prefix=p))
+                proto._add_hooks(lambda _, *args, p=prefix: self.set_param(*args, prefix=p))
             yield self
         finally:
             for proto in self.root.values():
@@ -200,7 +212,7 @@ class Sweep:
         try:
             for proto in self.root.values():
                 prefix = proto._prefix
-                proto._add_hook(lambda _, *args, p=prefix: self.set_param(*args, prefix=p))
+                proto._add_hooks(lambda _, *args, p=prefix: self.set_param(*args, prefix=p))
             yield self
         finally:
             for proto in self.root.values():
@@ -225,7 +237,7 @@ class Sweep:
         try:
             for proto in self.root.values():
                 prefix = proto._prefix
-                proto._add_hook(lambda _, *args, p=prefix: self.set_param(*args, prefix=p))
+                proto._add_hooks(lambda _, *args, p=prefix: self.set_param(*args, prefix=p))
             yield self
         finally:
             for proto in self.root.values():
