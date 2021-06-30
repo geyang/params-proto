@@ -24,7 +24,7 @@ def test_setter_and_getter_hook(clear_args):
         print(Proto, item, value)
 
     print(vars(G))
-    G._add_hook(setter)
+    G._add_hooks(setter)
 
     assert G.start_seed == 10
     G.start_seed = 20
@@ -64,6 +64,7 @@ def test_multiple_configs_no_prefix(clear_args):
 def test_multiple_configs(clear_args):
     """When using a prefix key, attribute keys that do not exists
     gets written anyways."""
+
     class G(ParamsProto, cli_parse=False, prefix=True):
         a = 5
 
@@ -376,13 +377,47 @@ def test_each(clear_args):
     with Sweep(G).product as sweep:
         G.seed = [10, 20, 30]
 
+    with Sweep(G):
+        G.seed = 110
+
+    @sweep.each
     def each(G):
         G.postfix = f"G.seed-({G.seed})"
-
-    sweep.each(each)
 
     all = list(sweep)
 
     assert all[0]['G.postfix'] == "G.seed-(10)"
     assert all[1]['G.postfix'] == "G.seed-(20)"
     assert all[2]['G.postfix'] == "G.seed-(30)"
+
+
+def test_set_getter(clear_args):
+    """Can get the value immediately after setting under Sweep.set.
+    **Limitations**: currently only work inside the each function,
+    and the set context.
+    """
+
+    class G(PrefixProto):
+        seed = 10
+        postfix = "seed-"
+
+    with Sweep(G).product as sweep:
+        G.seed = [10, 20, 30]
+
+    with Sweep(G):
+        G.seed = 110
+        assert G.seed == 110, "should be able to use the value"
+        assert G.postfix == "seed-", "should be able to get original value"
+
+    @sweep.each
+    def each(G):
+        G.postfix = f"G.seed-({G.seed})"
+        G.some_value = "random-string"
+        assert G.some_value == "random-string", "should be able to get the updated value right away"
+
+    all = list(sweep)
+
+    assert all[0]['G.postfix'] == "G.seed-(10)"
+    assert all[1]['G.postfix'] == "G.seed-(20)"
+    assert all[2]['G.postfix'] == "G.seed-(30)"
+    assert all[0]['G.some_value'] == "random-string"
