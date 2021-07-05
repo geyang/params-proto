@@ -106,6 +106,11 @@ class Sweep:
         return [*iter(self)]
 
     @property
+    def dataframe(self):
+        import pandas as pd
+        return pd.DataFrame(self.list)
+
+    @property
     def __dict__(self):
         if self._d:
             return self._d
@@ -263,7 +268,31 @@ class Sweep:
                 filename,
             )
 
-    def load(self, filename="sweep.jsonl", strict=True, silent=False):
+    @staticmethod
+    def log(deps, filename):
+        """append deps object to a JSONL log file, used as a helper function"""
+        import json
+        with open(filename, 'a+') as f:
+            f.write(json.dumps(deps) + '\n')
+
+    @staticmethod
+    def read(filename, no_exist_ok=True):
+        """Read JSONL log files, used as a helper function"""
+        import json
+        sweep = []
+        try:
+            with open(filename, 'r') as f:
+                line = f.readline().strip()
+                while line:
+                    # need to handle end of line
+                    if not line.startswith("//"):
+                        sweep.append(json.loads(line.strip()))
+                    line = f.readline().strip()
+        except FileNotFoundError:
+            pass
+        return sweep
+
+    def load(self, sweep="sweep.jsonl", strict=True, silent=False):
         """
         Loading sweep state from a jsonl file:
 
@@ -278,27 +307,31 @@ class Sweep:
             there is no way to recover this type of attributes. So the user should try to
             either use PrefixProto, or explicitly define the attributes.
 
-        Usage Pattern:
+        Usage Pattern 1: Loading from a file
 
             sweep = Sweep(Args, RUN).load('sweep.jsonl')
             for i, deps in enumerate(sweep):
                 assert RUN.job_id == i + 1, "the job_id in that sweep.json should be 1-based."
 
+        Usage Pattern 2: Leading from a sweep list object or a pandas DataFrame
+
+            sweep_list = Sweep.read(sweep.jsonl)
+            sweep = Sweep(Args, RUN).load(sweep_list)
+            for i, deps in enumerate(sweep):
+                assert RUN.job_id == i + 1, "the job_id in that sweep.json should be 1-based."
+
         """
-        import json
         import pandas as pd
         from termcolor import colored
-        sweep = []
-        with open(filename, 'r') as f:
-            l = f.readline().strip()
-            while l:
-                # need to handle end of line
-                if not l.startswith("//"):
-                    sweep.append(json.loads(l.strip()))
-                l = f.readline().strip()
 
-        # print(*sweep, sep="\n")
-        df = pd.DataFrame(sweep)
+        if isinstance(sweep, str):
+            sweep = self.read(sweep)
+        if isinstance(sweep, list):
+            df = pd.DataFrame(sweep)
+        elif isinstance(sweep, pd.DataFrame):
+            df = sweep
+        else:
+            raise TypeError(f"{type(sweep)} is not supported")
 
         with self.zip:
             for full_key in df:
