@@ -372,6 +372,8 @@ def test_load(clear_args):
         config_2 = False
 
     sweep = Sweep(P, G).load([{'P.config_1': True}, {'config_2': True}])
+    sweep = Sweep(P, G).load([{'P.config_2': True}], strict=False)
+    sweep = Sweep(P, G).load([{'does_not_exist': True}], strict=False)
 
     with pytest.raises(KeyError):
         sweep = Sweep(P, G).load([{'P.config_2': True}])

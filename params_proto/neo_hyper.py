@@ -340,10 +340,10 @@ class Sweep:
                     proto = self.root[prefix]
                     if not hasattr(proto, keys[0]):
                         if strict:
-                            raise KeyError(f'{proto} does not contain the key "{keys[0]}"')
+                            raise KeyError(f'{proto} does not contain the key "{prefix}.{keys[0]}"')
                         if not silent:
                             print(colored(f'{proto} does not contain the key "', "red") +
-                                  colored(f'{prefix}.{keys[0]}', "green") +
+                                  colored(f'{full_key}', "green") +
                                   colored(f'" ', "red"))
 
                     setattr(proto, '.'.join(keys), df[full_key].values.tolist())
@@ -360,7 +360,7 @@ class Sweep:
                         if not silent:
                             print(
                                 colored(f'The key "', "red") +
-                                colored(f'{keys[0]}', "green") +
+                                colored(f'{full_key}', "green") +
                                 colored(f'" ', "red") +
                                 colored(f'does not appear in any of the Arguments', "red")
                             )
