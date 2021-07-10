@@ -1,9 +1,9 @@
-import itertools
 from collections import namedtuple, defaultdict
 from contextlib import contextmanager
-from typing import TypeVar, ContextManager, Iterable, Union, Dict
 
+import itertools
 from params_proto.neo_proto import Meta, ParamsProto, Proto
+from typing import TypeVar, ContextManager, Iterable, Union, Dict
 
 
 def dot_join(*keys):
@@ -335,23 +335,33 @@ class Sweep:
 
         with self.zip:
             for full_key in df:
-                first, *keys = full_key.split('.')
-                if first in self.root:
-                    setattr(self.root[first], '.'.join(keys), df[full_key].values.tolist())
+                prefix, *keys = full_key.split('.')
+                if prefix in self.root:
+                    proto = self.root[prefix]
+                    if not hasattr(proto, keys[0]):
+                        if strict:
+                            raise KeyError(f'{proto} does not contain the key "{keys[0]}"')
+                        if not silent:
+                            print(colored(f'{proto} does not contain the key "', "red") +
+                                  colored(f'{prefix}.{keys[0]}', "green") +
+                                  colored(f'" ', "red"))
+
+                    setattr(proto, '.'.join(keys), df[full_key].values.tolist())
                 else:
                     for k, proto in self.root.items():
                         if isinstance(k, str):
                             continue
-                        if hasattr(proto, first):
+                        if hasattr(proto, prefix):
                             setattr(proto, full_key, df[full_key].values.tolist())
                             break
                     else:
-                        msg = colored(f'The key "', "red") + \
-                              colored(f'{full_key}', "green") + \
-                              colored(f'" ', "red") + \
-                              colored(f'does not appear in any of the Arguments', "red")
                         if strict:
-                            raise KeyError(msg)
+                            raise KeyError(f'The key "{full_key}" does not appear in any of the Arguments')
                         if not silent:
-                            print(msg)
+                            print(
+                                colored(f'The key "', "red") +
+                                colored(f'{keys[0]}', "green") +
+                                colored(f'" ', "red") +
+                                colored(f'does not appear in any of the Arguments', "red")
+                            )
         return self
