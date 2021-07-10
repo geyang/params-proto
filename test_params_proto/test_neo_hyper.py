@@ -364,6 +364,22 @@ def test_jagged(clear_args):
             assert G.config_2 == 20
 
 
+def test_load(clear_args):
+    class P(PrefixProto):
+        config_1 = False
+
+    class G(ParamsProto):
+        config_2 = False
+
+    sweep = Sweep(P, G).load([{'P.config_1': True}, {'config_2': True}])
+
+    with pytest.raises(KeyError):
+        sweep = Sweep(P, G).load([{'P.config_2': True}])
+
+    with pytest.raises(KeyError):
+        sweep = Sweep(P, G).load([{'does_not_exist': True}])
+
+
 def test_each(clear_args):
     """Can register a function to be ran for each configuration. Useful for
     setting values that dynamically depend on others."""
