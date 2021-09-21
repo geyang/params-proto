@@ -25,5 +25,5 @@ setup(name="params_proto",
           "Programming Language :: Python :: 3"
       ],
       packages=[p for p in find_packages() if "test" not in p],
-      install_requires=["waterbear>=2.6.5", "argparse", "argcomplete", "typing"]
+      install_requires=["waterbear>=2.6.5", "argparse", "argcomplete", "typing", "expandvars"]
       )

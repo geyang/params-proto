@@ -1,3 +1,6 @@
+import os
+
+
 def test_simple_prefix():
     from params_proto.neo_proto import ParamsProto
 
@@ -20,9 +23,11 @@ def test_update_no_prefix():
     class G(ParamsProto, cli=False):
         seed = 10
 
-    d = {"seed": 20}
+    d = {"seed": 20, "non_exist_gets_written": 10, "cascade.not_written": 30}
     G._update(d)
     assert G.seed == 20
+    assert G.non_exist_gets_written == 10
+    assert not hasattr(G, 'cascade')
 
 
 def test_update_with_prefix():
@@ -240,7 +245,19 @@ def test_Proto_default():
     assert r.root_attribute == 30
 
 
-def test_non_overwrite():
+# noinspection PyPep8Naming
+def test_Proto_env():
+    from params_proto.neo_proto import ParamsProto, Proto
+
+    class Root(ParamsProto, cli=False, prefix="."):
+        home = Proto(default='default', env="HOME")
+        home_and_some = Proto(default='default', env="$HOME/and_some")
+
+    assert Root.home == os.environ['HOME']
+    assert Root.home_and_some == os.environ['HOME'] + "/and_some"
+
+
+def test_none_overwrite():
     """The point of this test is to make sure None values also gets written."""
     from params_proto.neo_proto import ParamsProto
 
