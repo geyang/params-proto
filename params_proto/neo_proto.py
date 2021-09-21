@@ -5,6 +5,7 @@ from warnings import warn
 
 from params_proto.utils import dot_to_deps
 from waterbear import Bear
+from expandvars import expandvars
 
 
 class Proto(SimpleNamespace):
@@ -13,7 +14,7 @@ class Proto(SimpleNamespace):
     help = None
     dtype = None
 
-    def __init__(self, default=None, help=None, dtype=None, metavar='\b', env=None, **kwargs):
+    def __init__(self, default=None, help=None, dtype=None, metavar='\b', env=None, nounset=False, **kwargs):
         """
         The proto object. The env attribute allows one to set the environment variable
         from which this proto reads value from.
@@ -24,14 +25,20 @@ class Proto(SimpleNamespace):
         :param metavar:
         :param env: the environment variable for the default value -- in the next version could be set
              automatically from the prefix of the class.
+        :param nonset: default to False, when true raises error for env var that are not set.
         :param kwargs:
         """
         from termcolor import colored
         if default and not dtype:
             dtype = type(default)
         # only apply dtype to ENV, and when dtype is not None.
-        if env and env in os.environ:
-            default = dtype(os.environ[env]) if dtype else os.environ[env]
+        if env:
+            if nounset or env in os.environ:
+                default = os.environ[env]
+            elif "$" in env:
+                default = expandvars(env, nounset=nounset)
+            if dtype:
+                default = dtype(default)
 
         default_str = str([default])[1:-1]
         if len(default_str) > 45:
@@ -177,7 +184,8 @@ class Meta(type):
             for k, v in __d.items():
                 # when the prefix does not exist
                 if not cls._prefix:
-                    setattr(cls, k, v)
+                    if '.' not in k:
+                        setattr(cls, k, v)
                 elif k.startswith(cls._prefix + "."):
                     setattr(cls, k[len(cls._prefix) + 1:], v)
 
