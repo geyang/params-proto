@@ -50,6 +50,7 @@ class Proto(SimpleNamespace):
         if default_str:
             help_str += colored(default_str, 'cyan') + " "
         if help:
+            # todo: handle multi-line help strings. Parse and remove indent.
             if len(help_str + help) > 60:
                 help_str += '\n' + help
             else:
