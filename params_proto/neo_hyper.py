@@ -276,20 +276,16 @@ class Sweep:
             f.write(json.dumps(deps) + '\n')
 
     @staticmethod
-    def read(filename, no_exist_ok=True):
+    def read(filename):
         """Read JSONL log files, used as a helper function"""
         import json
         sweep = []
-        try:
-            with open(filename, 'r') as f:
+        with open(filename, 'r') as f:
+            line = f.readline().strip()
+            while line:  # need to handle end of line
+                if not line.startswith("//"):
+                    sweep.append(json.loads(line.strip()))
                 line = f.readline().strip()
-                while line:
-                    # need to handle end of line
-                    if not line.startswith("//"):
-                        sweep.append(json.loads(line.strip()))
-                    line = f.readline().strip()
-        except FileNotFoundError:
-            pass
         return sweep
 
     def load(self, sweep="sweep.jsonl", strict=True, silent=False):
