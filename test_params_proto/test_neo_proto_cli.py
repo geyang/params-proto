@@ -71,11 +71,39 @@ def test_simple_cli_args(single_config):
     print(help)
 
 
+def test_delayed_cli_parsing(single_config):
+
+    class Root(ParamsProto, cli=False):
+        """
+        Root Configuration Object
+        """
+        env_name = "FetchReach-v1"
+        seed = 123
+
+    class Duplicate(ParamsProto):
+        """
+        The Second Configuration Object
+        """
+        env_name = "FetchReach-v1"
+        seed = 123
+        bool = True
+
+    print(">>>1", vars(Duplicate))
+    help = ARGS.parser.format_help()
+    print(help)
+
+    print(">>>2", Root.env_name)
+    assert Root.env_name == "FetchReach-v1"
+    print(">>>3", Duplicate.env_name)
+    assert Duplicate.env_name == "FetchPickAndPlace-v1"
+
+
+
 def test_multiple_cli_args(prefixed_config):
     # todo: need to clear the ARGS command to isolate the
     #   changes for these tests
 
-    class Root(ParamsProto, parse_args=False):
+    class Root(ParamsProto):
         """
         Root Configuration Object
         """
@@ -96,6 +124,8 @@ def test_multiple_cli_args(prefixed_config):
 
     print(">>>2", Second.env_name)
     assert Second.env_name == "FetchPickAndPlace-v1"
+    print(">>>3", Root.env_name)
+    assert Root.env_name == "FetchReach-v1"
 
     assert Second.bool is False
 
@@ -141,7 +171,8 @@ def test_ENV_params(prefixed_config):
         """
         Root Configuration Object
         """
-        env_name = Proto("FetchReach-v1", env="ENV_NAME", help="this is a very long readme and it goes on and one and on and never stops. The line breaks have a large indent and it is not really clear how the indentation actually works. It almost looks like the paragraph is right aligned.")
+        env_name = Proto("FetchReach-v1", env="ENV_NAME",
+                         help="this is a very long readme and it goes on and one and on and never stops. The line breaks have a large indent and it is not really clear how the indentation actually works. It almost looks like the paragraph is right aligned.")
         seed = Proto(123, help="this is short and longer")
         home = Proto('ge', env="USER", help="this is short and longer")
         some = Proto()
