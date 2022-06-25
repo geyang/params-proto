@@ -267,6 +267,7 @@ def test_none_overwrite():
     A._update({'A.key': None})
     assert A.key is None, "key should not be `None`."
 
+
 # def test_singleton_overwrite():
 #     """
 #     For overrides, we should be able to directly modify the root configuration object.
@@ -279,3 +280,24 @@ def test_none_overwrite():
 #     Root.update(root_attribute=11)
 #     # r = Root(override)
 #     assert Root.root_attribute == 11
+
+def test_deep_nested():
+    """The point of this test is to test nested protos."""
+    from params_proto.neo_proto import PrefixProto
+
+    class A(PrefixProto, cli=False):
+        key = 10
+
+        class B(PrefixProto, cli=False):
+            key = 20
+
+            class C(PrefixProto, cli=False):
+                key = 30
+
+    A._update({'A.key': None, 'A.B.key': 'hey', 'A.B.C.key': 'yo'})
+    # A.B._update({'A.key': None, 'B.key': 'hey', 'A.B.C.key': 'yo'})
+    # A.B.C._update({'A.key': None, 'A.B.key': 'hey', 'C.key': 'yo'})
+
+    assert A.key is None, "key should not be `None`."
+    assert A.B.key is "hey", "key should be `hey`."
+    assert A.B.C.key is "yo", "key should be `yo`."
