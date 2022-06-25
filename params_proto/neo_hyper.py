@@ -288,7 +288,9 @@ class Sweep:
                 line = f.readline().strip()
         return sweep
 
-    def load(self, sweep="sweep.jsonl", strict=True, silent=False):
+    file = None
+
+    def load(self, file="sweep.jsonl", strict=True, silent=False):
         """
         Loading sweep state from a jsonl file:
 
@@ -320,14 +322,16 @@ class Sweep:
         import pandas as pd
         from termcolor import colored
 
-        if isinstance(sweep, str):
-            sweep = self.read(sweep)
-        if isinstance(sweep, list):
-            df = pd.DataFrame(sweep)
-        elif isinstance(sweep, pd.DataFrame):
-            df = sweep
+        self.file = file
+
+        if isinstance(file, str):
+            file = self.read(file)
+        if isinstance(file, list):
+            df = pd.DataFrame(file)
+        elif isinstance(file, pd.DataFrame):
+            df = file
         else:
-            raise TypeError(f"{type(sweep)} is not supported")
+            raise TypeError(f"{type(file)} is not supported")
 
         with self.zip:
             for full_key in df:
