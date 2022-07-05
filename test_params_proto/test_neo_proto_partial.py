@@ -1,6 +1,6 @@
 import pytest
-from params_proto.neo_partial import proto_partial
-from params_proto.neo_proto import Proto, ParamsProto, ARGS
+from params_proto.partial import proto_partial
+from params_proto.proto import Proto, ParamsProto, ARGS
 
 
 @pytest.fixture

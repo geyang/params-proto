@@ -1,6 +1,6 @@
 import pytest
-from params_proto.neo_hyper import Sweep, dot_join
-from params_proto.neo_proto import ParamsProto, ARGS, PrefixProto
+from params_proto.hyper import Sweep, dot_join
+from params_proto import ParamsProto, ARGS, PrefixProto
 
 
 @pytest.fixture
@@ -102,7 +102,7 @@ def test_incrementation(clear_args):
 
     There are a few patterns for accomplishing this.
     """
-    from params_proto.neo_proto import Accumulant
+    from params_proto.proto import Accumulant
 
     class G(ParamsProto):
         seed = None

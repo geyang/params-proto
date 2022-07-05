@@ -1,4 +1,5 @@
 import os
+from functools import partial
 from textwrap import dedent
 from types import SimpleNamespace
 from warnings import warn
@@ -75,8 +76,7 @@ class Flag(Proto):
     def __init__(self, help=None, to_value=True, default=None, dtype=None, **kwargs):
         help = f"-> {str([to_value])[1:-1]}" + (f" {help}" if help else "")
         dtype = dtype or type(to_value) or type(default)
-        super().__init__(default=default, nargs=0, help=help, dtype=dtype, **kwargs)
-        self.to_value = to_value
+        super().__init__(default=default, nargs=0, help=help, dtype=dtype, to_value=to_value, **kwargs)
 
 
 class Accumulant(Proto):
@@ -86,6 +86,24 @@ class Accumulant(Proto):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+
+class StrType(type):
+    thunk = None
+    help = None
+
+    def __matmul__(self, fn_str):
+        return Eval(fn_str)
+
+
+class Eval(Proto, metaclass=StrType):
+    thunk = None
+
+    def __init__(self, default, help=None, **kwargs):
+        super().__init__(default=eval(default), nargs=0, help=help, dtype=eval, **kwargs)
+
+    def __call__(self, *args, **kwargs):
+        return self.thunk(*args, **kwargs)
 
 
 def is_private(k: str) -> bool:
@@ -180,17 +198,24 @@ class Meta(type):
            easy to update the data directly.
         @return:
         """
-        # todo: support nested update.
         if __d:
-            for k, v in __d.items():
-                # when the prefix does not exist
-                if not cls._prefix:
-                    if '.' not in k:
-                        setattr(cls, k, v)
-                elif k.startswith(cls._prefix + "."):
-                    setattr(cls, k[len(cls._prefix) + 1:], v)
+            if not cls._prefix:
+                print('NOT')
+                current_scope = {k: v for k, v in __d.items() if "." not in k}
+            else:
+                prefix = cls._prefix + "."
+                current_scope = {k[len(prefix):]: v for k, v in __d.items() if k.startswith(prefix)}
+
+            for k, v in current_scope.items():
+                if "." in k:
+                    first, rest = k.split('.', 1)
+                    getattr(cls, first)._update(current_scope)
+                else:
+                    setattr(cls, k, v)
 
         for k, v in kwargs.items():
+            if "." in k:
+                raise RuntimeError(f"{k} is not supported via **kwargs in updates.")
             setattr(cls, k, v)
 
     @property  # falls back to the
@@ -288,6 +313,8 @@ class ArgFactory:
     clear = __init__
 
     def add_argument(self, proto, key, *name_or_flags, default=None, dtype=None, to_value=None, **kwargs):
+        if to_value:
+            print("to_value is: >>>", to_value)
         local_args = {}
         parser = self.group or self.parser
         for arg_key in name_or_flags:

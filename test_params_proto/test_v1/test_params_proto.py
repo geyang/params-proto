@@ -1,6 +1,6 @@
-from params_proto import is_hidden, cli_parse, prefix_proto, proto_partial, \
-    Proto, ParamsProto, proto_signature, \
-    BoolFlag
+from params_proto.v1 import params_proto
+from params_proto.v1 import is_hidden, cli_parse, prefix_proto, proto_partial, \
+    Proto, ParamsProto, proto_signature, BoolFlag
 
 
 def test_decorator():
@@ -33,7 +33,6 @@ def test_is_hidden():
 
 
 def test_cli_proto_simple():
-    import params_proto as params_proto
     params_proto.PARSER = None
 
     @cli_parse
@@ -45,7 +44,6 @@ def test_cli_proto_simple():
 
 
 def test_cli_proto():
-    from params_proto import params_proto
     params_proto.parser = None
 
     @cli_parse
@@ -70,7 +68,6 @@ def test_cli_proto():
                        "render": False, "no_dump": True}
     assert G._proto is not None, '_proto should exist'
 
-    from params_proto import params_proto
     params_proto.parser = None
 
     @cli_parse
@@ -95,7 +92,6 @@ def test_cli_proto():
 
 
 def test_proto_to_dict():
-    from params_proto import params_proto
     params_proto.parser = None
 
     @cli_parse
@@ -107,7 +103,6 @@ def test_proto_to_dict():
 
 
 from textwrap import dedent
-from subprocess import check_output
 
 
 def test_from_command_line():
@@ -128,7 +123,6 @@ def test_from_command_line():
 
 
 def test_function_partial():
-    from params_proto import params_proto
     params_proto.parser = None
 
     @prefix_proto
@@ -150,7 +144,6 @@ def test_function_partial():
 
 
 def test_function_partial_with_keyword_only_arguments():
-    import params_proto as params_proto
     params_proto.PARSER = None
 
     @prefix_proto

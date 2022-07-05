@@ -1,5 +1,5 @@
 #!python3
-from params_proto.neo_proto import ParamsProto, Proto
+from params_proto.proto import ParamsProto, Proto
 
 
 def get_indent(text):
@@ -45,7 +45,7 @@ class Config(ParamsProto):
 
 
 if __name__ == "__main__":
-    from params_proto.neo_proto import ARGS
+    from params_proto.proto import ARGS
 
     help_str = ARGS.parser.format_help()
     print(help_str)

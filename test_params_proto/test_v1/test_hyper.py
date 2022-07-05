@@ -1,10 +1,11 @@
 import pytest
-from params_proto.hyper import Sweep, dot_join
-from params_proto.neo_proto import PrefixProto, ARGS
+from params_proto.v1.hyper import Sweep, dot_join
+from params_proto import PrefixProto, ARGS
 
 
 def test_dot_join():
     assert dot_join(None, None) is None
+
 
 @pytest.fixture
 def clear_args():

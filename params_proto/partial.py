@@ -1,7 +1,7 @@
 import inspect
 from functools import partialmethod, wraps
 
-from .neo_proto import ParamsProto
+from .proto import ParamsProto
 
 
 def proto_partial(proto: ParamsProto, method=False):

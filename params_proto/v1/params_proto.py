@@ -299,7 +299,7 @@ def proto_signature(parameter_prototype, need_self=False):
     return decorate
 
 
-from params_proto import neo_proto
+from params_proto import proto
 
 
 def proto_partial(proto, method=False):

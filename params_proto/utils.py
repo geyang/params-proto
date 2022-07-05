@@ -1,3 +1,12 @@
+import re
+
+ANSI_CLEANER = re.compile(r"(\x9B|\x1B\[)[0-?]*[ -/]*[@-~]")
+
+
+def clean_ansi(string: str):
+    return ANSI_CLEANER.sub("", string)
+
+
 def dot_to_deps(dot_dict, *prefixes):
     # Note: regularize for prefixes that contain dots
     for p in prefixes:
