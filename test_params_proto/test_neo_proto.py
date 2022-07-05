@@ -1,9 +1,8 @@
 import os
+from params_proto import ParamsProto, get_children, Proto
 
 
 def test_simple_prefix():
-    from params_proto.neo_proto import ParamsProto
-
     class Root(ParamsProto, cli=False):
         _prefix = "not_root"
 
@@ -18,8 +17,6 @@ def test_simple_prefix():
 
 
 def test_update_no_prefix():
-    from params_proto.neo_proto import ParamsProto
-
     class G(ParamsProto, cli=False):
         seed = 10
 
@@ -31,8 +28,6 @@ def test_update_no_prefix():
 
 
 def test_update_with_prefix():
-    from params_proto.neo_proto import ParamsProto
-
     class G(ParamsProto, cli=False, prefix=True):
         seed = 10
 
@@ -42,8 +37,6 @@ def test_update_with_prefix():
 
 
 def test_update_by_key():
-    from params_proto.neo_proto import ParamsProto
-
     class G(ParamsProto, cli=False):
         seed = 10
 
@@ -52,8 +45,6 @@ def test_update_by_key():
 
 
 def test_update_by_object_directly():
-    from params_proto.neo_proto import ParamsProto
-
     class G(ParamsProto, cli=False, prefix=True):
         seed = 10
 
@@ -78,7 +69,6 @@ def test_namespace():
     have dependencies, you won't be able to dynamically re-compute
     the dependent attributes.
     """
-    from params_proto.neo_proto import ParamsProto
 
     # prefix is for the argparse (not implemented).
     class Root(ParamsProto, cli=False, prefix='root'):
@@ -126,8 +116,6 @@ def test_namespace():
 def test_dependency():
     """ParamsProto should allow levels of dependencies."""
 
-    from params_proto.neo_proto import ParamsProto, get_children
-
     class Root(ParamsProto, cli=False, prefix='root'):
         launch_type = 'borg'
 
@@ -152,7 +140,6 @@ def test_dependency():
 
 def test_prefix():
     """Testing """
-    from params_proto.neo_proto import ParamsProto, get_children
 
     class Root(ParamsProto, cli=False, prefix='root'):
         launch_type = 'borg'
@@ -207,7 +194,6 @@ def test_root_config():
     """
     For overrides, we should be able to directly modify the root configuration object.
     """
-    from params_proto.neo_proto import ParamsProto
 
     class Root(ParamsProto, cli=False, prefix="."):
         root_attribute = 10
@@ -223,8 +209,6 @@ def test_root_config():
 
 # noinspection PyPep8Naming
 def test_Proto_default():
-    from params_proto.neo_proto import ParamsProto, Proto
-
     a = Proto(default=10)
     assert a.default == 10, "default should be correct"
     assert a.value == 10, "value should default to the original value"
@@ -247,8 +231,6 @@ def test_Proto_default():
 
 # noinspection PyPep8Naming
 def test_Proto_env():
-    from params_proto.neo_proto import ParamsProto, Proto
-
     class Root(ParamsProto, cli=False, prefix="."):
         home = Proto(default='default', env="HOME")
         home_and_some = Proto(default='default', env="$HOME/and_some")
@@ -259,7 +241,6 @@ def test_Proto_env():
 
 def test_none_overwrite():
     """The point of this test is to make sure None values also gets written."""
-    from params_proto.neo_proto import ParamsProto
 
     class A(ParamsProto, cli=False, prefix=True):
         key = 10
@@ -283,7 +264,7 @@ def test_none_overwrite():
 
 def test_deep_nested():
     """The point of this test is to test nested protos."""
-    from params_proto.neo_proto import PrefixProto
+    from params_proto.proto import PrefixProto
 
     class A(PrefixProto, cli=False):
         key = 10
@@ -295,8 +276,6 @@ def test_deep_nested():
                 key = 30
 
     A._update({'A.key': None, 'A.B.key': 'hey', 'A.B.C.key': 'yo'})
-    # A.B._update({'A.key': None, 'B.key': 'hey', 'A.B.C.key': 'yo'})
-    # A.B.C._update({'A.key': None, 'A.B.key': 'hey', 'C.key': 'yo'})
 
     assert A.key is None, "key should not be `None`."
     assert A.B.key is "hey", "key should be `hey`."

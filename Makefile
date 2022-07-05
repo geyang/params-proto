@@ -35,5 +35,8 @@ publish: convert-rst
 	make test
 	make wheel
 	twine upload dist/*
+publish-no-test: convert-rst
+	make wheel
+	twine upload dist/*
 test:
 	python -m pytest  --capture=sys

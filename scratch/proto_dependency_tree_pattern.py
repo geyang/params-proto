@@ -1,4 +1,4 @@
-from params_proto.neo_proto import ParamsProto, get_children
+from params_proto.proto import ParamsProto, get_children
 
 
 class Root(ParamsProto, prefix='root'):

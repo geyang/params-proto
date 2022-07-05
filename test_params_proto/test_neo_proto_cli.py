@@ -1,6 +1,6 @@
 import pytest
 import sys
-from params_proto.neo_proto import ParamsProto, Proto, ARGS, Flag
+from params_proto.proto import ParamsProto, Proto, ARGS, Flag
 
 
 @pytest.fixture
@@ -72,7 +72,6 @@ def test_simple_cli_args(single_config):
 
 
 def test_delayed_cli_parsing(single_config):
-
     class Root(ParamsProto, cli=False):
         """
         Root Configuration Object
@@ -96,7 +95,6 @@ def test_delayed_cli_parsing(single_config):
     assert Root.env_name == "FetchReach-v1"
     print(">>>3", Duplicate.env_name)
     assert Duplicate.env_name == "FetchPickAndPlace-v1"
-
 
 
 def test_multiple_cli_args(prefixed_config):
@@ -133,7 +131,6 @@ def test_multiple_cli_args(prefixed_config):
 def test_bool_flags(flag_config):
     # todo: need to clear the ARGS command to isolate the
     #   changes for these tests
-
     class Root(ParamsProto):
         """Root Configuration Object with Flags
 

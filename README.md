@@ -1,5 +1,9 @@
 # `params-proto`, A Python Decorator That Gives Your Model Parameters Super-power
 
+- 2022/07/04: 
+    * Move `neo_proto` to top-level, move older `params_proto` to `v1` namespace.
+    * Implement nested update via [global prefix](https://github.com/geyang/params_proto/blob/master/test_params_proto/test_neo_proto.py#L278). No relative update via `**kwargs`, yet
+    * Fix `to_value` bug in Flag
 - 2021/06/16: Proto now supports using environment variables as default.
 - 2021/06/13: 5 month into my postdoc at MIT, add `sweep.save("sweep.jsonl")` to dump
     the sweep into a `jsonl` file for large scale experiments on AWS.
@@ -33,7 +37,8 @@ Then to declare your hyperparameters, you can write the following in a `your_pro
 
 ```python
 import sys
-from params_proto.neo_proto import ParamsProto, Flag, Proto, PrefixProto
+from params_proto.proto import ParamsProto, Flag, Proto, PrefixProto
+
 
 # this is the first config schema
 class Args(PrefixProto):
@@ -54,6 +59,7 @@ class Args(PrefixProto):
     clip_inputs = Flag()
     normalize_inputs = Flag()
 
+
 # this is the second schema
 class LfGR(PrefixProto):
     # reporting
@@ -69,31 +75,30 @@ Then you an sweep the hyperparameter via the following declarative pattern:
 
 ```python
 from rl import main, Args
-from params_proto.neo_hyper import Sweep
+from params_proto.hyper import Sweep
 
 if __name__ == '__main__':
     from lp_analysis import instr
 
     with Sweep(Args, LfGR) as sweep:
-	    # override the default
+        # override the default
         Args.pi_lr = 3e-3
-        Args.clip_inputs = True # this was a flag
-        
+        Args.clip_inputs = True  # this was a flag
+
         # override the second config object
         LfGR.visualization_interval = 40
 
-	    # product between the zipped and the seed
+        # product between the zipped and the seed
         with sweep.product:
-
-	        # similar to python zip, unpacks a list of values.
+            # similar to python zip, unpacks a list of values.
             with sweep.zip:
                 Args.env_name = ['FetchReach-v1', 'FetchPush-v1', 'FetchPickAndPlace-v1', 'FetchSlide-v1']
                 Args.n_epochs = [4, 12, 12, 20]
                 Args.n_workers = [5, 150, 200, 500]
 
-	        # the seed is sweeped at last
+                # the seed is sweeped at last
             Args.seed = [100, 200, 300, 400, 500, 600]
-    
+
     # You can save the sweep into a `jsonl` file
     sweep.save('sweep.jsonl')
 
