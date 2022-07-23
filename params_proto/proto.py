@@ -313,8 +313,8 @@ class ArgFactory:
     clear = __init__
 
     def add_argument(self, proto, key, *name_or_flags, default=None, dtype=None, to_value=None, **kwargs):
-        if to_value:
-            print("to_value is: >>>", to_value)
+        # if to_value:
+        #     print("to_value is: >>>", to_value)
         local_args = {}
         parser = self.group or self.parser
         for arg_key in name_or_flags:
