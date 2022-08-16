@@ -200,7 +200,6 @@ class Meta(type):
         """
         if __d:
             if not cls._prefix:
-                print('NOT')
                 current_scope = {k: v for k, v in __d.items() if "." not in k}
             else:
                 prefix = cls._prefix + "."
