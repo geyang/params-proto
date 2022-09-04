@@ -59,23 +59,20 @@ def read_deps(*path: str, should_flatten: bool = True) -> dict:
     path = os.path.join(*path)
     dirname = os.path.dirname(path)
 
-    try:
-        with open(path, "r") as f:
-            deps: dict = yaml.load(f, yaml.SafeLoader)
-            print(f"Loaded config file {path}")
-            if should_flatten:
-                deps = flatten(deps)
+    with open(path, "r") as f:
+        deps: dict = yaml.load(f, yaml.SafeLoader)
+        print(f"Loaded config file {path}")
+        if should_flatten:
+            deps = flatten(deps)
 
-            if "_base" in deps:
-                # Load base config template if required
-                base = deps.pop("_base")
-                base_deps = read_deps(dirname, base)
-                deps = {**base_deps, **deps}
-                print(f"Loaded and merged base config template {base}")
+        if "_base" in deps:
+            # Load base config template if required
+            base = deps.pop("_base")
+            base_deps = read_deps(dirname, base)
+            deps = {**base_deps, **deps}
+            print(f"Loaded and merged base config template {base}")
 
-            return deps
-    except FileNotFoundError:
-        raise FileNotFoundError(f"Config file {path} not found")
+        return deps
 
 
 def flatten(nested_dict: dict, parent_key: str = "", sep: str = ".", generic_key: str = "_flatten", ) -> dict:
