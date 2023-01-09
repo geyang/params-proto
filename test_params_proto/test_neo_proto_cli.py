@@ -7,7 +7,7 @@ from params_proto.proto import ParamsProto, Proto, ARGS, Flag
 def single_config():
     old_argv = sys.argv.copy()
     for k, v in {
-        "--env_name": "FetchPickAndPlace-v1",
+        "--env-name": "FetchPickAndPlace-v1",
         "--seed": "100",
     }.items():
         if k not in sys.argv:
@@ -32,7 +32,7 @@ def prefixed_config():
     old_argv = sys.argv.copy()
     for k, v in {
         "--Second.bool": "False",
-        "--Second.env_name": "FetchPickAndPlace-v1",
+        "--Second.env-name": "FetchPickAndPlace-v1",
         "--Second.seed": "100",
     }.items():
         if k not in sys.argv:
@@ -46,7 +46,7 @@ def test_argparse_override(single_config):
     import argparse
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--env_name', type=str, default='FetchReach-v1')
+    parser.add_argument('--env-name', type=str, default='FetchReach-v1')
     parser.add_argument('--seed', type=int, default=123)
     # parser.add_argument("args", nargs="+")
     # help = parser.format_help()

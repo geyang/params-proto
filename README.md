@@ -1,4 +1,4 @@
-# `params-proto`, A Python Decorator That Gives Your Model Parameters Super-power
+# `params-proto`, Modern Hyper Parameter Management for Machine Learning
 
 - 2022/07/04: 
     * Move `neo_proto` to top-level, move older `params_proto` to `v1` namespace.

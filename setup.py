@@ -8,8 +8,7 @@ with open(path.join(path.abspath(path.dirname(__file__)), 'VERSION'), encoding='
     VERSION = f.read()
 
 setup(name="params_proto",
-      description="A command line argument parsing utility using python class-based namespace for better IDE static "
-                  "auto-completion",
+      description= "Modern Hyper Parameter Management for Machine Learning",
       long_description=LONG_DESCRIPTION,
       version=VERSION,
       url="https://github.com/episodeyang/params_proto",
