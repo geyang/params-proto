@@ -269,9 +269,10 @@ class Meta(type):
             if is_private(k):
                 continue
 
-            keys = [f"--{prefix}{k}"]
-            if "_" in keys[-1]:
-                keys.append(f"--{prefix}{k.replace('_', '-')}")
+            # keys = [f"--{prefix}{k}"]
+            # if "_" in keys[-1]:
+            #     keys.append(f"--{prefix}{k.replace('_', '-')}")
+            keys = [f"--{prefix}{k.replace('_', '-')}"]
 
             if isinstance(v, ParamsProto):
                 v._register_args(cls._prefix)
