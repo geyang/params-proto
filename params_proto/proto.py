@@ -42,11 +42,13 @@ class Proto(SimpleNamespace):
             if dtype:
                 default = dtype(default)
 
+        help = cleandoc(help or "")
+
         default_str = str([default])[1:-1]
         if len(default_str) > 45:
             default_str = default_str[:42] + "..."
         default_str = default_str.replace('%', '%%')
-        help_str = colored(f"\t<{'any' if dtype is None else dtype.__name__}> ", "blue")
+        help_str = colored(f"<{'any' if dtype is None else dtype.__name__}>", "blue")
         if env and env in os.environ:
             help_str += colored("$" + env, 'magenta') + '='
         if default_str:
@@ -109,9 +111,9 @@ class Eval(Proto, metaclass=StrType):
 
 def is_private(k: str) -> bool:
     return k.startswith('_prefix') or \
-           k.startswith("_ParamsProto_") or \
-           k.startswith("_Meta_") or \
-           k.startswith("__")
+        k.startswith("_ParamsProto_") or \
+        k.startswith("_Meta_") or \
+        k.startswith("__")
 
 
 def get_children(__init__):
