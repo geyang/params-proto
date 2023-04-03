@@ -48,7 +48,7 @@ class Proto(SimpleNamespace):
         if len(default_str) > 45:
             default_str = default_str[:42] + "..."
         default_str = default_str.replace('%', '%%')
-        help_str = colored(f"<{'any' if dtype is None else dtype.__name__}>", "blue")
+        help_str = colored(f":{'any' if dtype is None else dtype.__name__} ", "blue")
         if env and env in os.environ:
             help_str += colored("$" + env, 'magenta') + '='
         if default_str:
