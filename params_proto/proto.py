@@ -7,6 +7,7 @@ from warnings import warn
 from params_proto.utils import dot_to_deps
 from waterbear import Bear
 from expandvars import expandvars
+from inspect import cleandoc
 
 
 class Proto(SimpleNamespace):
@@ -53,9 +54,9 @@ class Proto(SimpleNamespace):
         if help:
             # todo: handle multi-line help strings. Parse and remove indent.
             if len(help_str + help) > 60:
-                help_str += '\n' + help
+                help_str += '\n' + help.replace('%', '%%')
             else:
-                help_str += help
+                help_str += help.replace('%', '%%')
 
         super().__init__(default=default, help=help_str, dtype=dtype, metavar=metavar, **kwargs)
 
@@ -257,7 +258,7 @@ class Meta(type):
         if cls._prefix:
             prefix = prefix + cls._prefix + "."
 
-        doc_str = dedent(cls.__doc__ or "")
+        doc_str = cleandoc(cls.__doc__ or "")
 
         if prefix:
             ARGS.add_argument_group(prefix, doc_str)
@@ -313,8 +314,6 @@ class ArgFactory:
     clear = __init__
 
     def add_argument(self, proto, key, *name_or_flags, default=None, dtype=None, to_value=None, **kwargs):
-        # if to_value:
-        #     print("to_value is: >>>", to_value)
         local_args = {}
         parser = self.group or self.parser
         for arg_key in name_or_flags:
