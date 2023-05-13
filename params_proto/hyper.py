@@ -49,6 +49,7 @@ class Sweep:
 
     def each(self, fn):
         self.__each_fn = fn
+        return self
 
     # noinspection PyProtectedMember
     def __init__(self, *protos: Meta):
