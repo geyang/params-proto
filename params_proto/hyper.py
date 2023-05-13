@@ -262,11 +262,17 @@ class Sweep:
                 f.write(json.dumps(item) + '\n')
 
         if verbose:
+            import os
+            from urllib import parse
+
             print(
                 c("saved", "blue"),
                 c(len(self.list), "green"),
                 c("items to", "blue"),
                 filename,
+                ".",
+                # this is to show file path in console.
+                "file://"+ parse.quote(os.path.realpath(filename))
             )
 
     @staticmethod
