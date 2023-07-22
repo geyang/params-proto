@@ -107,7 +107,6 @@ if __name__ == "__main__":
 
     set_bunch = {"resources.teacher.replica_hint": 10, }
     _ = dot_to_deps(set_bunch, 'resources')
-    print(_)
     assert _ == {'teacher': {'replica_hint': 10}}, "should contain nested dict"
 
     _ = dot_to_deps({'root.launch_type': 'local'}, "root")
