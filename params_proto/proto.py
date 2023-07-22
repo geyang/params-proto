@@ -1,8 +1,8 @@
 import os
 from collections import ChainMap, defaultdict
 from copy import copy
-from inspect import cleandoc, ismethod
-from types import SimpleNamespace, MethodType
+from inspect import cleandoc
+from types import SimpleNamespace
 from warnings import warn
 
 from expandvars import expandvars
@@ -430,10 +430,10 @@ class ParamsProto(Bear, metaclass=Meta, cli=False):
             #  - resolve property: https://stackoverflow.com/questions/6193556/how-do-python-properties-work
             #  - How to detect if is property:
             #     https://stackoverflow.com/questions/17735520/determine-if-given-class-attribute-is-a-property-or-not-python-object
-            if ismethod(child) or \
-                    isinstance(child, property) or \
-                    isinstance(child, MethodType) or \
-                    isinstance(child, staticmethod):
+            if isinstance(child, property) or isinstance(child, staticmethod):
+                del new_children[k]
+            if callable(child):
+                # note: this only affects ParamsProto instances (args = Args()). It won't affect Singleton Pattern.
                 del new_children[k]
             # bypass hidden methods
             elif k.startswith("_"):
