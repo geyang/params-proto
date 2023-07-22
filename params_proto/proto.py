@@ -287,9 +287,8 @@ class Meta(type):
             keys = [f"--{prefix}{k.replace('_', '-')}"]
 
             # fixme: this is surely wrong
-            if is_subclass(v, test_clss=[ParamsProto]):
-                print(v, "is subclass of ParamsProto. Skip.")
-                # v._register_args(cls._prefix)
+            if is_subclass(v):
+                v._register_args(cls._prefix)
             elif isinstance(v, Proto):
                 ARGS.add_argument(cls, k, *keys, **vars(v))
             else:
@@ -418,7 +417,6 @@ class ParamsProto(Bear, metaclass=Meta, cli=False):
         for k, child in cls_vars.items():
             if is_subclass(child):
                 cfg = child_configs[k]
-                print("child is subclass", child, cfg)
                 new_children[k] = child(_deps=_deps, **cfg)
             elif is_subclass(Bear):
                 new_children[k] = child(**cfg)
