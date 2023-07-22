@@ -404,7 +404,7 @@ class ParamsProto(Bear, metaclass=Meta, cli=False):
         ins = super(ParamsProto, cls).__new__(cls)
         # Note: initialize Bear without passing the children,
         #  because children might contain nested configs.
-        super(ParamsProto, ins).__init__(**cls.__vars__)
+        # super(ParamsProto, ins).__init__(**cls.__vars__)
         return ins
 
     @get_children
