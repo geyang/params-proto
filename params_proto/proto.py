@@ -1,13 +1,14 @@
 import os
-from functools import partial
-from textwrap import dedent
+from collections import ChainMap, defaultdict
+from copy import copy
+from inspect import cleandoc
 from types import SimpleNamespace
 from warnings import warn
 
+from expandvars import expandvars
+
 from params_proto.utils import dot_to_deps
 from waterbear import Bear
-from expandvars import expandvars
-from inspect import cleandoc
 
 
 class Proto(SimpleNamespace):
@@ -133,6 +134,28 @@ def get_children(__init__):
     return deco
 
 
+def get_dict(d, default=None, *, recursive):
+    default = default or {}
+    for k, v in d.items():
+        if is_private(k):
+            continue
+        if isinstance(v, Proto):
+            default[k] = v.value
+        elif not recursive:
+            default[k] = v
+        # elif isinstance(v, ParamsProto) or isinstance(v, PrefixProto):
+        #     default[k] = v.__dict__
+        else:
+            try:
+                if issubclass(v, ParamsProto):
+                    default[k] = v.__dict__
+                else:
+                    default[k] = v
+            except:
+                default[k] = v
+    return default
+
+
 class Meta(type):
     _prefix: str
 
@@ -225,7 +248,8 @@ class Meta(type):
         """this is the original vars, return a dictionary of
         children, without recursively converting descendents
         to a dictionary."""
-        return {k: v for k, v in super().__dict__.items() if not is_private(k)}
+        m = ChainMap(*[c.__vars__ for c in cls.__bases__ if not is_base_class(c)], super().__dict__)
+        return get_dict(m, recursive=False)
 
     @property  # has to be class property on ParamsProto
     def __dict__(cls):
@@ -236,23 +260,8 @@ class Meta(type):
 
             Returns: Nested Dict.
             """
-        _ = {}
-        for k, v in super().__dict__.items():
-            if is_private(k):
-                continue
-            if isinstance(v, ParamsProto):
-                _[k] = vars(v)
-            elif isinstance(v, Proto):
-                _[k] = v.value
-            else:
-                try:
-                    if issubclass(v, ParamsProto):
-                        _[k] = vars(v)
-                    else:
-                        _[k] = v
-                except:
-                    _[k] = v
-        return _
+        m = ChainMap(*[c.__dict__ for c in cls.__bases__ if not is_base_class(c)], super().__dict__)
+        return get_dict(m, recursive=False)
 
     def _register_args(cls, prefix=None):
 
@@ -277,8 +286,10 @@ class Meta(type):
             #     keys.append(f"--{prefix}{k.replace('_', '-')}")
             keys = [f"--{prefix}{k.replace('_', '-')}"]
 
-            if isinstance(v, ParamsProto):
-                v._register_args(cls._prefix)
+            # fixme: this is surely wrong
+            if is_subclass(v, test_clss=[ParamsProto]):
+                print(v, "is subclass of ParamsProto. Skip.")
+                # v._register_args(cls._prefix)
             elif isinstance(v, Proto):
                 ARGS.add_argument(cls, k, *keys, **vars(v))
             else:
@@ -364,6 +375,9 @@ class ArgFactory:
 ARGS = ArgFactory()  # this is the global store
 
 
+# # todo: add a base asbtraction
+# class Mixin(ParamsProto, cli=False):
+
 class ParamsProto(Bear, metaclass=Meta, cli=False):
     _prefix = "ParamsProto"  # b/c cls._prefix only created in subclass.
 
@@ -384,14 +398,32 @@ class ParamsProto(Bear, metaclass=Meta, cli=False):
         return ins
 
     @get_children
-    def __init__(self, _deps=None, **children):
+    def __init__(self, _deps=None, _prefix=None, **children):
         """default init function, called after __new__."""
         # Note: grab the keys from Meta class--this is very clever. - Ge
         # Note: in fact we might not need to Bear class anymore.
         # todo: really want to change this behavior -- make children override by default??
-        _ = self.__class__.__vars__
-        _.update(children)
-        super().__init__(**_)
+        cls_vars = self.__class__.__vars__
+        new_children = copy(cls_vars)
+
+        child_configs = defaultdict(dict)
+        for k, v in children.items():
+            attr, *sub_key = k.split(".")
+            if sub_key:
+                child_configs[attr][".".join(sub_key)] = v
+            else:
+                # write teh child key/values directly to the children.
+                new_children[attr] = v
+
+        for k, child in cls_vars.items():
+            if is_subclass(child):
+                cfg = child_configs[k]
+                print("child is subclass", child, cfg)
+                new_children[k] = child(_deps=_deps, **cfg)
+            elif is_subclass(Bear):
+                new_children[k] = child(**cfg)
+
+        super().__init__(_prefix=_prefix, **new_children)
 
     def __getattribute__(self, item):
         # todo: Makes more sense to do at compile time.
@@ -407,31 +439,44 @@ class ParamsProto(Bear, metaclass=Meta, cli=False):
 
         Returns: Nested Dict.
         """
-        _ = {}
-        for k, v in super().__dict__.items():
-            if is_private(k):
-                continue
-            if isinstance(v, ParamsProto):
-                _[k] = v.__dict__
-            elif isinstance(v, Proto):
-                _[k] = v.value
-            else:
-                try:
-                    if issubclass(v, ParamsProto):
-                        _[k] = vars(v)
-                    else:
-                        _[k] = v
-                except:
-                    _[k] = v
-        return _
+        # note: support just one parent for now.
+        m = ChainMap(*[c.__dict__ for c in self.__class__.__bases__ if not is_base_class(c)], super().__dict__)
+        return get_dict(m, recursive=True)
 
 
 class PrefixProto(ParamsProto, cli=False):
-    """A ParamsProto class with prefix set to True."""
+    """A ParamsProto class with prefix set to True.
+
+    Since we override the __init_subclass__ method, the returned classes instance is
+    still a ParamsProto class. NOT a PrefixProto class.
+    """
     _prefix = "PrefixProto"
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(prefix=True, **kwargs)
+
+
+def is_subclass(cls, *, test_clss=(ParamsProto, PrefixProto)):
+    for tc in test_clss:
+        try:
+            if issubclass(cls, tc):
+                return True
+        except:
+            pass
+
+    return False
+
+
+def is_base_class(cls):
+    """Check if a class is a base class of ParamsProto.
+
+    Args:
+        cls:
+
+    Returns:
+
+    """
+    return cls in [ParamsProto, PrefixProto, Bear]
 
 
 from typing import Union
