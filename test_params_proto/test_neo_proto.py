@@ -345,7 +345,47 @@ def test_dict_attr():
     class Args(ParamsProto):
         dict_attr = {}
 
+        def instance_method(self, ):
+            assert isinstance(self, Args), "self should be an instance of Args"
+
     assert not isinstance(Args.dict_attr, Bear), "should not be Bear"
 
     args = Args()
     assert not isinstance(args.dict_attr, Bear), "should not be Bear"
+
+
+def test_class_property():
+    """dict attr used to return Bear"""
+
+    class Args(ParamsProto):
+        dict_attr = {}
+
+        @property
+        def some_attr(self, ):
+            return "attr value"
+
+    assert Args().some_attr == "attr value"
+    # assert not isinstance(Args.dict_attr, Bear), "should not be Bear"
+    #
+    # args = Args()
+    # assert not isinstance(args.dict_attr, Bear), "should not be Bear"
+
+
+def test_instance_method():
+    """dict attr used to return Bear"""
+    from types import MethodType
+
+    class Args(ParamsProto):
+        def instance_method(self, ):
+            assert isinstance(self, Args), "self should be an instance of Args"
+
+        arrow_fn = lambda self: self
+
+    args = Args()
+    args.instance_method()
+    assert isinstance(args.instance_method, MethodType), "the functions should be bounded"
+
+    new_self = args.arrow_fn()
+    assert isinstance(new_self, Args), "self should be an instance of Args"
+    assert isinstance(args.arrow_fn, MethodType), "the arrow_fn should also be bounded"
+
