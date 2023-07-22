@@ -397,6 +397,9 @@ class ParamsProto(Bear, metaclass=Meta, cli=False):
         else:
             cls._prefix = None
 
+    def __post_init__(self):
+        pass
+
     def __new__(cls, _deps=None, _prefix=None, **children):
         ins = super(ParamsProto, cls).__new__(cls)
         # Note: initialize Bear without passing the children,
@@ -430,6 +433,7 @@ class ParamsProto(Bear, metaclass=Meta, cli=False):
                 new_children[k] = child(**cfg)
 
         super().__init__(_prefix=_prefix, **new_children)
+        self.__post_init__()
 
     def __getattribute__(self, item):
         # todo: Makes more sense to do at compile time.
