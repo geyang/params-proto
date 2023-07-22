@@ -432,7 +432,8 @@ class ParamsProto(Bear, metaclass=Meta, cli=False):
             elif is_subclass(Bear):
                 new_children[k] = child(**cfg)
 
-        super().__init__(_prefix=_prefix, **new_children)
+        # turn __recursive to False to make sure dict children are returned as dict, NOT Bear
+        super().__init__(_prefix=_prefix, __recursive=False, **new_children)
         self.__post_init__()
 
     def __getattribute__(self, item):

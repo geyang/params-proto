@@ -336,3 +336,16 @@ def test_inheritance():
     assert args_3.root_name == "updated", "the root name should also update."
 
     assert Args.parent_name == "parent", "Args.parent_name should be 'root'"
+
+
+def test_dict_attr():
+    """dict attr used to return Bear"""
+    from waterbear import Bear
+
+    class Args(ParamsProto):
+        dict_attr = {}
+
+    assert not isinstance(Args.dict_attr, Bear), "should not be Bear"
+
+    args = Args()
+    assert not isinstance(args.dict_attr, Bear), "should not be Bear"
