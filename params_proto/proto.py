@@ -1,8 +1,8 @@
 import os
 from collections import ChainMap, defaultdict
 from copy import copy
-from inspect import cleandoc
-from types import SimpleNamespace
+from inspect import cleandoc, ismethod
+from types import SimpleNamespace, MethodType
 from warnings import warn
 
 from expandvars import expandvars
@@ -426,7 +426,19 @@ class ParamsProto(Bear, metaclass=Meta, cli=False):
                 new_children[attr] = v
 
         for k, child in cls_vars.items():
-            if is_subclass(child):
+            # note:
+            #  - resolve property: https://stackoverflow.com/questions/6193556/how-do-python-properties-work
+            #  - How to detect if is property:
+            #     https://stackoverflow.com/questions/17735520/determine-if-given-class-attribute-is-a-property-or-not-python-object
+            if ismethod(child) or \
+                    isinstance(child, property) or \
+                    isinstance(child, MethodType) or \
+                    isinstance(child, staticmethod):
+                del new_children[k]
+            # bypass hidden methods
+            elif k.startswith("_"):
+                del new_children[k]
+            elif is_subclass(child):
                 cfg = child_configs[k]
                 new_children[k] = child(_deps=_deps, **cfg)
             elif is_subclass(Bear):
@@ -441,12 +453,10 @@ class ParamsProto(Bear, metaclass=Meta, cli=False):
         value = Bear.__getattribute__(self, item)
         if isinstance(value, Proto):
             return value.value
-        elif isinstance(value, property):
-            # note:
-            #  - resolve property: https://stackoverflow.com/questions/6193556/how-do-python-properties-work
-            #  - How to detect if is property:
-            #     https://stackoverflow.com/questions/17735520/determine-if-given-class-attribute-is-a-property-or-not-python-object
-            return value.__get__(self)
+        # elif ismethod(value):
+        #     return partial(value, self)
+        # elif isinstance(value, property):
+        #     return value.__get__(self)
         return value
 
     @property  # has to be class property on ParamsProto
