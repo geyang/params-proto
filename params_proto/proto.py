@@ -290,19 +290,19 @@ class Meta(type):
             if is_subclass(v):
                 v._register_args(cls._prefix)
             elif isinstance(v, Proto):
-                ARGS.add_argument(cls, k, *keys, **vars(v))
+                ARGS.add_argument(cls, k, *keys, _argument_group=prefix, **vars(v))
             else:
                 try:
                     if issubclass(v, ParamsProto):
                         v._register_args(cls._prefix)
                     else:
                         v = Proto(v)
-                        ARGS.add_argument(cls, k, *keys, **vars(v))
+                        ARGS.add_argument(cls, k, *keys, _argument_group=prefix, **vars(v))
                 except:
                     v = Proto(v)
-                    ARGS.add_argument(cls, k, *keys, **vars(v))
+                    ARGS.add_argument(cls, k, *keys, _argument_group=prefix, **vars(v))
 
-        ARGS.group = None
+        ARGS.last_group = None
 
 
 import argparse
@@ -316,7 +316,8 @@ class ArgFactory:
 
     For this reason we implement this as a funciton, with a stateful
     context."""
-    group = None
+    groups = defaultdict(lambda: None)
+    last_group = None
 
     def __init__(self, ):
         fmt_cls = lambda prog: argparse.RawTextHelpFormatter(prog, indent_increment=4, max_help_position=50)
@@ -325,9 +326,12 @@ class ArgFactory:
 
     clear = __init__
 
-    def add_argument(self, proto, key, *name_or_flags, default=None, dtype=None, to_value=None, **kwargs):
+    def add_argument(self, proto, key, *name_or_flags, _argument_group=None, default=None, dtype=None, to_value=None, **kwargs):
         local_args = {}
-        parser = self.group or self.parser
+        if _argument_group:
+            parser = self.groups[_argument_group]
+        else:
+            parser = self.last_group or self.parser
         for arg_key in name_or_flags:
             if arg_key in self.__args:
                 warn(f"{arg_key} has already been registered. "
@@ -365,7 +369,8 @@ class ArgFactory:
         self.__args.update(local_args)
 
     def add_argument_group(self, name, description):
-        self.group = self.parser.add_argument_group(name, description)
+        self.last_group = self.parser.add_argument_group(name, description)
+        self.groups[name] = self.last_group
 
     def parse_args(self, *args):
         args, unknown = self.parser.parse_known_args()
