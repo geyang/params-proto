@@ -1,7 +1,7 @@
 import os
 from collections import ChainMap, defaultdict
 from copy import copy
-from inspect import cleandoc
+from inspect import cleandoc, isfunction
 from types import SimpleNamespace
 from warnings import warn
 
@@ -432,7 +432,7 @@ class ParamsProto(Bear, metaclass=Meta, cli=False):
             #     https://stackoverflow.com/questions/17735520/determine-if-given-class-attribute-is-a-property-or-not-python-object
             if isinstance(child, property) or isinstance(child, staticmethod):
                 del new_children[k]
-            if callable(child):
+            if isfunction(child):
                 # note: this only affects ParamsProto instances (args = Args()). It won't affect Singleton Pattern.
                 del new_children[k]
             # bypass hidden methods
