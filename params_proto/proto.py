@@ -247,8 +247,11 @@ class Meta(type):
     def __vars__(cls):
         """this is the original vars, return a dictionary of
         children, without recursively converting descendents
-        to a dictionary."""
-        m = ChainMap(*[c.__vars__ for c in cls.__bases__ if not is_base_class(c)], super().__dict__)
+        to a dictionary.
+
+        Not a stardard Python Dunder method. Only used in the __init__ call.
+        """
+        m = ChainMap(*[c.__dict__ for c in cls.__bases__ if not is_base_class(c)], super().__dict__)
         return get_dict(m, recursive=False)
 
     @property  # has to be class property on ParamsProto
