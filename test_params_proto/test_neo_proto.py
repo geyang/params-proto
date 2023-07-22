@@ -296,28 +296,34 @@ def test_deep_nested():
 
 
 def test_inheritance():
+    """
+    The point of this test is to make sure that the inheritance works.
+    """
     from params_proto import PrefixProto, ParamsProto
 
-    class Root(PrefixProto):
-        name: str = "root"
+    class Root(PrefixProto, cli=False):
+        root_name: str = "root"
 
     class Parent(Root, ParamsProto, cli=False):
-        name: str = "root"
-        parent: str = "parent"
+        parent_name: str = "parent"
+
+        def __post_init__(self):
+            print("Parent.__post_init__")
 
     class Args(Parent, PrefixProto):
         seed: int = 100
         text: str = "hello"
 
-        # @property
-        # def __dict__(self):
-        #     return {**Root.__dict__, **super().__dict__}
+        def __post_init__(self):
+            print("Args.__post_init__")
 
-    # args = Args(_deps=dict(seed=200))
-    # args = Args(_deps={"Args.seed": 200})
     args = Args()
-    print(args, type(args))
-    # print(Args.name)
-    # print(vars(Args))
-    # args = Args()
-    # print(vars(args))
+    assert args.root_name == "root"
+    assert args.parent_name == "parent"
+
+    args_2 = Args(_deps={"Args.root_name": "new_root_name"})
+    assert args_2.root_name == "new_root_name", "the root name should be updated"
+
+    Root.root_name = "updated"
+    args_3 = Args()
+    assert args_3.root_name == "updated", "the root name should also update."
