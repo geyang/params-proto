@@ -438,7 +438,15 @@ class ParamsProto(Bear, metaclass=Meta, cli=False):
     def __getattribute__(self, item):
         # todo: Makes more sense to do at compile time.
         value = Bear.__getattribute__(self, item)
-        return value.value if isinstance(value, Proto) else value
+        if isinstance(value, Proto):
+            return value.value
+        elif isinstance(value, property):
+            # note:
+            #  - resolve property: https://stackoverflow.com/questions/6193556/how-do-python-properties-work
+            #  - How to detect if is property:
+            #     https://stackoverflow.com/questions/17735520/determine-if-given-class-attribute-is-a-property-or-not-python-object
+            return value.__get__(self)
+        return value
 
     @property  # has to be class property on ParamsProto
     def __dict__(self):

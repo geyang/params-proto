@@ -299,20 +299,25 @@ def test_inheritance():
     """
     The point of this test is to make sure that the inheritance works.
     """
-    from params_proto import PrefixProto, ParamsProto
+    from params_proto import PrefixProto
 
-    class Root(PrefixProto, cli=False):
+    class Root:
         root_name: str = "root"
 
-    class Parent(Root, ParamsProto, cli=False):
-        parent_name: str = "parent"
+        @property
+        def custom_property(self):
+            return "custom_property works"
 
-        def __post_init__(self):
-            print("Parent.__post_init__")
+    class Parent(Root):
+        parent_name: str = "parent"
 
     class Args(Parent, PrefixProto):
         seed: int = 100
         text: str = "hello"
+
+        @property
+        def args_property(self):
+            return "args_property works"
 
         def __post_init__(self):
             print("Args.__post_init__")
@@ -320,6 +325,8 @@ def test_inheritance():
     args = Args()
     assert args.root_name == "root"
     assert args.parent_name == "parent"
+    assert args.custom_property == "custom_property works"
+    assert args.args_property == 'args_property works'
 
     args_2 = Args(_deps={"Args.root_name": "new_root_name"})
     assert args_2.root_name == "new_root_name", "the root name should be updated"
@@ -327,3 +334,5 @@ def test_inheritance():
     Root.root_name = "updated"
     args_3 = Args()
     assert args_3.root_name == "updated", "the root name should also update."
+
+    assert Args.parent_name == "parent", "Args.parent_name should be 'root'"

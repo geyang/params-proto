@@ -1,4 +1,5 @@
 import pytest
+
 from params_proto.partial import proto_partial
 from params_proto.proto import Proto, ParamsProto, ARGS
 
@@ -61,12 +62,6 @@ def test_function_partial_dynamic_values(clear_args):
         d = Proto(default=None, help="this is working")
         e = True
 
-        @classmethod
-        def __init__(cls, _deps=None):
-            cls._update(_deps)
-            cls.a = 2
-            cls.b = 4
-
     # note: in this case a should not get
     #  the value from G. And E should not
     #  get the value from G either.
@@ -75,7 +70,8 @@ def test_function_partial_dynamic_values(clear_args):
         assert a == 2, "the a entry should be updated value"
         assert b == 4, "the a entry should be updated value."
 
-    G_2()
+    G_2.a = 2
+    G_2.b = 4
     some_func()
 
 
