@@ -342,7 +342,7 @@ def test_dict_attr():
     """dict attr used to return Bear"""
     from waterbear import Bear
 
-    class Args(ParamsProto):
+    class Args(ParamsProto, cli=False):
         dict_attr = {}
 
         def instance_method(self, ):
@@ -357,7 +357,7 @@ def test_dict_attr():
 def test_class_property():
     """dict attr used to return Bear"""
 
-    class Args(ParamsProto):
+    class Args(ParamsProto, cli=False):
         dict_attr = {}
 
         @property
@@ -375,7 +375,7 @@ def test_instance_method():
     """dict attr used to return Bear"""
     from types import MethodType
 
-    class Args(ParamsProto):
+    class Args(ParamsProto, cli=False):
         def instance_method(self, ):
             assert isinstance(self, Args), "self should be an instance of Args"
 
