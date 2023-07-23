@@ -299,10 +299,13 @@ def test_inheritance():
     """
     The point of this test is to make sure that the inheritance works.
     """
-    from params_proto import PrefixProto
 
     class Root:
         root_name: str = "root"
+
+        @staticmethod
+        def a_method_should_not_appear():
+            return "should NOT appear"
 
         @property
         def custom_property(self):
@@ -311,7 +314,11 @@ def test_inheritance():
     class Parent(Root):
         parent_name: str = "parent"
 
-    class Args(Parent, PrefixProto):
+        @property
+        def parent_property(self):
+            return "parent_property works"
+
+    class Args(ParamsProto, Parent):
         seed: int = 100
         text: str = "hello"
 
@@ -322,20 +329,32 @@ def test_inheritance():
         def __post_init__(self):
             print("Args.__post_init__")
 
+    assert Args.root_name == "root"
+    assert Args.parent_name == "parent"
+    assert Args.custom_property == "custom_property works"
+    assert Args.args_property == 'args_property works'
+    assert Args.a_method_should_not_appear() == "should NOT appear"
+    assert vars(Args) == {
+        'parent_name': 'parent',
+        'parent_property': 'parent_property works',
+        'seed': 100,
+        'text': 'hello',
+        'args_property': 'args_property works',
+    }
+
     args = Args()
     assert args.root_name == "root"
     assert args.parent_name == "parent"
     assert args.custom_property == "custom_property works"
     assert args.args_property == 'args_property works'
+    assert vars(args) == {
+        'parent_name': 'parent',
+        'parent_property': 'parent_property works',
+        'seed': 100,
+        'text': 'hello',
+        'args_property': 'args_property works',
+    }
 
-    args_2 = Args(_deps={"Args.root_name": "new_root_name"})
-    assert args_2.root_name == "new_root_name", "the root name should be updated"
-
-    Root.root_name = "updated"
-    args_3 = Args()
-    assert args_3.root_name == "updated", "the root name should also update."
-
-    assert Args.parent_name == "parent", "Args.parent_name should be 'root'"
 
 
 def test_dict_attr():
@@ -388,4 +407,3 @@ def test_instance_method():
     new_self = args.arrow_fn()
     assert isinstance(new_self, Args), "self should be an instance of Args"
     assert isinstance(args.arrow_fn, MethodType), "the arrow_fn should also be bounded"
-

@@ -1,14 +1,14 @@
 import os
 from collections import ChainMap, defaultdict
-from copy import copy
-from inspect import cleandoc, isfunction
-from types import SimpleNamespace
+from inspect import cleandoc, ismethod
+from itertools import chain
+from types import SimpleNamespace, BuiltinFunctionType
 from warnings import warn
 
 from expandvars import expandvars
+from waterbear import Bear
 
 from params_proto.utils import dot_to_deps
-from waterbear import Bear
 
 
 class Proto(SimpleNamespace):
@@ -111,9 +111,18 @@ class Eval(Proto, metaclass=StrType):
 
 
 def is_private(k: str) -> bool:
-    return k.startswith('_prefix') or \
+    """Filter Private Attributes.
+
+    Args:
+        k: <str> the key to be tested.
+
+    Returns True if key equals "_prefix", or starts with "__" or "_<ParentClass>_"
+    """
+    return k == '_prefix' or \
         k.startswith("_ParamsProto_") or \
+        k.startswith("_PrefixProto_") or \
         k.startswith("_Meta_") or \
+        k.startswith("_Bear_") or \
         k.startswith("__")
 
 
@@ -213,7 +222,13 @@ class Meta(type):
             assert value is not None
         except:
             value = type.__getattribute__(self, item)
-        return value.value if isinstance(value, Proto) else value
+
+        # rewrite in multiple lines
+        if isinstance(value, Proto):
+            return value.value
+        elif isinstance(value, property):
+            return value.__get__(self)
+        return value
 
     def _update(cls, __d: dict = None, **kwargs):
         """
@@ -257,14 +272,37 @@ class Meta(type):
     @property  # has to be class property on ParamsProto
     def __dict__(cls):
         """
-            recurrently return dictionary, only when the child has the same type.
-            Only returns dictionary of children (but not grand children) if
-            the child type is not ParamsProto.
+        recurrently return dictionary, only when the child has the same type.
+        Only returns dictionary of children (but not grand children) if
+        the child type is not ParamsProto.
 
-            Returns: Nested Dict.
-            """
-        m = ChainMap(*[c.__dict__ for c in cls.__bases__ if not is_base_class(c)], super().__dict__)
-        return get_dict(m, recursive=False)
+        Returns: Nested Dict.
+        """
+        # note: support just one parent for now.
+        __vars = ChainMap(*[c.__dict__ for c in cls.__class__.__bases__ if not is_base_class(c)], cls.__vars__, super().__dict__)
+
+        d = {}
+        for key in __vars.keys():
+            if is_private(key):
+                continue
+
+            child = getattr(cls, key)
+
+            if ismethod(child):
+                continue
+            if isinstance(child, BuiltinFunctionType):
+                continue
+            elif isinstance(child, property):
+                # note: this is different from the instance method.
+                # note-2: this is redundant if __getattribute__ also evaluates the properties on the class
+                d[key] = child.__get__(cls)
+            # always recursive
+            elif isinstance(child, ParamsProto) or isinstance(child, Bear):
+                d[key] = child.__dict__
+            else:
+                d[key] = child
+
+        return d
 
     def _register_args(cls, prefix=None):
 
@@ -404,7 +442,6 @@ class ParamsProto(Bear, metaclass=Meta, cli=False):
         ins = super(ParamsProto, cls).__new__(cls)
         # Note: initialize Bear without passing the children,
         #  because children might contain nested configs.
-        # super(ParamsProto, ins).__init__(**cls.__vars__)
         return ins
 
     @get_children
@@ -413,39 +450,19 @@ class ParamsProto(Bear, metaclass=Meta, cli=False):
         # Note: grab the keys from Meta class--this is very clever. - Ge
         # Note: in fact we might not need to Bear class anymore.
         # todo: really want to change this behavior -- make children override by default??
-        cls_vars = self.__class__.__vars__
-        new_children = copy(cls_vars)
+        for key, child in self.__class__.__vars__.items():
 
-        child_configs = defaultdict(dict)
-        for k, v in children.items():
-            attr, *sub_key = k.split(".")
-            if sub_key:
-                child_configs[attr][".".join(sub_key)] = v
-            else:
-                # write teh child key/values directly to the children.
-                new_children[attr] = v
+            cfg = children.get(key, {})
 
-        for k, child in cls_vars.items():
-            # note:
-            #  - resolve property: https://stackoverflow.com/questions/6193556/how-do-python-properties-work
-            #  - How to detect if is property:
-            #     https://stackoverflow.com/questions/17735520/determine-if-given-class-attribute-is-a-property-or-not-python-object
-            if isinstance(child, property) or isinstance(child, staticmethod):
-                del new_children[k]
-            if isfunction(child):
-                # note: this only affects ParamsProto instances (args = Args()). It won't affect Singleton Pattern.
-                del new_children[k]
-            # bypass hidden methods
-            elif k.startswith("_"):
-                del new_children[k]
-            elif is_subclass(child):
-                cfg = child_configs[k]
-                new_children[k] = child(_deps=_deps, **cfg)
-            elif is_subclass(Bear):
-                new_children[k] = child(**cfg)
+            if is_subclass(child):
+                children[key] = child(_deps=_deps, **cfg)
 
-        # turn __recursive to False to make sure dict children are returned as dict, NOT Bear
-        super().__init__(_prefix=_prefix, __recursive=False, **new_children)
+            elif is_subclass(child, ancestors=(Bear,)):
+                # constructor should iteratively create children.
+                children[key] = child(**cfg)
+
+        super().__init__(_prefix=_prefix, __recursive=False, **children)
+
         self.__post_init__()
 
     def __getattribute__(self, item):
@@ -469,8 +486,22 @@ class ParamsProto(Bear, metaclass=Meta, cli=False):
         Returns: Nested Dict.
         """
         # note: support just one parent for now.
-        m = ChainMap(*[c.__dict__ for c in self.__class__.__bases__ if not is_base_class(c)], super().__dict__)
-        return get_dict(m, recursive=True)
+        __vars = ChainMap(*[c.__dict__ for c in self.__class__.__bases__ if not is_base_class(c)], self.__class__.__vars__, super().__dict__)
+        d = {}
+        for key in __vars.keys():
+            if is_private(key):
+                continue
+
+            child = getattr(self, key)
+            if ismethod(child):
+                continue
+            # always recursive
+            elif isinstance(child, ParamsProto) or isinstance(child, Bear):
+                d[key] = child.__dict__
+            else:
+                d[key] = child
+
+        return d
 
 
 class PrefixProto(ParamsProto, cli=False):
@@ -485,8 +516,8 @@ class PrefixProto(ParamsProto, cli=False):
         super().__init_subclass__(prefix=True, **kwargs)
 
 
-def is_subclass(cls, *, test_clss=(ParamsProto, PrefixProto)):
-    for tc in test_clss:
+def is_subclass(cls, *, ancestors=(ParamsProto, PrefixProto), extra=tuple()):
+    for tc in chain(ancestors, extra):
         try:
             if issubclass(cls, tc):
                 return True
