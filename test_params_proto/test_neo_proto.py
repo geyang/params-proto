@@ -347,6 +347,15 @@ def test_inheritance():
         'args_property': 'args_property works',
         'custom_property': 'custom_property works',
     }
+    # assert vars(Args) == {
+    #     'root_name': 'root',
+    #     'parent_name': 'parent',
+    #     'parent_property': Args.parent_property,
+    #     'seed': 100,
+    #     'text': 'hello',
+    #     'args_property': Args.args_property,
+    #     'custom_property': Args.custom_property
+    # }
 
     Root.root_name = "new_root"
     assert Args.root_name == "new_root", "should update."
