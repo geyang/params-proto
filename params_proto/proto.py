@@ -257,8 +257,8 @@ class Meta(type):
                 raise RuntimeError(f"{k} is not supported via **kwargs in updates.")
             setattr(cls, k, v)
 
-    @property  # has to be class property on ParamsProto
-    def __dict__(cls):
+    @property  # used in the init of children
+    def __vars__(cls):
         """
         recurrently return dictionary, only when the child has the same type.
         Only returns dictionary of children (but not grand children) if
@@ -291,6 +291,48 @@ class Meta(type):
                 # note-2: this is redundant if __getattribute__ also evaluates the properties on the class
                 # d[key] = child.__get__(cls)
                 d[key] = child
+            # always recursive
+            elif isinstance(child, ParamsProto) or isinstance(child, Bear):
+                d[key] = child.__dict__
+            else:
+                d[key] = child
+
+        return d
+
+    @property  # has to be class property on ParamsProto
+    def __dict__(cls):
+        """
+        recurrently return dictionary, only when the child has the same type.
+        Only returns dictionary of children (but not grand children) if
+        the child type is not ParamsProto.
+
+        Returns: Nested Dict.
+        """
+        # note: support just one parent for now.
+        __vars = ChainMap(*[c.__dict__ for c in find_ancestors(cls)], super().__dict__)
+
+        d = {}
+        for key in __vars.keys():
+            if is_private(key):
+                continue
+
+            child = getattr(cls, key)
+
+            if ismethod(child):
+                continue
+            if isfunction(child):
+                continue
+            if isinstance(child, BuiltinFunctionType):
+                continue
+            elif isinstance(child, staticmethod):
+                # do not add static methods to the dictionary.
+                # d[key] = child.__get__(None, cls)
+                pass
+            elif isinstance(child, property):
+                # note: this is different from the instance method.
+                # note-2: this is redundant if __getattribute__ also evaluates the properties on the class
+                d[key] = child.__get__(cls)
+                # d[key] = child
             # always recursive
             elif isinstance(child, ParamsProto) or isinstance(child, Bear):
                 d[key] = child.__dict__
@@ -445,7 +487,7 @@ class ParamsProto(Bear, metaclass=Meta, cli=False):
         # Note: grab the keys from Meta class--this is very clever. - Ge
         # Note: in fact we might not need to Bear class anymore.
         # todo: really want to change this behavior -- make children override by default??
-        __vars = vars(self.__class__)
+        __vars = self.__class__.__vars__
         __vars.update(**children)
         for key, child in __vars.items():
             if is_private(key):
