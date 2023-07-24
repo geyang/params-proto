@@ -1,9 +1,9 @@
+import itertools
 from collections import namedtuple, defaultdict
 from contextlib import contextmanager
-
-import itertools
-from params_proto.proto import Meta, ParamsProto, Proto
 from typing import TypeVar, ContextManager, Iterable, Union, Dict
+
+from params_proto.proto import Meta, ParamsProto, Proto
 
 
 def dot_join(*keys):
@@ -272,7 +272,7 @@ class Sweep:
                 filename,
                 ".",
                 # this is to show file path in console.
-                "file://"+ parse.quote(os.path.realpath(filename))
+                "file://" + parse.quote(os.path.realpath(filename))
             )
 
     @staticmethod
