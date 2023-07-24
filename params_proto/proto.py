@@ -1,7 +1,9 @@
 import os
 from collections import ChainMap, defaultdict
-from inspect import cleandoc, ismethod
+from copy import copy
+from inspect import cleandoc, ismethod, isfunction
 from itertools import chain
+from pprint import pprint
 from types import SimpleNamespace, BuiltinFunctionType
 from warnings import warn
 
@@ -258,17 +260,6 @@ class Meta(type):
                 raise RuntimeError(f"{k} is not supported via **kwargs in updates.")
             setattr(cls, k, v)
 
-    @property  # falls back to the
-    def __vars__(cls):
-        """this is the original vars, return a dictionary of
-        children, without recursively converting descendents
-        to a dictionary.
-
-        Not a stardard Python Dunder method. Only used in the __init__ call.
-        """
-        m = ChainMap(*[c.__dict__ for c in cls.__bases__ if not is_base_class(c)], super().__dict__)
-        return get_dict(m, recursive=False)
-
     @property  # has to be class property on ParamsProto
     def __dict__(cls):
         """
@@ -279,7 +270,7 @@ class Meta(type):
         Returns: Nested Dict.
         """
         # note: support just one parent for now.
-        __vars = ChainMap(*[c.__dict__ for c in cls.__class__.__bases__ if not is_base_class(c)], cls.__vars__, super().__dict__)
+        __vars = ChainMap(*[c.__dict__ for c in find_ancestors(cls)], super().__dict__)
 
         d = {}
         for key in __vars.keys():
@@ -290,8 +281,14 @@ class Meta(type):
 
             if ismethod(child):
                 continue
+            if isfunction(child):
+                continue
             if isinstance(child, BuiltinFunctionType):
                 continue
+            elif isinstance(child, staticmethod):
+                # do not add static methods to the dictionary.
+                # d[key] = child.__get__(None, cls)
+                pass
             elif isinstance(child, property):
                 # note: this is different from the instance method.
                 # note-2: this is redundant if __getattribute__ also evaluates the properties on the class
@@ -450,19 +447,23 @@ class ParamsProto(Bear, metaclass=Meta, cli=False):
         # Note: grab the keys from Meta class--this is very clever. - Ge
         # Note: in fact we might not need to Bear class anymore.
         # todo: really want to change this behavior -- make children override by default??
-        for key, child in self.__class__.__vars__.items():
+        __vars = vars(self.__class__)
+        __vars.update(**children)
+        # __vars = ChainMap(*[c.__dict__ for c in find_ancestors(self.__class__)], children)
+        for key, child in __vars.items():
+            if is_private(key):
+                continue
 
             cfg = children.get(key, {})
-
             if is_subclass(child):
                 children[key] = child(_deps=_deps, **cfg)
-
             elif is_subclass(child, ancestors=(Bear,)):
                 # constructor should iteratively create children.
                 children[key] = child(**cfg)
+            else:
+                children[key] = child
 
         super().__init__(_prefix=_prefix, __recursive=False, **children)
-
         self.__post_init__()
 
     def __getattribute__(self, item):
@@ -483,25 +484,48 @@ class ParamsProto(Bear, metaclass=Meta, cli=False):
         Only returns dictionary of children (but not grand children) if
         the child type is not ParamsProto.
 
+        Properties should remain dynamic
+
         Returns: Nested Dict.
         """
         # note: support just one parent for now.
-        __vars = ChainMap(*[c.__dict__ for c in self.__class__.__bases__ if not is_base_class(c)], self.__class__.__vars__, super().__dict__)
-        d = {}
-        for key in __vars.keys():
+        print('===============')
+        d = {}  # this is the original vars, return a dictionary of
+        for key, _child in super().__dict__.items():
             if is_private(key):
                 continue
 
             child = getattr(self, key)
-            if ismethod(child):
-                continue
+            # should never exist. Otherwise, Init is wrong.
+            # if ismethod(child) or isinstance(_child, staticmethod):
+            #     continue
             # always recursive
-            elif isinstance(child, ParamsProto) or isinstance(child, Bear):
+            # should never be needed bc init should instantiate these
+            if isinstance(child, ParamsProto) or isinstance(child, Bear):
                 d[key] = child.__dict__
             else:
                 d[key] = child
 
         return d
+
+
+def find_ancestors(cls):
+    """Find all ancestors of a class.
+
+    Args:
+        cls:
+
+    Returns:
+
+    """
+    ancestors = []
+    for c in cls.__bases__:
+        if is_base_class(c, extra=(object,)):
+            continue
+        ancestors.append(c)
+        ancestors.extend(find_ancestors(c))
+
+    return ancestors
 
 
 class PrefixProto(ParamsProto, cli=False):
@@ -527,7 +551,7 @@ def is_subclass(cls, *, ancestors=(ParamsProto, PrefixProto), extra=tuple()):
     return False
 
 
-def is_base_class(cls):
+def is_base_class(cls, extra=tuple()):
     """Check if a class is a base class of ParamsProto.
 
     Args:
@@ -536,7 +560,7 @@ def is_base_class(cls):
     Returns:
 
     """
-    return cls in [ParamsProto, PrefixProto, Bear]
+    return cls in [ParamsProto, PrefixProto, Bear, *extra]
 
 
 from typing import Union

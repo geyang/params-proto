@@ -303,8 +303,11 @@ def test_inheritance():
     class Root:
         root_name: str = "root"
 
+        def a_method_should_not_appear(self):
+            return "should NOT appear"
+
         @staticmethod
-        def a_method_should_not_appear():
+        def a_static_method_should_not_appear():
             return "should NOT appear"
 
         @property
@@ -333,28 +336,36 @@ def test_inheritance():
     assert Args.parent_name == "parent"
     assert Args.custom_property == "custom_property works"
     assert Args.args_property == 'args_property works'
-    assert Args.a_method_should_not_appear() == "should NOT appear"
+    assert Args.a_method_should_not_appear(Args) == "should NOT appear"
+    assert Args.a_static_method_should_not_appear() == "should NOT appear"
     assert vars(Args) == {
+        'root_name': 'root',
         'parent_name': 'parent',
         'parent_property': 'parent_property works',
         'seed': 100,
         'text': 'hello',
         'args_property': 'args_property works',
+        'custom_property': 'custom_property works',
     }
 
+    Root.root_name = "new_root"
+    assert Args.root_name == "new_root", "should update."
+
     args = Args()
-    assert args.root_name == "root"
+    assert vars(args) == {
+        'root_name': 'new_root',
+        'parent_name': 'parent',
+        'parent_property': 'parent_property works',
+        'seed': 100,
+        'text': 'hello',
+        'args_property': 'args_property works',
+        'custom_property': 'custom_property works',
+    }
+    Args.root_name = "second_new_root"
+    assert args.root_name == "new_root"
     assert args.parent_name == "parent"
     assert args.custom_property == "custom_property works"
     assert args.args_property == 'args_property works'
-    assert vars(args) == {
-        'parent_name': 'parent',
-        'parent_property': 'parent_property works',
-        'seed': 100,
-        'text': 'hello',
-        'args_property': 'args_property works',
-    }
-
 
 
 def test_dict_attr():
