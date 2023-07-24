@@ -1,6 +1,6 @@
 import os
 
-from params_proto import ParamsProto, get_children, Proto
+from params_proto import ParamsProto, get_children, Proto, PrefixProto
 
 
 def test_simple_prefix():
@@ -334,8 +334,8 @@ def test_inheritance():
 
     assert Args.root_name == "root"
     assert Args.parent_name == "parent"
-    assert Args.custom_property == "custom_property works"
-    assert Args.args_property == 'args_property works'
+    assert Args.custom_property.__get__(Args) == "custom_property works"
+    assert Args.args_property.__get__(Args) == 'args_property works'
     assert Args.a_method_should_not_appear(Args) == "should NOT appear"
     assert Args.a_static_method_should_not_appear() == "should NOT appear"
     assert vars(Args) == {
@@ -351,9 +351,57 @@ def test_inheritance():
     Root.root_name = "new_root"
     assert Args.root_name == "new_root", "should update."
 
+
+def test_instance_inheritance():
+    """
+    The point of this test is to make sure that the inheritance works.
+    """
+
+    class Root:
+        root_name: str = "root"
+
+        def __post_init__(self):
+            print("\nRoot.__post_init__")
+
+        def a_method_should_not_appear(self):
+            return "should NOT appear"
+
+        @staticmethod
+        def a_static_method_should_not_appear():
+            return "should NOT appear"
+
+        @property
+        def custom_property(self):
+            return "custom_property works"
+
+    class Parent(Root):
+        parent_name: str = "parent"
+
+        def __post_init__(self):
+            super().__post_init__()
+            print("Parent.__post_init__")
+
+        @property
+        def parent_property(self):
+            return "parent_property works"
+
+    class Args(PrefixProto, Parent):
+        seed: int = 100
+        text: str = "hello"
+
+        @property
+        def args_property(self):
+            return "args_property works"
+
+        def __post_init__(self):
+            Parent.__post_init__(self)
+            print("Args.__post_init__")
+
     args = Args()
+    Root.root_name = "new_root"
+
     assert vars(args) == {
-        'root_name': 'new_root',
+        'root_name': 'root',
         'parent_name': 'parent',
         'parent_property': 'parent_property works',
         'seed': 100,
@@ -361,8 +409,7 @@ def test_inheritance():
         'args_property': 'args_property works',
         'custom_property': 'custom_property works',
     }
-    Args.root_name = "second_new_root"
-    assert args.root_name == "new_root"
+    assert args.root_name == "root"
     assert args.parent_name == "parent"
     assert args.custom_property == "custom_property works"
     assert args.args_property == 'args_property works'

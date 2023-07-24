@@ -1,16 +1,13 @@
 import os
 from collections import ChainMap, defaultdict
-from copy import copy
 from inspect import cleandoc, ismethod, isfunction
 from itertools import chain
-from pprint import pprint
 from types import SimpleNamespace, BuiltinFunctionType
 from warnings import warn
 
 from expandvars import expandvars
-from waterbear import Bear
-
 from params_proto.utils import dot_to_deps
+from waterbear import Bear
 
 
 class Proto(SimpleNamespace):
@@ -228,8 +225,8 @@ class Meta(type):
         # rewrite in multiple lines
         if isinstance(value, Proto):
             return value.value
-        elif isinstance(value, property):
-            return value.__get__(self)
+        # elif isinstance(value, property):
+        #     return value.__get__(self)
         return value
 
     def _update(cls, __d: dict = None, **kwargs):
@@ -292,7 +289,8 @@ class Meta(type):
             elif isinstance(child, property):
                 # note: this is different from the instance method.
                 # note-2: this is redundant if __getattribute__ also evaluates the properties on the class
-                d[key] = child.__get__(cls)
+                # d[key] = child.__get__(cls)
+                d[key] = child
             # always recursive
             elif isinstance(child, ParamsProto) or isinstance(child, Bear):
                 d[key] = child.__dict__
@@ -449,7 +447,6 @@ class ParamsProto(Bear, metaclass=Meta, cli=False):
         # todo: really want to change this behavior -- make children override by default??
         __vars = vars(self.__class__)
         __vars.update(**children)
-        # __vars = ChainMap(*[c.__dict__ for c in find_ancestors(self.__class__)], children)
         for key, child in __vars.items():
             if is_private(key):
                 continue
@@ -460,6 +457,8 @@ class ParamsProto(Bear, metaclass=Meta, cli=False):
             elif is_subclass(child, ancestors=(Bear,)):
                 # constructor should iteratively create children.
                 children[key] = child(**cfg)
+            elif isinstance(child, property):
+                continue
             else:
                 children[key] = child
 
@@ -489,8 +488,11 @@ class ParamsProto(Bear, metaclass=Meta, cli=False):
         Returns: Nested Dict.
         """
         # note: support just one parent for now.
+        __vars = vars(self.__class__)
+        __vars.update(**super().__dict__)
+
         d = {}  # this is the original vars, return a dictionary of
-        for key, _child in super().__dict__.items():
+        for key, _child in __vars.items():
             if is_private(key):
                 continue
 
@@ -500,10 +502,10 @@ class ParamsProto(Bear, metaclass=Meta, cli=False):
             #     continue
             # always recursive
             # should never be needed bc init should instantiate these
-            if isinstance(child, ParamsProto) or isinstance(child, Bear):
-                d[key] = child.__dict__
-            else:
-                d[key] = child
+            # if isinstance(child, ParamsProto) or isinstance(child, Bear):
+            #     d[key] = child.__dict__
+            # else:
+            d[key] = child
 
         return d
 
