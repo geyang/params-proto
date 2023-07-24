@@ -267,7 +267,8 @@ class Meta(type):
         Returns: Nested Dict.
         """
         # note: support just one parent for now.
-        __vars = ChainMap(*[c.__dict__ for c in find_ancestors(cls)], super().__dict__)
+        lineage = [*find_ancestors(cls), super()]
+        __vars = ChainMap(*[c.__vars__ if hasattr(c, "__vars__") else c.__dict__ for c in lineage])
 
         d = {}
         for key in __vars.keys():
