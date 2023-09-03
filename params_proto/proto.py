@@ -175,6 +175,8 @@ class Meta(type):
         cls.__get_hooks = cls.__get_hooks[:-1]
 
     def __setattr__(cls, item, value):
+        if item == "_tree":
+            return
         if item.startswith("_Meta_"):
             return type.__setattr__(cls, item, value)
         try:
@@ -183,13 +185,6 @@ class Meta(type):
                 return set_hooks[-1](cls, item, value)
         except:
             return type.__setattr__(cls, item, value)
-
-    # def __getattr__(cls, item):
-    #     # effectively not used, because the cls.__get_hook is empty.
-    #     if cls.__get_hooks:
-    #         return cls.__get_hooks[-1](cls, item)
-    #     else:
-    #         return type.__getattribute__(cls, item)
 
     def __getattribute__(self, item):
         if item.startswith("_Meta_"):
@@ -318,6 +313,14 @@ class Meta(type):
             else:
                 d[key] = child
 
+        return d
+
+    @property
+    def _tree(cls):
+        d = copy(cls.__dict__)
+        for k, v in d.items():
+            if isinstance(v, Meta):
+                d[k] = v._tree
         return d
 
     def _register_args(cls, prefix=None):
@@ -483,9 +486,8 @@ class ParamsProto(Bear, metaclass=Meta, cli=False):
                 # constructor should iteratively create children.
                 children[key] = child(**cfg)
             elif isinstance(child, property):
-                # ordering is important
+                # fixme: ordering is important, and this could fail. Should run at the end.
                 children[key] = child.__get__(self)
-                print(">>> key:", key, children[key])
             else:
                 children[key] = cfg
 
@@ -513,17 +515,14 @@ class ParamsProto(Bear, metaclass=Meta, cli=False):
         """
         # note: support just one parent for now.
         __vars = vars(self.__class__)
-        print(__vars)
         # overwrite with older value, to avoid mutability
         cached = super().__dict__
-        print(cached)
 
         d = {}
         for key, child in cached.items():
             if is_private(key):
                 continue
             if isinstance(child, property):
-                print("replacing", key, "with", [__vars[key]])
                 d[key] = __vars[key]
             else:
                 d[key] = child
