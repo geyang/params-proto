@@ -1,5 +1,6 @@
 import os
 from collections import ChainMap, defaultdict
+from copy import copy
 from inspect import cleandoc, ismethod, isfunction
 from itertools import chain
 from types import SimpleNamespace, BuiltinFunctionType
@@ -117,7 +118,7 @@ def is_private(k: str) -> bool:
 
     Returns True if key equals "_prefix", or starts with "__" or "_<ParentClass>_"
     """
-    return k == '_prefix' or \
+    return k in ['_prefix', '_tree'] or \
         k.startswith("_ParamsProto_") or \
         k.startswith("_PrefixProto_") or \
         k.startswith("_Meta_") or \
@@ -127,7 +128,7 @@ def is_private(k: str) -> bool:
 
 def get_children(__init__):
     """decorator to parse the dependencies into current scope,
-    using the cls.__prefix attribute of the namespace.
+    using the cls._prefix attribute of the namespace.
 
     Allows one to use _prefix to override to original class._prefix
     """
@@ -140,28 +141,6 @@ def get_children(__init__):
         return res
 
     return deco
-
-
-def get_dict(d, default=None, *, recursive):
-    default = default or {}
-    for k, v in d.items():
-        if is_private(k):
-            continue
-        if isinstance(v, Proto):
-            default[k] = v.value
-        elif not recursive:
-            default[k] = v
-        # elif isinstance(v, ParamsProto) or isinstance(v, PrefixProto):
-        #     default[k] = v.__dict__
-        else:
-            try:
-                if issubclass(v, ParamsProto):
-                    default[k] = v.__dict__
-                else:
-                    default[k] = v
-            except:
-                default[k] = v
-    return default
 
 
 class Meta(type):
@@ -333,7 +312,6 @@ class Meta(type):
                 # note: this is different from the instance method.
                 # note-2: this is redundant if __getattribute__ also evaluates the properties on the class
                 d[key] = child.__get__(cls)
-                # d[key] = child
             # always recursive
             elif isinstance(child, ParamsProto) or isinstance(child, Bear):
                 d[key] = child.__dict__
@@ -473,7 +451,7 @@ class ParamsProto(Bear, metaclass=Meta, cli=False):
         else:
             cls._prefix = None
 
-    def __post_init__(self):
+    def __post_init__(self, _deps=None):
         pass
 
     def __new__(cls, _deps=None, _prefix=None, **children):
@@ -489,38 +467,71 @@ class ParamsProto(Bear, metaclass=Meta, cli=False):
         # Note: in fact we might not need to Bear class anymore.
         # todo: really want to change this behavior -- make children override by default??
         __vars = self.__class__.__vars__
-        __vars.update(**children)
         for key, child in __vars.items():
             if is_private(key):
                 continue
 
-            cfg = children.get(key, {})
+            # this means that the new parameters do not
+            if key not in children:
+                cfg = child
+            else:
+                cfg = children[key]
+
             if is_subclass(child):
-                children[key] = child(_deps=_deps, **cfg)
+                children[key] = child(_deps, **cfg)
             elif is_subclass(child, ancestors=(Bear,)):
                 # constructor should iteratively create children.
                 children[key] = child(**cfg)
             elif isinstance(child, property):
-                continue
+                # ordering is important
+                children[key] = child.__get__(self)
+                print(">>> key:", key, children[key])
             else:
-                children[key] = child
+                children[key] = cfg
 
         super().__init__(_prefix=_prefix, __recursive=False, **children)
-        self.__post_init__()
+        try:
+            self.__post_init__(_deps)
+        except TypeError:
+            self.__post_init__()
 
     def __getattribute__(self, item):
         # todo: Makes more sense to do at compile time.
         value = Bear.__getattribute__(self, item)
         if isinstance(value, Proto):
             return value.value
-        # elif ismethod(value):
-        #     return partial(value, self)
-        # elif isinstance(value, property):
-        #     return value.__get__(self)
         return value
 
     @property  # has to be class property on ParamsProto
     def __dict__(self):
+        """
+        NOT Recursive: return dictionary, only when the child has the same type.
+
+        Properties should remain dynamic
+
+        Returns: Dict.
+        """
+        # note: support just one parent for now.
+        __vars = vars(self.__class__)
+        print(__vars)
+        # overwrite with older value, to avoid mutability
+        cached = super().__dict__
+        print(cached)
+
+        d = {}
+        for key, child in cached.items():
+            if is_private(key):
+                continue
+            if isinstance(child, property):
+                print("replacing", key, "with", [__vars[key]])
+                d[key] = __vars[key]
+            else:
+                d[key] = child
+
+        return d
+
+    @property
+    def _tree(self):
         """
         recurrently return dictionary, only when the child has the same type.
         Only returns dictionary of children (but not grand children) if
@@ -531,24 +542,10 @@ class ParamsProto(Bear, metaclass=Meta, cli=False):
         Returns: Nested Dict.
         """
         # note: support just one parent for now.
-        __vars = vars(self.__class__)
-        __vars.update(**super().__dict__)
-
-        d = {}  # this is the original vars, return a dictionary of
-        for key, _child in __vars.items():
-            if is_private(key):
-                continue
-
-            child = getattr(self, key)
-            # should never exist. Otherwise, Init is wrong.
-            # if ismethod(child) or isinstance(_child, staticmethod):
-            #     continue
-            # always recursive
-            # should never be needed bc init should instantiate these
-            # if isinstance(child, ParamsProto) or isinstance(child, Bear):
-            #     d[key] = child.__dict__
-            # else:
-            d[key] = child
+        d = copy(self.__dict__)
+        for key, child in d.items():
+            if isinstance(child, ParamsProto):
+                d[key] = child._tree
 
         return d
 

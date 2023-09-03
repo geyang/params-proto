@@ -144,63 +144,27 @@ def test_dependency():
 def test_prefix():
     """Testing """
 
-    class Root(ParamsProto, cli=False, prefix='root'):
-        launch_type = 'borg'
+    class PPO(ParamsProto, cli=False, prefix="PPO"):
+        num_envs = 10
 
-    class Teacher(ParamsProto, cli=False, prefix="resources.teacher"):
-        cell = None
-        autopilot = False
-
-        @get_children
-        def __init__(self, _deps, **children):
-            super().__init__(_deps, **children)
-            print(children)
-
-            self.replicas_hint = 1 if Root(_deps).launch_type == 'local' else 26
-
-    t = Teacher()
-    print(">>>", t, type(t))
-
-    class Resources(ParamsProto, cli=False, prefix="resources"):
-        class default(ParamsProto, cli=False):
-            replicas_hint = 1
-
-        @get_children
-        def __init__(self, _deps=None, **children):
-            super().__init__(_deps, **children)
-            print(super().__init__)
-            print('======================')
-
-            r = Root(_deps)  # you can use the updated root.
-            print(children)
-            self.item = children.get('teacher', None)
-            self.teacher = Teacher(_deps, )
-            self.bad_teacher = Teacher(_deps, _prefix="resources.bad_teacher")
+        # Right now this is not automatic.
+        class sim(ParamsProto, cli=False, prefix="PPO.sim"):
+            ptype = "physx"
+            decimation = 4
 
     sweep_param = {
-        "root.launch_type": "local",
-        "resources.teacher.replicas_hint": 10,
+        "PPO.num_envs": 5,
+        "PPO.sim.decimation": 2,
     }
 
-    r = Resources(sweep_param)
-    # assert r.teacher._prefix == "resources.teacher"
-    # assert r.bad_teacher._prefix == "resources.bad_teacher"
-    # # this is problematic--default does not exist.
-    # assert set(r.__dict__.keys()) == {"item", "default", "teacher", "bad_teacher"}
+    assert PPO.sim._prefix == "PPO.sim", "the prefix should be correct."
 
-    # The attributes can either be subclasses of ParamsProto, or instances.
-    print(">>>", r.default, type(r.default))
-    assert isinstance(r.default, Resources.default), "the default should be a class object, not an instance"
-    # assert isinstance(r.teacher, ParamsProto), "this is an instance."
-    #
-    # # calling vars always gives you nested dicts (still debating if this is a good thing)
-    # assert vars(r)['teacher'] == {'cell': None, 'autopilot': False, 'replicas_hint': 10}
-    # assert vars(r.bad_teacher) == {'cell': None, 'autopilot': False}
-    #
-    # assert r.teacher.replicas_hint == 10
-    #
-    # assert r.bad_teacher.cell is None
-    # assert r.bad_teacher.autopilot is False
+    cfg = PPO(sweep_param)
+    assert cfg.num_envs == 5
+    assert cfg.sim.decimation == 2
+
+    # now test the nested dictionary fromt he config file
+    assert cfg._tree == {'num_envs': 5, 'sim': {'decimation': 2, 'ptype': 'physx'}}
 
 
 def test_root_config():
