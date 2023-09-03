@@ -166,6 +166,8 @@ def test_prefix():
     # now test the nested dictionary fromt he config file
     assert cfg._tree == {'num_envs': 5, 'sim': {'decimation': 2, 'ptype': 'physx'}}
 
+    assert PPO._tree == {'num_envs': 10, 'sim': {'decimation': 4, 'ptype': 'physx'}}
+
 
 def test_root_config():
     """
