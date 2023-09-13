@@ -291,6 +291,9 @@ def test_inheritance():
         seed: int = 100
         text: str = "hello"
 
+        def self_method(self):
+            return "has self"
+
         @property
         def args_property(self):
             return "args_property works"
@@ -326,6 +329,10 @@ def test_inheritance():
 
     Root.root_name = "new_root"
     assert Args.root_name == "new_root", "should update."
+
+    args = Args()
+    args.a_method_should_not_appear() == "should NOT appear", "should be able to call the method."
+    args.self_method() == "has self", "the method should have access to self."
 
 
 def test_instance_inheritance():
