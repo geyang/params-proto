@@ -104,14 +104,14 @@ def test_delayed_cli_parsing(single_config):
 
 def test_dual_cli_parsing(single_config):
     from params_proto import PrefixProto
-    class Root(ParamsProto):
+    class Root(ParamsProto, cli_parse=False):
         """
         Root Configuration Object
         """
         env_name = "FetchReach-v1"
         seed = 123
 
-    class Duplicate(PrefixProto):
+    class Duplicate(PrefixProto, cli_parse=False):
         """
         The Second Configuration Object
         """
@@ -119,6 +119,8 @@ def test_dual_cli_parsing(single_config):
         seed = 123
         bool = True
 
+    # only the last one should call cli_parse=True (the default)
+    # also, you can call ARGS.parse() as well imperatively.
     class Third(PrefixProto):
         """
         The Third Configuration Object
