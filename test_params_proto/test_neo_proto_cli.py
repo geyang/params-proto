@@ -119,13 +119,22 @@ def test_dual_cli_parsing(single_config):
         seed = 123
         bool = True
 
+    class Third(PrefixProto):
+        """
+        The Third Configuration Object
+        """
+        env_name = "FetchReach-v1"
+        seed = 123
+        bool = True
+
     print("")
     print(">>>1", vars(Duplicate))
     help = ARGS.parser.format_help()
     assert help.replace(" \x08", "").strip() == dedent("""
     usage: _jb_pytest_runner.py [-h] [--env-name] [--seed]
                                 [--Duplicate.env-name] [--Duplicate.seed]
-                                [--Duplicate.bool]
+                                [--Duplicate.bool] [--Third.env-name]
+                                [--Third.seed] [--Third.bool]
 
     Root Configuration Object
 
@@ -140,13 +149,19 @@ def test_dual_cli_parsing(single_config):
         --Duplicate.env-name  :str 'FetchReach-v1' 
         --Duplicate.seed      :int 123 
         --Duplicate.bool      :bool True 
+        
+    Third.:
+        The Third Configuration Object
+
+        --Third.env-name      :str 'FetchReach-v1' 
+        --Third.seed          :int 123 
+        --Third.bool          :bool True 
     """).strip()
 
     print(">>>3", Root.env_name)
     assert Root.env_name == "FetchPickAndPlace-v1"
     print(">>>2", Duplicate.env_name)
     assert Duplicate.env_name == "FetchReach-v1"
-
 
 
 def test_multiple_cli_args(prefixed_config):
