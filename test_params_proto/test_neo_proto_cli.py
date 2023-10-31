@@ -1,3 +1,5 @@
+from textwrap import dedent
+
 import pytest
 import sys
 from params_proto.proto import ParamsProto, Proto, ARGS, Flag
@@ -48,6 +50,7 @@ def test_argparse_override(single_config):
 
     parser.add_argument('--env-name', type=str, default='FetchReach-v1')
     parser.add_argument('--seed', type=int, default=123)
+    # todo: add parser override.
     # parser.add_argument("args", nargs="+")
     # help = parser.format_help()
     # print(help)
@@ -68,6 +71,7 @@ def test_simple_cli_args(single_config):
 
     assert Root._prefix is None
     help = ARGS.parser.format_help()
+    print("")
     print(help)
 
 
@@ -87,6 +91,7 @@ def test_delayed_cli_parsing(single_config):
         seed = 123
         bool = True
 
+    print("")
     print(">>>1", vars(Duplicate))
     help = ARGS.parser.format_help()
     print(help)
@@ -95,6 +100,53 @@ def test_delayed_cli_parsing(single_config):
     assert Root.env_name == "FetchReach-v1"
     print(">>>3", Duplicate.env_name)
     assert Duplicate.env_name == "FetchPickAndPlace-v1"
+
+
+def test_dual_cli_parsing(single_config):
+    from params_proto import PrefixProto
+    class Root(ParamsProto):
+        """
+        Root Configuration Object
+        """
+        env_name = "FetchReach-v1"
+        seed = 123
+
+    class Duplicate(PrefixProto):
+        """
+        The Second Configuration Object
+        """
+        env_name = "FetchReach-v1"
+        seed = 123
+        bool = True
+
+    print("")
+    print(">>>1", vars(Duplicate))
+    help = ARGS.parser.format_help()
+    assert help.replace(" \x08", "").strip() == dedent("""
+    usage: _jb_pytest_runner.py [-h] [--env-name] [--seed]
+                                [--Duplicate.env-name] [--Duplicate.seed]
+                                [--Duplicate.bool]
+
+    Root Configuration Object
+
+    optional arguments:
+        -h, --help              show this help message and exit
+        --env-name            :str 'FetchReach-v1' 
+        --seed                :int 123 
+
+    Duplicate.:
+        The Second Configuration Object
+
+        --Duplicate.env-name  :str 'FetchReach-v1' 
+        --Duplicate.seed      :int 123 
+        --Duplicate.bool      :bool True 
+    """).strip()
+
+    print(">>>3", Root.env_name)
+    assert Root.env_name == "FetchPickAndPlace-v1"
+    print(">>>2", Duplicate.env_name)
+    assert Duplicate.env_name == "FetchReach-v1"
+
 
 
 def test_multiple_cli_args(prefixed_config):

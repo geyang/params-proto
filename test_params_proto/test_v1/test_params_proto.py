@@ -112,8 +112,9 @@ def test_from_command_line():
     class G:
         some_arg = Proto(0, aliases=['-s'])
 
-    assert G.__parser.format_help() == dedent(""" 
-        usage: __main__.py [-h] [--some-arg SOME_ARG]
+    print(G.__parser.format_help())
+    assert G.__parser.format_help() == dedent(f""" 
+        usage: _jb_pytest_runner.py [-h] [--some-arg SOME_ARG]
         
         optional arguments:
           -h, --help            show this help message and exit
