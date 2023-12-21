@@ -31,6 +31,7 @@ setup(
         "argcomplete",
         "typing",
         "expandvars",
-        "termcolor"
+        "termcolor",
+        "textwrap"
     ]
 )
