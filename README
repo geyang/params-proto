@@ -144,7 +144,7 @@ and it should print out a list of dictionaries that looks like:
 ## Where Can I find Documentation?
 
 Look at the specification file at
-`https://github.com/episodeyang/params_proto/blob/master/test_params_proto/*.py <test_params_proto>`__ , which is part of the
+`https://github.com/episodeyang/params_proto/blob/master/test_params_proto/\*.py <test_params_proto>`__ , which is part of the
 integrated test. These scripts contains the most comprehensive set of
 usage patters!!
 

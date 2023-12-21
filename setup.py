@@ -32,6 +32,5 @@ setup(
         "typing",
         "expandvars",
         "termcolor",
-        "textwrap"
     ]
 )
