@@ -14,7 +14,7 @@ setup(
     version=VERSION,
     url="https://github.com/episodeyang/params_proto",
     author="Ge Yang",
-    author_email="yangge1987@gmail.com",
+    author_email="ge.ike.yang@gmail.com",
     license=None,
     keywords=["params_proto", "decorator", "argparse",
               "argcomplete", "auto-completion", "autocomplete",
@@ -31,5 +31,6 @@ setup(
         "argcomplete",
         "typing",
         "expandvars",
+        "termcolor"
     ]
 )
