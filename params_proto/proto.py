@@ -1,5 +1,6 @@
 import os
 from collections import ChainMap, defaultdict
+from contextlib import suppress
 from copy import copy
 from inspect import cleandoc, ismethod, isfunction
 from itertools import chain
@@ -17,7 +18,16 @@ class Proto(SimpleNamespace):
     help = None
     dtype = None
 
-    def __init__(self, default=None, help=None, dtype=None, metavar='\b', env=None, nounset=False, **kwargs):
+    def __init__(
+        self,
+        default=None,
+        help=None,
+        dtype=None,
+        metavar="\b",
+        env=None,
+        nounset=False,
+        **kwargs,
+    ):
         """
         The proto object. The env attribute allows one to set the environment variable
         from which this proto reads value from.
@@ -32,6 +42,7 @@ class Proto(SimpleNamespace):
         :param kwargs:
         """
         from termcolor import colored
+
         if default and not dtype:
             dtype = type(default)
         # only apply dtype to ENV, and when dtype is not None.
@@ -48,20 +59,22 @@ class Proto(SimpleNamespace):
         default_str = str([default])[1:-1]
         if len(default_str) > 45:
             default_str = default_str[:42] + "..."
-        default_str = default_str.replace('%', '%%')
+        default_str = default_str.replace("%", "%%")
         help_str = colored(f":{'any' if dtype is None else dtype.__name__} ", "blue")
         if env and env in os.environ:
-            help_str += colored("$" + env, 'magenta') + '='
+            help_str += colored("$" + env, "magenta") + "="
         if default_str:
-            help_str += colored(default_str, 'cyan') + " "
+            help_str += colored(default_str, "cyan") + " "
         if help:
             # todo: handle multi-line help strings. Parse and remove indent.
             if len(help_str + help) > 60:
-                help_str += '\n' + help.replace('%', '%%')
+                help_str += "\n" + help.replace("%", "%%")
             else:
-                help_str += help.replace('%', '%%')
+                help_str += help.replace("%", "%%")
 
-        super().__init__(default=default, help=help_str, dtype=dtype, metavar=metavar, **kwargs)
+        super().__init__(
+            default=default, help=help_str, dtype=dtype, metavar=metavar, **kwargs
+        )
 
     @property
     def value(self):
@@ -80,7 +93,14 @@ class Flag(Proto):
     def __init__(self, help=None, to_value=True, default=None, dtype=None, **kwargs):
         help = f"-> {str([to_value])[1:-1]}" + (f" {help}" if help else "")
         dtype = dtype or type(to_value) or type(default)
-        super().__init__(default=default, nargs=0, help=help, dtype=dtype, to_value=to_value, **kwargs)
+        super().__init__(
+            default=default,
+            nargs=0,
+            help=help,
+            dtype=dtype,
+            to_value=to_value,
+            **kwargs,
+        )
 
 
 class Accumulant(Proto):
@@ -104,7 +124,9 @@ class Eval(Proto, metaclass=StrType):
     thunk = None
 
     def __init__(self, default, help=None, **kwargs):
-        super().__init__(default=eval(default), nargs=0, help=help, dtype=eval, **kwargs)
+        super().__init__(
+            default=eval(default), nargs=0, help=help, dtype=eval, **kwargs
+        )
 
     def __call__(self, *args, **kwargs):
         return self.thunk(*args, **kwargs)
@@ -118,12 +140,14 @@ def is_private(k: str) -> bool:
 
     Returns True if key equals "_prefix", or starts with "__" or "_<ParentClass>_"
     """
-    return k in ['_prefix', '_tree'] or \
-        k.startswith("_ParamsProto_") or \
-        k.startswith("_PrefixProto_") or \
-        k.startswith("_Meta_") or \
-        k.startswith("_Bear_") or \
-        k.startswith("__")
+    return (
+        k in ["_prefix", "_tree"]
+        or k.startswith("_ParamsProto_")
+        or k.startswith("_PrefixProto_")
+        or k.startswith("_Meta_")
+        or k.startswith("_Bear_")
+        or k.startswith("__")
+    )
 
 
 def get_children(__init__):
@@ -148,7 +172,7 @@ class Meta(type):
 
     def __init__(cls, name, bases, namespace, cli=True, cli_parse=True, **kwargs):
         for k, v in namespace.items():
-            if not k.startswith('__'):
+            if not k.startswith("__"):
                 setattr(cls, k, v)
 
         # note: This allows as to initialize ParamsProto on the class itself.
@@ -217,11 +241,13 @@ class Meta(type):
                 current_scope = {k: v for k, v in __d.items() if "." not in k}
             else:
                 prefix = cls._prefix + "."
-                current_scope = {k[len(prefix):]: v for k, v in __d.items() if k.startswith(prefix)}
+                current_scope = {
+                    k[len(prefix) :]: v for k, v in __d.items() if k.startswith(prefix)
+                }
 
             for k, v in current_scope.items():
                 if "." in k:
-                    first, rest = k.split('.', 1)
+                    first, rest = k.split(".", 1)
                     getattr(cls, first)._update(current_scope)
                 else:
                     setattr(cls, k, v)
@@ -242,7 +268,9 @@ class Meta(type):
         """
         # note: support just one parent for now.
         lineage = [*find_ancestors(cls), super()]
-        __vars = ChainMap(*[c.__vars__ if hasattr(c, "__vars__") else c.__dict__ for c in lineage])
+        __vars = ChainMap(
+            *[c.__vars__ if hasattr(c, "__vars__") else c.__dict__ for c in lineage]
+        )
 
         d = {}
         for key in __vars.keys():
@@ -324,7 +352,6 @@ class Meta(type):
         return d
 
     def _register_args(cls, prefix=None):
-
         prefix = "" if not prefix else f"{prefix}."
         if cls._prefix:
             prefix = prefix + cls._prefix + "."
@@ -357,7 +384,9 @@ class Meta(type):
                         v._register_args(cls._prefix)
                     else:
                         v = Proto(v)
-                        ARGS.add_argument(cls, k, *keys, _argument_group=prefix, **vars(v))
+                        ARGS.add_argument(
+                            cls, k, *keys, _argument_group=prefix, **vars(v)
+                        )
                 except:
                     v = Proto(v)
                     ARGS.add_argument(cls, k, *keys, _argument_group=prefix, **vars(v))
@@ -376,17 +405,32 @@ class ArgFactory:
 
     For this reason we implement this as a funciton, with a stateful
     context."""
+
     groups = defaultdict(lambda: None)
     last_group = None
 
-    def __init__(self, ):
-        fmt_cls = lambda prog: argparse.RawTextHelpFormatter(prog, indent_increment=4, max_help_position=50)
+    def __init__(
+        self,
+    ):
+        fmt_cls = lambda prog: argparse.RawTextHelpFormatter(
+            prog, indent_increment=4, max_help_position=50
+        )
         self.parser = argparse.ArgumentParser(formatter_class=fmt_cls)
         self.__args = {}
 
     clear = __init__
 
-    def add_argument(self, proto, key, *name_or_flags, _argument_group=None, default=None, dtype=None, to_value=None, **kwargs):
+    def add_argument(
+        self,
+        proto,
+        key,
+        *name_or_flags,
+        _argument_group=None,
+        default=None,
+        dtype=None,
+        to_value=None,
+        **kwargs,
+    ):
         local_args = {}
         if _argument_group:
             parser = self.groups[_argument_group]
@@ -394,21 +438,23 @@ class ArgFactory:
             parser = self.last_group or self.parser
         for arg_key in name_or_flags:
             if arg_key in self.__args:
-                warn(f"{arg_key} has already been registered. "
-                     f"This could be okay if intentional. Previous "
-                     f"value is {self.__args[arg_key]}. New value is "
-                     f"{kwargs}.")
+                warn(
+                    f"{arg_key} has already been registered. "
+                    f"This could be okay if intentional. Previous "
+                    f"value is {self.__args[arg_key]}. New value is "
+                    f"{kwargs}."
+                )
                 local_args[arg_key] = kwargs
 
         class BoolAction(argparse.Action):
-            """parses 'true' to True, 'false' to False etc. """
+            """parses 'true' to True, 'false' to False etc."""
 
             def __call__(self, parser, namespace, values, option_string):
-                if values in ['false', 'False']:
+                if values in ["false", "False"]:
                     values = False
-                elif values in ['true', 'True']:
+                elif values in ["true", "True"]:
                     values = True
-                elif values in ['none', 'null', 'None']:
+                elif values in ["none", "null", "None"]:
                     values = None
                 try:
                     getattr(proto, key).value = to_value or values
@@ -423,9 +469,23 @@ class ArgFactory:
                     setattr(proto, key, to_value or values)
 
         if dtype == bool:
-            parser.add_argument(*name_or_flags, default=default, type=str, dest=key, action=BoolAction, **kwargs)
+            parser.add_argument(
+                *name_or_flags,
+                default=default,
+                type=str,
+                dest=key,
+                action=BoolAction,
+                **kwargs,
+            )
         else:
-            parser.add_argument(*name_or_flags, default=default, type=dtype, dest=key, action=ArgAction, **kwargs)
+            parser.add_argument(
+                *name_or_flags,
+                default=default,
+                type=dtype,
+                dest=key,
+                action=ArgAction,
+                **kwargs,
+            )
         self.__args.update(local_args)
 
     def add_argument_group(self, name, description):
@@ -441,6 +501,7 @@ ARGS = ArgFactory()  # this is the global store
 
 # # todo: add a base asbtraction
 # class Mixin(ParamsProto, cli=False):
+
 
 class ParamsProto(Bear, metaclass=Meta, cli=False):
     _prefix = "ParamsProto"  # b/c cls._prefix only created in subclass.
@@ -492,9 +553,12 @@ class ParamsProto(Bear, metaclass=Meta, cli=False):
                 children[key] = cfg
 
         super().__init__(_prefix=_prefix, __recursive=False, **children)
-        try:
+
+        prestine = True
+        with suppress(TypeError):
             self.__post_init__(_deps)
-        except TypeError:
+            prestine = False
+        if prestine:
             self.__post_init__()
 
     def __getattribute__(self, item):
@@ -574,6 +638,7 @@ class PrefixProto(ParamsProto, cli=False):
     Since we override the __init_subclass__ method, the returned classes instance is
     still a ParamsProto class. NOT a PrefixProto class.
     """
+
     _prefix = "PrefixProto"
 
     def __init_subclass__(cls, **kwargs):
@@ -609,18 +674,18 @@ from typing import Union
 def update(Config: Union[type, Meta, ParamsProto], override):
     """Update a ParamsProto namespace, or instance
 
-      by the override dictionary. Note the dictionary
-          is dot.separated
+    by the override dictionary. Note the dictionary
+        is dot.separated
 
-      dot-keys are not yet implemented.
+    dot-keys are not yet implemented.
 
-      Args:
-          Config:
-          override:
+    Args:
+        Config:
+        override:
 
-      Returns:
+    Returns:
 
-      """
+    """
     for k, v in override.items():
         if k.startswith(Config._prefix + "."):
-            setattr(Config, k[len(Config._prefix) + 1:], v)
+            setattr(Config, k[len(Config._prefix) + 1 :], v)
