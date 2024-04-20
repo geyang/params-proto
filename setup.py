@@ -4,6 +4,7 @@ from setuptools import setup, find_packages
 
 with open(path.join(path.abspath(path.dirname(__file__)), 'README'), encoding='utf-8') as f:
     LONG_DESCRIPTION = f.read()
+
 with open(path.join(path.abspath(path.dirname(__file__)), 'VERSION'), encoding='utf-8') as f:
     VERSION = f.read()
 
