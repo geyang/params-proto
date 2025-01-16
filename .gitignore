@@ -1,5 +1,6 @@
+.DS_Store
+
 .pytest_cache
-**/.DS_Store
 
 # Created by .ignore support plugin (hsz.mobi)
 ### JetBrains template
@@ -8,21 +9,6 @@
 
 # pytest output directories
 test-logs
-
-# User-specific stuff:
-.idea
-.idea/**/workspace.xml
-.idea/**/tasks.xml
-.idea/dictionaries
-
-# Sensitive or high-churn files:
-.idea/**/dataSources/
-.idea/**/dataSources.ids
-.idea/**/dataSources.xml
-.idea/**/dataSources.local.xml
-.idea/**/sqlDataSources.xml
-.idea/**/dynamic.xml
-.idea/**/uiDesigner.xml
 
 # Gradle:
 .idea/**/gradle.xml
