@@ -17,9 +17,11 @@ setup(
     author="Ge Yang",
     author_email="ge.ike.yang@gmail.com",
     license=None,
-    keywords=["params_proto", "decorator", "argparse",
+    keywords=[
+        "params_proto", "decorator", "argparse",
               "argcomplete", "auto-completion", "autocomplete",
-              "shell arguments", "argument parser"],
+              "shell arguments", "argument parser",
+    ],
     classifiers=[
         "Development Status :: 4 - Beta",
         "Intended Audience :: Science/Research",
@@ -30,7 +32,6 @@ setup(
         "waterbear>=2.6.8",
         "argparse",
         "argcomplete",
-        "typing",
         "expandvars",
         "termcolor",
     ]

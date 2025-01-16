@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="RuffConfigService">
+    <option name="globalRuffExecutablePath" value="/opt/homebrew/bin/ruff" />
+    <option name="globalRuffLspExecutablePath" value="/opt/homebrew/bin/ruff-lsp" />
+    <option name="ruffConfigPath" value="$PROJECT_DIR$/ruff.toml" />
+    <option name="useRuffServer" value="true" />
+  </component>
+</project>
