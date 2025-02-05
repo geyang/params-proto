@@ -8,8 +8,10 @@ from types import SimpleNamespace, BuiltinFunctionType
 from warnings import warn
 
 from expandvars import expandvars
-from params_proto.utils import dot_to_deps
 from waterbear import Bear
+
+from params_proto.parse_env_template import all_available
+from params_proto.utils import dot_to_deps
 
 
 class Proto(SimpleNamespace):
@@ -25,7 +27,7 @@ class Proto(SimpleNamespace):
         dtype=None,
         metavar="\b",
         env=None,
-        nounset=False,
+        strict_parsing=False,
         **kwargs,
     ):
         """
@@ -38,7 +40,8 @@ class Proto(SimpleNamespace):
         :param metavar:
         :param env: the environment variable for the default value -- in the next version could be set
              automatically from the prefix of the class.
-        :param nonset: default to False, when true raises error for env var that are not set.
+        :param strict_parsing: default to False, when true raises error for env var that are not set.
+              this is passed onto the expandvars function as nounset.
         :param kwargs:
         """
         from termcolor import colored
@@ -47,11 +50,11 @@ class Proto(SimpleNamespace):
             dtype = type(default)
         # only apply dtype to ENV, and when dtype is not None.
         if env:
-            if nounset or env in os.environ:
+            if strict_parsing or env in os.environ:
                 default = os.environ[env]
-            elif "$" in env:
+            elif "$" in env and all_available(env, strict=True):
                 # fall back to default, otherwise value becomes `''`.
-                default = expandvars(env, nounset=nounset) or default
+                default = expandvars(env, nounset=strict_parsing) or default
             if dtype:
                 default = dtype(default)
 
@@ -73,9 +76,7 @@ class Proto(SimpleNamespace):
             else:
                 help_str += help.replace("%", "%%")
 
-        super().__init__(
-            default=default, help=help_str, dtype=dtype, metavar=metavar, **kwargs
-        )
+        super().__init__(default=default, help=help_str, dtype=dtype, metavar=metavar, **kwargs)
 
     @property
     def value(self):
@@ -125,9 +126,7 @@ class Eval(Proto, metaclass=StrType):
     thunk = None
 
     def __init__(self, default, help=None, **kwargs):
-        super().__init__(
-            default=eval(default), nargs=0, help=help, dtype=eval, **kwargs
-        )
+        super().__init__(default=eval(default), nargs=0, help=help, dtype=eval, **kwargs)
 
     def __call__(self, *args, **kwargs):
         return self.thunk(*args, **kwargs)
@@ -242,9 +241,7 @@ class Meta(type):
                 current_scope = {k: v for k, v in __d.items() if "." not in k}
             else:
                 prefix = cls._prefix + "."
-                current_scope = {
-                    k[len(prefix) :]: v for k, v in __d.items() if k.startswith(prefix)
-                }
+                current_scope = {k[len(prefix) :]: v for k, v in __d.items() if k.startswith(prefix)}
 
             for k, v in current_scope.items():
                 if "." in k:
@@ -269,9 +266,7 @@ class Meta(type):
         """
         # note: support just one parent for now.
         lineage = [*find_ancestors(cls), super()]
-        __vars = ChainMap(
-            *[c.__vars__ if hasattr(c, "__vars__") else c.__dict__ for c in lineage]
-        )
+        __vars = ChainMap(*[c.__vars__ if hasattr(c, "__vars__") else c.__dict__ for c in lineage])
 
         d = {}
         for key in __vars.keys():
@@ -385,9 +380,7 @@ class Meta(type):
                         v._register_args(cls._prefix)
                     else:
                         v = Proto(v)
-                        ARGS.add_argument(
-                            cls, k, *keys, _argument_group=prefix, **vars(v)
-                        )
+                        ARGS.add_argument(cls, k, *keys, _argument_group=prefix, **vars(v))
                 except:
                     v = Proto(v)
                     ARGS.add_argument(cls, k, *keys, _argument_group=prefix, **vars(v))
@@ -413,9 +406,7 @@ class ArgFactory:
     def __init__(
         self,
     ):
-        fmt_cls = lambda prog: argparse.RawTextHelpFormatter(
-            prog, indent_increment=4, max_help_position=50
-        )
+        fmt_cls = lambda prog: argparse.RawTextHelpFormatter(prog, indent_increment=4, max_help_position=50)
         self.parser = argparse.ArgumentParser(formatter_class=fmt_cls)
         self.__args = {}
 
