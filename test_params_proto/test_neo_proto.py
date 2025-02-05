@@ -8,13 +8,13 @@ def test_simple_prefix():
         _prefix = "not_root"
 
     assert Root._prefix == "not_root"
-    assert Root(_prefix='yo')._prefix == "yo"
+    assert Root(_prefix="yo")._prefix == "yo"
 
     class Root2(ParamsProto, prefix="this", cli=False):
         pass
 
     assert Root2._prefix == "this"
-    assert Root(_prefix='yo')._prefix == "yo"
+    assert Root(_prefix="yo")._prefix == "yo"
 
 
 def test_update_no_prefix():
@@ -25,7 +25,7 @@ def test_update_no_prefix():
     G._update(d)
     assert G.seed == 20
     assert G.non_exist_gets_written == 10
-    assert not hasattr(G, 'cascade')
+    assert not hasattr(G, "cascade")
 
 
 def test_update_with_prefix():
@@ -72,11 +72,11 @@ def test_namespace():
     """
 
     # prefix is for the argparse (not implemented).
-    class Root(ParamsProto, cli=False, prefix='root'):
-        launch_type = 'borg'
+    class Root(ParamsProto, cli=False, prefix="root"):
+        launch_type = "borg"
 
     assert Root._prefix == "root"
-    assert vars(Root) == {'launch_type': 'borg'}
+    assert vars(Root) == {"launch_type": "borg"}
     assert Root.launch_type == "borg"
 
     r = Root(_prefix="other")
@@ -102,25 +102,25 @@ def test_namespace():
     #     mutates the instance in-place, and is undesirable.
     #  ~
     #  2. it allows hierarchical injection of local configurations.
-    r = Root({"root.launch_type": 'local'})
+    r = Root({"root.launch_type": "local"})
     assert r.launch_type == "local"
 
     # of course, you can be more direct:
-    r = Root(**{"launch_type": 'Sorry David, I can not do that.'})
+    r = Root(**{"launch_type": "Sorry David, I can not do that."})
     assert r.launch_type == "Sorry David, I can not do that."
 
     # or simpler:
-    r = Root(launch_type='check out: pip install jaynes')
+    r = Root(launch_type="check out: pip install jaynes")
     assert r.launch_type == "check out: pip install jaynes"
 
 
 def test_dependency():
     """ParamsProto should allow levels of dependencies."""
 
-    class Root(ParamsProto, cli=False, prefix='root'):
-        launch_type = 'borg'
+    class Root(ParamsProto, cli=False, prefix="root"):
+        launch_type = "borg"
 
-    class SomeConfig(ParamsProto, cli=False, prefix='resource'):
+    class SomeConfig(ParamsProto, cli=False, prefix="resource"):
         fixed = "default"
         some_item = "default_value"
 
@@ -134,15 +134,15 @@ def test_dependency():
             else:
                 self.some_item = SomeConfig.some_item
 
-    s = SomeConfig({"root.launch_type": 'local'})
+    s = SomeConfig({"root.launch_type": "local"})
     assert s.some_item == "default_value"
 
-    s = SomeConfig({"root.launch_type": 'borg'})
+    s = SomeConfig({"root.launch_type": "borg"})
     assert s.some_item == "new_value"
 
 
 def test_prefix():
-    """Testing """
+    """Testing"""
 
     class PPO(ParamsProto, cli=False, prefix="PPO"):
         num_envs = 10
@@ -164,9 +164,9 @@ def test_prefix():
     assert cfg.sim.decimation == 2
 
     # now test the nested dictionary fromt he config file
-    assert cfg._tree == {'num_envs': 5, 'sim': {'decimation': 2, 'ptype': 'physx'}}
+    assert cfg._tree == {"num_envs": 5, "sim": {"decimation": 2, "ptype": "physx"}}
 
-    assert PPO._tree == {'num_envs': 10, 'sim': {'decimation': 4, 'ptype': 'physx'}}
+    assert PPO._tree == {"num_envs": 10, "sim": {"decimation": 4, "ptype": "physx"}}
 
 
 def test_root_config():
@@ -182,6 +182,7 @@ def test_root_config():
     print(f"{vars(r)}")
     print(r.root_attribute)
     import sys
+
     print(sys.executable)
     assert r.root_attribute == 11
 
@@ -197,7 +198,7 @@ def test_Proto_default():
         other_1 = Proto(20, "this is help text")
 
     print(vars(Root))
-    assert vars(Root) == {'other_1': 20, 'root_attribute': 10}
+    assert vars(Root) == {"other_1": 20, "root_attribute": 10}
     assert Root.root_attribute == 10
     assert Root().root_attribute == 10
 
@@ -211,11 +212,21 @@ def test_Proto_default():
 # noinspection PyPep8Naming
 def test_Proto_env():
     class Root(ParamsProto, cli=False, prefix="."):
-        home = Proto(default='default', env="HOME")
-        home_and_some = Proto(default='default', env="$HOME/and_some")
+        home = Proto(default="default", env="HOME")
+        home_and_some = Proto(default="default", env="$HOME/and_some")
 
-    assert Root.home == os.environ['HOME']
-    assert Root.home_and_some == os.environ['HOME'] + "/and_some"
+    assert Root.home == os.environ["HOME"]
+    assert Root.home_and_some == os.environ["HOME"] + "/and_some"
+
+
+# noinspection PyPep8Naming
+def test_Proto_env_priority():
+    class Root(ParamsProto, cli=False, prefix="."):
+        home = Proto(default="default", env="DOES_NOT_EXIST")
+        dollar_sign = Proto(default="default", env="$DOES_NOT_EXIST")
+
+    assert Root.home == "default"
+    assert Root.dollar_sign == "default"
 
 
 def test_none_overwrite():
@@ -224,7 +235,7 @@ def test_none_overwrite():
     class A(ParamsProto, cli=False, prefix=True):
         key = 10
 
-    A._update({'A.key': None})
+    A._update({"A.key": None})
     assert A.key is None, "key should not be `None`."
 
 
@@ -241,6 +252,7 @@ def test_none_overwrite():
 #     # r = Root(override)
 #     assert Root.root_attribute == 11
 
+
 def test_deep_nested():
     """The point of this test is to test nested protos."""
     from params_proto.proto import PrefixProto
@@ -254,11 +266,11 @@ def test_deep_nested():
             class C(PrefixProto, cli=False):
                 key = 30
 
-    A._update({'A.key': None, 'A.B.key': 'hey', 'A.B.C.key': 'yo'})
+    A._update({"A.key": None, "A.B.key": "hey", "A.B.C.key": "yo"})
 
     assert A.key is None, "key should not be `None`."
-    assert A.B.key is "hey", "key should be `hey`."
-    assert A.B.C.key is "yo", "key should be `yo`."
+    assert A.B.key == "hey", "key should be `hey`."
+    assert A.B.C.key == "yo", "key should be `yo`."
 
 
 def test_inheritance():
@@ -304,27 +316,27 @@ def test_inheritance():
     assert Args.root_name == "root"
     assert Args.parent_name == "parent"
     assert Args.custom_property.__get__(Args) == "custom_property works"
-    assert Args.args_property.__get__(Args) == 'args_property works'
+    assert Args.args_property.__get__(Args) == "args_property works"
     assert Args.a_method_should_not_appear(Args) == "should NOT appear"
     assert Args.a_static_method_should_not_appear() == "should NOT appear"
     # this is used during initialization
     assert Args.__vars__ == {
-        'root_name': 'root',
-        'parent_name': 'parent',
-        'parent_property': Args.parent_property,
-        'seed': 100,
-        'text': 'hello',
-        'args_property': Args.args_property,
-        'custom_property': Args.custom_property
+        "root_name": "root",
+        "parent_name": "parent",
+        "parent_property": Args.parent_property,
+        "seed": 100,
+        "text": "hello",
+        "args_property": Args.args_property,
+        "custom_property": Args.custom_property,
     }
     assert vars(Args) == {
-        'root_name': 'root',
-        'parent_name': 'parent',
-        'parent_property': 'parent_property works',
-        'seed': 100,
-        'text': 'hello',
-        'args_property': 'args_property works',
-        'custom_property': 'custom_property works',
+        "root_name": "root",
+        "parent_name": "parent",
+        "parent_property": "parent_property works",
+        "seed": 100,
+        "text": "hello",
+        "args_property": "args_property works",
+        "custom_property": "custom_property works",
     }
 
     Root.root_name = "new_root"
@@ -384,18 +396,18 @@ def test_instance_inheritance():
     Root.root_name = "new_root"
 
     assert vars(args) == {
-        'root_name': 'root',
-        'parent_name': 'parent',
-        'parent_property': 'parent_property works',
-        'seed': 100,
-        'text': 'hello',
-        'args_property': 'args_property works',
-        'custom_property': 'custom_property works',
+        "root_name": "root",
+        "parent_name": "parent",
+        "parent_property": "parent_property works",
+        "seed": 100,
+        "text": "hello",
+        "args_property": "args_property works",
+        "custom_property": "custom_property works",
     }
     assert args.root_name == "root"
     assert args.parent_name == "parent"
     assert args.custom_property == "custom_property works"
-    assert args.args_property == 'args_property works'
+    assert args.args_property == "args_property works"
 
 
 def test_dict_attr():
@@ -405,7 +417,9 @@ def test_dict_attr():
     class Args(ParamsProto, cli=False):
         dict_attr = {}
 
-        def instance_method(self, ):
+        def instance_method(
+            self,
+        ):
             assert isinstance(self, Args), "self should be an instance of Args"
 
     assert not isinstance(Args.dict_attr, Bear), "should not be Bear"
@@ -421,7 +435,9 @@ def test_class_property():
         dict_attr = {}
 
         @property
-        def some_attr(self, ):
+        def some_attr(
+            self,
+        ):
             return "attr value"
 
     assert Args().some_attr == "attr value"
@@ -436,7 +452,9 @@ def test_instance_method():
     from types import MethodType
 
     class Args(ParamsProto, cli=False):
-        def instance_method(self, ):
+        def instance_method(
+            self,
+        ):
             assert isinstance(self, Args), "self should be an instance of Args"
 
         arrow_fn = lambda self: self

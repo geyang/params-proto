@@ -50,7 +50,8 @@ class Proto(SimpleNamespace):
             if nounset or env in os.environ:
                 default = os.environ[env]
             elif "$" in env:
-                default = expandvars(env, nounset=nounset)
+                # fall back to default, otherwise value becomes `''`.
+                default = expandvars(env, nounset=nounset) or default
             if dtype:
                 default = dtype(default)
 
