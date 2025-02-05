@@ -224,9 +224,11 @@ def test_Proto_env_priority():
     class Root(ParamsProto, cli=False, prefix="."):
         home = Proto(default="default", env="DOES_NOT_EXIST")
         dollar_sign = Proto(default="default", env="$DOES_NOT_EXIST")
+        dollar_sign_complex = Proto(default="default", env="$DOES_NOT_EXIST/and_some")
 
     assert Root.home == "default"
     assert Root.dollar_sign == "default"
+    assert Root.dollar_sign_complex == "default"
 
 
 def test_none_overwrite():
