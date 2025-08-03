@@ -115,8 +115,8 @@ html_theme_options = {
             "class": "",
         },
     ],
-    "source_repository": "https://github.com/episodeyang/params_proto/",
-    "source_branch": "master",
+    "source_repository": "https://github.com/geyang/params-proto/",
+    "source_branch": "main",
     "source_directory": "docs/",
 }
 html_static_path = ["_static"]
