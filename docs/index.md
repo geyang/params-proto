@@ -53,6 +53,7 @@ python train.py --Args.debug --Args.learning_rate 0.01 --Args.model_name "transf
 quick_start
 examples/index
 api/index
+release_notes
 ```
 
 ## What Problem Does This Solve?
@@ -68,7 +69,7 @@ params-proto solves this by providing a declarative way to define parameters tha
 
 ## GitHub Repository
 
-The source code is available on [GitHub](https://github.com/episodeyang/params_proto).
+The source code is available on [GitHub](https://github.com/geyang/params-proto).
 
 ## Indices and tables
 
