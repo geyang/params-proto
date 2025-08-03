@@ -1,5 +1,17 @@
 # `params-proto`, Modern Hyper Parameter Management for Machine Learning
 
+[![Documentation Status](https://readthedocs.org/projects/params-proto/badge/?version=latest)](https://params-proto.readthedocs.io/en/latest/?badge=latest)
+[![GitHub Release](https://img.shields.io/github/release/geyang/params-proto.svg)](https://github.com/geyang/params-proto/releases)
+[![PyPI version](https://badge.fury.io/py/params-proto.svg)](https://badge.fury.io/py/params-proto)
+
+## 📖 Documentation & Release Notes
+
+- **📚 Complete Documentation**: [params-proto.readthedocs.io](https://params-proto.readthedocs.io/)
+- **📋 Release Notes**: [View Changelog](https://params-proto.readthedocs.io/en/latest/release_notes.html)
+- **🚀 Quick Start**: [Getting Started Guide](https://params-proto.readthedocs.io/en/latest/quick_start.html)
+- **💡 Examples**: [Comprehensive Tutorials](https://params-proto.readthedocs.io/en/latest/examples/)
+- **🔧 API Reference**: [Complete API Docs](https://params-proto.readthedocs.io/en/latest/api/)
+
 - 2022/07/04: 
     * Move `neo_proto` to top-level, move older `params_proto` to `v1` namespace.
     * Implement nested update via [global prefix](https://github.com/geyang/params_proto/blob/master/test_params_proto/test_neo_proto.py#L278). No relative update via `**kwargs`, yet
