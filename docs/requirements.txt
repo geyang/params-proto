@@ -1,0 +1,9 @@
+sphinx>=4.0
+furo
+myst-parser
+sphinx-copybutton
+waterbear>=2.6.8
+argparse
+argcomplete
+expandvars
+termcolor

@@ -1,3 +1,5 @@
+.PHONY: default wheel dev convert-rst resize update-doc docs preview publish-no-test publish test
+
 # shell option to use extended glob from from https://stackoverflow.com/a/6922447/1560241
 SHELL:=/bin/bash -O extglob
 
@@ -40,3 +42,9 @@ publish-no-test: convert-rst
 	twine upload dist/*
 test:
 	python -m pytest  --capture=sys
+preview:
+	sphinx-autobuild --host 0.0.0.0 docs docs/_build/html
+docs:
+	rm -rf docs/_build
+	cd docs && make html
+	cd docs/_build/html && python -m http.server 8888
