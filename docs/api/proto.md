@@ -177,4 +177,6 @@ class Config(ParamsProto):
    :members:
    :undoc-members:
    :show-inheritance:
+   :exclude-members: ParamsProto, Proto, Flag, PrefixProto, Meta, Bear, SimpleNamespace, ChainMap, defaultdict, suppress, isfunction, ismethod, BuiltinFunctionType, chain
+   :imported-members: False
 ```
