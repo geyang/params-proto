@@ -10,7 +10,7 @@ from warnings import warn
 from expandvars import expandvars
 from waterbear import Bear
 
-from params_proto.v2.parse_env_template import all_available
+from params_proto.parse_env_template import all_available
 from params_proto.v2.utils import dot_to_deps
 
 

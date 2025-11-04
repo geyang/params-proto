@@ -1,3 +1,3 @@
 from .app import app
 from .func import partial
-from .proto import proto
+from .proto import EnvVar, Field, proto
