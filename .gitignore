@@ -128,6 +128,7 @@ ENV/
 
 # uv
 .python-version
+uv.lock
 
 # Spyder project settings
 .spyderproject
