@@ -286,4 +286,5 @@ config = read_deps("config.yaml")
    :members:
    :undoc-members:
    :show-inheritance:
+   :exclude-members: dot_to_deps, flatten, read_deps, clean_ansi
 ```

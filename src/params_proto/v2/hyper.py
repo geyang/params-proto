@@ -318,19 +318,19 @@ class Sweep:
         proto with the correct key. This first-attr approach works because the ParamsProto
         object also generates argparse parameters, which means repetitive arguments are
         not possible.
-        ~
+
         However this would fail in cases where attributes are dynamically added to an
         argument object. The `sweep.jsonl` file loses this type of information, therefore
         there is no way to recover this type of attributes. So the user should try to
         either use PrefixProto, or explicitly define the attributes.
 
-    Usage Pattern 1: Loading from a file
+    Usage Pattern 1: Loading from a file::
 
         sweep = Sweep(Args, RUN).load('sweep.jsonl')
         for i, deps in enumerate(sweep):
             assert RUN.job_id == i + 1, "the job_id in that sweep.json should be 1-based."
 
-    Usage Pattern 2: Leading from a sweep list object or a pandas DataFrame
+    Usage Pattern 2: Loading from a sweep list object or a pandas DataFrame::
 
         sweep_list = Sweep.read(sweep.jsonl)
         sweep = Sweep(Args, RUN).load(sweep_list)

@@ -258,4 +258,6 @@ for config in sweep:
    :members:
    :undoc-members:
    :show-inheritance:
+   :exclude-members: Sweep, contextmanager, defaultdict, namedtuple, ParamsProto, Meta, Proto
+   :imported-members: False
 ```

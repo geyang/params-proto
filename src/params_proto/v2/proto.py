@@ -179,6 +179,10 @@ class Meta(type):
 
     # note: This allows as to initialize ParamsProto on the class itself.
     #  super(ParamsProto, cls).__init__(cls)
+    # Disable CLI for the base ParamsProto and PrefixProto classes
+    if name in ("ParamsProto", "PrefixProto"):
+      cli = False
+
     if cli:
       cls._register_args()
 
@@ -503,7 +507,7 @@ ARGS = ArgFactory()  # this is the global store
 # class Mixin(ParamsProto, cli=False):
 
 
-class ParamsProto(Bear, metaclass=Meta, cli=False):
+class ParamsProto(Bear, metaclass=Meta):
   _prefix = "ParamsProto"  # b/c cls._prefix only created in subclass.
 
   def __init_subclass__(cls, prefix=False, **kwargs):
@@ -632,7 +636,7 @@ def find_ancestors(cls):
   return ancestors
 
 
-class PrefixProto(ParamsProto, cli=False):
+class PrefixProto(ParamsProto):
   """A ParamsProto class with prefix set to True.
 
   Since we override the __init_subclass__ method, the returned classes instance is
