@@ -15,7 +15,6 @@ def test_proto_cli():
 
   # @proto.cli decorator adds __init__, __repr__, and CLI parsing capabilities
   expected = dedent("""
-  python mnist_train.py --help
   usage: mnist_train.py [-h] [--batch-size INT] [--epochs INT]
 
   Train an MLP on MNIST dataset.
@@ -36,6 +35,7 @@ def test_rl_agent_help():
   @proto.prefix
   class Environment:
     """dm_control environment configuration."""
+
     domain: str = "cartpole"  # Domain name (e.g., cartpole, walker)
     task: str = "swingup"  # Task name within the domain
     time_limit: float = 10.0  # Episode time limit in seconds
@@ -43,6 +43,7 @@ def test_rl_agent_help():
   @proto.prefix
   class Agent:
     """SAC agent hyperparameters."""
+
     algorithm: str = "SAC"  # RL algorithm (SAC or PPO)
     buffer_size: int = 1000000  # Replay buffer capacity
     gamma: float = 0.99  # Discount factor
@@ -63,7 +64,6 @@ def test_rl_agent_help():
   # - __repr__ for nice printing
   # - CLI argument parsing (for @proto.cli)
   expected = dedent("""
-  python train_rl.py --help
   usage: train_rl.py [-h] [--total-steps INT] [--eval-freq INT] [--seed INT] [OPTIONS]
 
   Train RL agent on dm_control environment.

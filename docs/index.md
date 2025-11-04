@@ -1,58 +1,136 @@
-# params-proto: Modern Hyper Parameter Management for Machine Learning
+# params-proto: Composite Singleton Hyper-Parameter Management
 
-**params-proto** is a modern hyperparameter management library designed to solve "Experiment Parameter Hell" in machine
-learning projects. 
+**params-proto v3**
+is a declarative hyperparameter management library for machine learning. Write your parameters once with type hints and
+inline comments to get automatic CLI parsing, help generation, and declarative parameter sweeps with explicit error
+messages.
+
+- Automatically parse type hints and inline comments into an CLI program
+- Your IDE will provide autocompletion and type checking for your parameters
+- As simple as a class namespace or a function, progressively build up to more complex programs.
+- Multiple override patterns: CLI, direct assignment, context managers, and yaml config files
 
 ## Quick Start
 
-Install params-proto:
+Install params-proto using uv or pip:
 
-```shell
-pip install params-proto
-```
-or
 ```shell
 uv add params-proto
 ```
 
-## Key Features
+or
 
-- **Declarative Parameter Definition**: Define parameters as Python classes for better IDE support
-- **Command-line Integration**: Automatically generate CLI interfaces with argparse
-- **Auto-completion**: Tab completion support for command-line arguments
-- **Environment Variable Support**: Use environment variables as parameter defaults
-- **Type Safety**: Full type hints and IDE support
+```shell
+pip install params-proto
+```
 
-## Basic Usage
+You can convert this python funciton into a cli program with a single decorator:
 
 ```python
-from params_proto.v2 import proto
+from params_proto import proto
+
+
+@proto.cli
+def train(
+    lr: float = 0.001,  # Learning rate
+    batch_size: int = 32,  # Training batch size
+    n_epochs: int = 100,  # Number of training epochs
+):
+    """Train a neural network on CIFAR-10 dataset.
+
+    This function trains a ResNet model using the specified hyperparameters.
+    Training progress and metrics are logged to stdout.
+    """
+    print(f"Training with lr={lr}, batch_size={batch_size}, n_epochs={n_epochs}")
+    # Your training code here...
+
+
+if __name__ == "__main__":
+    train()
+```
+
+Now running it from the command line gives you automatic help:
+
+```shell
+$ python train.py --help
+usage: train.py [-h] [--lr FLOAT] [--batch-size INT] [--n-epochs INT]
+
+Train a neural network on CIFAR-10 dataset.
+
+This function trains a ResNet model using the specified hyperparameters.
+Training progress and metrics are logged to stdout.
+
+options:
+  -h, --help           show this help message and exit
+  --lr FLOAT           Learning rate (default: 0.001)
+  --batch-size INT     Training batch size (default: 32)
+  --n-epochs INT       Number of training epochs (default: 100)
+```
+
+And you can override parameters:
+
+```shell
+$ python train.py --lr 0.01 --batch-size 64
+Training with lr=0.01, batch_size=64, n_epochs=100
+```
+
+## Composing Multiple Singleton Schemas 
+
+```python
+from params_proto import proto
 
 
 @proto.prefix
-class Args:
-    """My experiment configuration"""
+class Model:
+    """Model configuration."""
+    name: str = "resnet50"  # Model architecture
+    pretrained: bool = True  # Use pretrained weights
 
-    debug: bool = False  # Enable debug mode
-    model_name: str = "resnet50"  # Model architecture to use
-    learning_rate: float = 0.001  # Learning rate for training
-    data_path: str = "${DATA_PATH}"  # Path to training data (supports env vars)
+
+@proto.prefix
+class Train:
+    """Training hyperparameters."""
+    lr: float = 0.001  # Learning rate
+    batch_size: int = 32  # Batch size
+
+
+@proto.cli
+def main(seed: int = 42):  # Random seed
+    """Train a model."""
+    print(f"Training {Model.name} with lr={Train.lr}")
+
+
+if __name__ == "__main__":
+    # this launches the cli program.
+    main()
 ```
 
-Use from the command-line:
+Command line usage:
 
 ```bash
-python train.py --Args.debug --Args.learning_rate 0.01 --Args.model_name "transformer"
+$ python train.py --model.name vit --train.lr 0.0001
 ```
 
-## Documentation Sections
+## Documentation Contents
 
 ```{toctree}
 :maxdepth: 1
-:caption: User Guide
+:caption: Getting Started
 
 quick_start
-release_notes
+migration
+```
+
+```{toctree}
+:maxdepth: 2
+:caption: User Guide
+
+guide/decorators
+guide/functions
+guide/classes
+guide/types
+guide/overrides
+guide/prefixes
 ```
 
 ```{toctree}
@@ -60,10 +138,9 @@ release_notes
 :caption: Examples
 
 examples/basic_usage
-examples/advanced_features
-examples/environment_variables
-examples/nested_configs
-examples/hyperparameter_sweeps
+examples/ml_training
+examples/rl_agent
+examples/cli_applications
 ```
 
 ```{toctree}
@@ -71,8 +148,14 @@ examples/hyperparameter_sweeps
 :caption: API Reference
 
 api/proto
-api/hyper
 api/utils
+```
+
+```{toctree}
+:maxdepth: 1
+:caption: Additional Resources
+
+release_notes
 ```
 
 ## What Problem Does This Solve?
@@ -87,6 +170,21 @@ to:
 
 params-proto solves this by providing a declarative way to define parameters that integrates seamlessly with Python IDEs
 and command-line interfaces.
+
+## Why v3?
+
+params-proto v3 is a complete redesign focused on simplicity and modern Python:
+
+| Feature     | v2                | v3           |
+|-------------|-------------------|--------------|
+| API Style   | Class inheritance | Decorators   |
+| Type Hints  | Optional          | Required     |
+| Inline Docs | Manual            | Automatic    |
+| Functions   | Not supported     | Full support |
+| Union Types | Limited           | Full support |
+| IDE Support | Basic             | Excellent    |
+
+See the [Migration Guide](migration.md) for upgrading from v2.
 
 ## GitHub Repository
 
