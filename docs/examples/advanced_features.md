@@ -9,7 +9,7 @@ Proto supports reading default values from environment variables, making your co
 ### Basic Environment Variable Usage
 
 ```python
-from params_proto.proto import ParamsProto, Proto
+from params_proto.v2.proto import ParamsProto, Proto
 import os
 
 class Config(ParamsProto):
@@ -72,7 +72,7 @@ Create hierarchical parameter structures for complex applications.
 ### Basic Nested Configuration
 
 ```python
-from params_proto.proto import ParamsProto, Proto
+from params_proto.v2.proto import ParamsProto, Proto
 
 class DatabaseConfig(ParamsProto, cli=False):
     host = Proto("Database host", default="localhost")
@@ -117,7 +117,7 @@ python app.py \
 ### Prefix-Based Nested Configuration
 
 ```python
-from params_proto.proto import ParamsProto, Proto, PrefixProto
+from params_proto.v2.proto import ParamsProto, Proto, PrefixProto
 
 class ModelConfig(PrefixProto, prefix="model"):
     """Model configuration with automatic prefix"""
@@ -155,7 +155,7 @@ Create configurations that adapt based on other parameter values.
 ### Conditional Configuration
 
 ```python
-from params_proto.proto import ParamsProto, Proto
+from params_proto.v2.proto import ParamsProto, Proto
 
 class Config(ParamsProto, cli_parse=False):
     """Configuration with conditional logic"""
@@ -249,7 +249,7 @@ Add validation logic to ensure parameter values are correct.
 ### Basic Validation
 
 ```python
-from params_proto.proto import ParamsProto, Proto
+from params_proto.v2.proto import ParamsProto, Proto
 
 class Config(ParamsProto):
     learning_rate = Proto("Learning rate", default=0.001)
@@ -417,7 +417,7 @@ Common patterns for integrating params-proto with other libraries.
 
 ```python
 import logging
-from params_proto.proto import ParamsProto, Proto, Flag
+from params_proto.v2.proto import ParamsProto, Proto, Flag
 
 class LoggingConfig(ParamsProto):
     log_level = Proto("Log level", default="INFO")

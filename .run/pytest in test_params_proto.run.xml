@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="pytest in test_params_proto" type="tests" factoryName="py.test" nameIsGenerated="true">
+  <configuration default="false" name="pytest in /Users/ge/fortyfive/params-proto/test_params_proto" type="tests" factoryName="py.test" nameIsGenerated="true">
     <module name="params-proto" />
     <option name="ENV_FILES" value="" />
     <option name="INTERPRETER_OPTIONS" value="" />

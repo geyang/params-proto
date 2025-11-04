@@ -9,7 +9,7 @@ Nested configurations help organize parameters into logical groups, making large
 ### Simple Nested Structure
 
 ```python
-from params_proto.proto import ParamsProto, Proto
+from params_proto.v2.proto import ParamsProto, Proto
 
 class DatabaseConfig(ParamsProto, cli=False):
     """Database connection configuration"""
@@ -71,7 +71,7 @@ Use prefixes to create cleaner command-line interfaces and better organization.
 ### Automatic Prefixes with PrefixProto
 
 ```python  
-from params_proto.proto import PrefixProto, ParamsProto, Proto
+from params_proto.v2.proto import PrefixProto, ParamsProto, Proto
 
 class ModelConfig(PrefixProto, prefix="model"):
     """Model architecture configuration"""
@@ -140,7 +140,7 @@ Create configurations that adapt based on other parameter values.
 ### Conditional Nested Configuration
 
 ```python
-from params_proto.proto import ParamsProto, Proto
+from params_proto.v2.proto import ParamsProto, Proto
 
 class BaseModelConfig(ParamsProto, cli=False):
     """Base model configuration"""

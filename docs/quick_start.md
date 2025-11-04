@@ -14,7 +14,7 @@ Here's a simple example to get you started with params-proto:
 
 ```python
 # config.py
-from params_proto.proto import ParamsProto, Flag, Proto
+from params_proto.v2.proto import ParamsProto, Flag, Proto
 
 class Config(ParamsProto):
     """Training configuration for my ML model"""

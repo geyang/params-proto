@@ -9,7 +9,7 @@ The `hyper` module provides powerful hyperparameter search and sweep functionali
 The main class for creating parameter sweeps and hyperparameter searches.
 
 ```{eval-rst}
-.. autoclass:: params_proto.hyper.Sweep
+.. autoclass:: params_proto.v2.hyper.Sweep
    :members:
    :undoc-members:
    :show-inheritance:
@@ -25,8 +25,8 @@ The main class for creating parameter sweeps and hyperparameter searches.
 #### Usage Example
 
 ```python
-from params_proto.proto import ParamsProto, Proto
-from params_proto.hyper import Sweep
+from params_proto.v2.proto import ParamsProto, Proto
+from params_proto.v2.hyper import Sweep
 
 class Config(ParamsProto):
     learning_rate = Proto("Learning rate", default=0.001)
@@ -145,7 +145,7 @@ sweep.save("hyperparameter_sweep.jsonl")
 ### Grid Search
 
 ```python
-from params_proto.hyper import Sweep
+from params_proto.v2.hyper import Sweep
 
 class ModelConfig(ParamsProto):
     learning_rate = Proto(default=0.001)
@@ -216,7 +216,7 @@ for config in random_configs:
 ```python
 import torch
 import torch.nn as nn
-from params_proto.hyper import Sweep
+from params_proto.v2.hyper import Sweep
 
 class TrainingConfig(ParamsProto):
     learning_rate = Proto(default=0.001)
@@ -254,7 +254,7 @@ for config in sweep:
 ## Complete Module Reference
 
 ```{eval-rst}
-.. automodule:: params_proto.hyper
+.. automodule:: params_proto.v2.hyper
    :members:
    :undoc-members:
    :show-inheritance:

@@ -92,7 +92,7 @@ Then you an sweep the hyperparameter via the following declarative pattern:
 
 ```python
 from rl import main, Args
-from params_proto.hyper import Sweep
+from params_proto.v2.hyper import Sweep
 
 if __name__ == '__main__':
     from lp_analysis import instr

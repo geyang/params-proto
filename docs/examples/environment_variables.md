@@ -9,7 +9,7 @@ Environment variables provide a way to configure your application without changi
 ### Simple Environment Variables
 
 ```python
-from params_proto.proto import ParamsProto, Proto
+from params_proto.v2.proto import ParamsProto, Proto
 import os
 
 class Config(ParamsProto):
@@ -394,7 +394,7 @@ def load_hierarchical_config():
     # 1. Load from config file first (if exists)
     config_file = os.environ.get('CONFIG_FILE', 'config.yaml')
     if os.path.exists(config_file):
-        from params_proto.utils import read_deps
+        from params_proto.v2.utils import read_deps
         file_config = read_deps(config_file)
         HierarchicalConfig._update(file_config)
     

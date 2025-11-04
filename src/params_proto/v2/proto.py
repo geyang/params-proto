@@ -10,8 +10,8 @@ from warnings import warn
 from expandvars import expandvars
 from waterbear import Bear
 
-from .parse_env_template import all_available
-from .utils import dot_to_deps
+from params_proto.v2.parse_env_template import all_available
+from params_proto.v2.utils import dot_to_deps
 
 
 class Proto(SimpleNamespace):
