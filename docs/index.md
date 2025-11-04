@@ -26,7 +26,7 @@ uv add params-proto
 ## Basic Usage
 
 ```python
-from params_proto import proto
+from params_proto.v2 import proto
 
 
 @proto.prefix
@@ -48,13 +48,31 @@ python train.py --Args.debug --Args.learning_rate 0.01 --Args.model_name "transf
 ## Documentation Sections
 
 ```{toctree}
-:maxdepth: 2
+:maxdepth: 1
 :caption: User Guide
 
 quick_start
 release_notes
-examples/index
-api/index
+```
+
+```{toctree}
+:maxdepth: 1
+:caption: Examples
+
+examples/basic_usage
+examples/advanced_features
+examples/environment_variables
+examples/nested_configs
+examples/hyperparameter_sweeps
+```
+
+```{toctree}
+:maxdepth: 1
+:caption: API Reference
+
+api/proto
+api/hyper
+api/utils
 ```
 
 ## What Problem Does This Solve?

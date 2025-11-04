@@ -68,6 +68,7 @@ html_sidebars = {
     ]
 }
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
+suppress_warnings = ['toc.not_included']
 autodoc_mock_imports = [
     "waterbear",
     "argparse",
