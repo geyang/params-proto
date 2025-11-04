@@ -1,6 +1,6 @@
 import os
 
-from params_proto.v2.parse_env_template import all_available, parse_env_template
+from params_proto.parse_env_template import all_available, parse_env_template
 
 
 def test_empty_template():
