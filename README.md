@@ -4,6 +4,8 @@
 [![GitHub Release](https://img.shields.io/github/release/geyang/params-proto.svg)](https://github.com/geyang/params-proto/releases)
 [![PyPI version](https://badge.fury.io/py/params-proto.svg)](https://badge.fury.io/py/params-proto)
 
+> **Note**: A snapshot of the pre-uv-migration codebase (v2.13.2) is preserved at [params-proto-v2](https://github.com/geyang/params-proto-v2).
+
 ## 📖 Documentation & Release Notes
 
 - **📚 Complete Documentation**: [params-proto.readthedocs.io](https://params-proto.readthedocs.io/)
