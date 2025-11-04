@@ -59,6 +59,7 @@ docs = [
     "myst-parser",
     "sphinx-copybutton",
     "sphinx-autobuild",
+    "tomli>=1.1.0; python_version < '3.11'",  # For reading pyproject.toml in conf.py
 ]
 
 [build-system]

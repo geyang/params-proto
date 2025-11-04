@@ -9,12 +9,19 @@
 project = "params-proto"
 copyright = "2024, Ge Yang"
 author = "Ge Yang"
-with open("../VERSION", "r") as f:
-    version = f.read()
-    version = version.strip()
 
 import sys
 import os
+
+# Read version from pyproject.toml
+try:
+    import tomllib  # Python 3.11+
+except ImportError:
+    import tomli as tomllib  # Python 3.8-3.10
+
+with open("../pyproject.toml", "rb") as f:
+    pyproject = tomllib.load(f)
+    version = pyproject["project"]["version"]
 
 sys.path.insert(0, os.path.abspath("../"))
 

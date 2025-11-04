@@ -1,13 +1,18 @@
 # params-proto: Modern Hyper Parameter Management for Machine Learning
 
-Welcome to the documentation for **params-proto**, a modern hyperparameter management library designed to solve "Experiment Parameter Hell" in machine learning projects.
+**params-proto** is a modern hyperparameter management library designed to solve "Experiment Parameter Hell" in machine
+learning projects. 
 
 ## Quick Start
 
 Install params-proto:
 
-```bash
-pip install params-proto waterbear
+```shell
+pip install params-proto
+```
+or
+```shell
+uv add params-proto
 ```
 
 ## Key Features
@@ -21,25 +26,21 @@ pip install params-proto waterbear
 ## Basic Usage
 
 ```python
-from params_proto.proto import ParamsProto, Flag, Proto
+from params_proto import proto
 
-class Args(ParamsProto):
+
+@proto.prefix
+class Args:
     """My experiment configuration"""
-    
-    # Boolean flag with help text
-    debug = Flag("Enable debug mode", default=False)
-    
-    # String parameter with default
-    model_name = Proto("Model architecture to use", default="resnet50")
-    
-    # Numeric parameter
-    learning_rate = Proto("Learning rate for training", default=0.001)
-    
-    # Environment variable support
-    data_path = Proto("Path to training data", default="${DATA_PATH}", dtype=str)
+
+    debug: bool = False  # Enable debug mode
+    model_name: str = "resnet50"  # Model architecture to use
+    learning_rate: float = 0.001  # Learning rate for training
+    data_path: str = "${DATA_PATH}"  # Path to training data (supports env vars)
 ```
 
-Use from command line:
+Use from the command-line:
+
 ```bash
 python train.py --Args.debug --Args.learning_rate 0.01 --Args.model_name "transformer"
 ```
@@ -58,14 +59,16 @@ release_notes
 
 ## What Problem Does This Solve?
 
-"Experiment Parameter Hell" occurs when you have numerous parameters scattered across your ML codebase, making it hard to:
+"Experiment Parameter Hell" occurs when you have numerous parameters scattered across your ML codebase, making it hard
+to:
 
 - Track what parameters exist
 - Get IDE autocompletion and type checking
 - Change parameters from the command line
 - Maintain parameter documentation
 
-params-proto solves this by providing a declarative way to define parameters that integrates seamlessly with Python IDEs and command-line interfaces.
+params-proto solves this by providing a declarative way to define parameters that integrates seamlessly with Python IDEs
+and command-line interfaces.
 
 ## GitHub Repository
 
