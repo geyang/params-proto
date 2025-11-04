@@ -4,14 +4,14 @@
 [![GitHub Release](https://img.shields.io/github/release/geyang/params-proto.svg)](https://github.com/geyang/params-proto/releases)
 [![PyPI version](https://badge.fury.io/py/params-proto.svg)](https://badge.fury.io/py/params-proto)
 
+> **Note**: A snapshot of the pre-uv-migration codebase (v2.13.2) is preserved at [params-proto-v2](https://github.com/geyang/params-proto-v2).
+
 ## 📖 Documentation & Release Notes
 
-- **📚 Complete Documentation**: [params-proto.readthedocs.io](https://params-proto.readthedocs.io/)
-- **📋 Release Notes**: [View Changelog](https://params-proto.readthedocs.io/en/latest/release_notes.html)
-- **🚀 Quick Start**: [Getting Started Guide](https://params-proto.readthedocs.io/en/latest/quick_start.html)
-- **💡 Examples**: [Comprehensive Tutorials](https://params-proto.readthedocs.io/en/latest/examples/)
-- **🔧 API Reference**: [Complete API Docs](https://params-proto.readthedocs.io/en/latest/api/)
-
+- 2025/11/03: A re-design of the params-protp API with a few key improvements
+    * Revisit the decorator-based API, to support dataclass and more complex commandline programs.
+    * Moving to the uv package manager
+- 2025/08/03: Add generated documentation at [params-proto.readthedocs.io](https://params-proto.readthedocs.io/)
 - 2022/07/04: 
     * Move `neo_proto` to top-level, move older `params_proto` to `v1` namespace.
     * Implement nested update via [global prefix](https://github.com/geyang/params_proto/blob/master/test_params_proto/test_neo_proto.py#L278). No relative update via `**kwargs`, yet
@@ -27,7 +27,7 @@
 
 ## What is "Experiment Parameter Hell"?
 
-"Experiemnt Parameter Hell" occurs when you have more than twenty parameters for your ML project that are all defined as string/function parameters with `click` or `argparse`. Sometimes these parameters are defined in a launch script and passes through five layers of function calls during an experiment.
+"Experiment Parameter Hell" occurs when you have more than twenty parameters for your ML project that are all defined as string/function parameters with `click` or `argparse`. Sometimes these parameters are defined in a launch script and passes through five layers of function calls during an experiment.
 
 <img width="60%" align="right" alt="autocompletion demo" src="./figures/params-proto-autocompletion.gif"></img>
 
@@ -42,43 +42,48 @@ For this reason, you want to avoid using dictionaries or opaque `argparse` defin
 First let's install `params-proto` and its supporting module `waterbear`
 
 ```bash
-pip install params-proto waterbear
+pip install neotype
 ```
 
 Then to declare your hyperparameters, you can write the following in a `your_project/soft_ac/config.py` file:
 
 ```python
 import sys
-from params_proto.proto import ParamsProto, Flag, Proto, PrefixProto
+from params_proto import proto
 
 
 # this is the first config schema
-class Args(PrefixProto):
-    """Soft-actor Critic Implementation with SOTA Performance
-    """
+@proto
+class Args:
+  """Soft-actor Critic Implementation with SOTA Performance"""
 
-    debug = True if "pydevd" in sys.modules else False
+  debug = True if "pydevd" in sys.modules else False
+  """this is the debug flag, and is set to true when present."""
 
-    cuda = Flag("cuda tend to be slower.")
-    seed = 42
-    env_name = "FetchReach-v1"
-    n_workers = 1 if debug else 12
-    v_lr = 1e-3
-    pi_lr = 1e-3
-    n_initial_rollouts = 0 if debug else 100
-    n_test_rollouts = 15
-    demo_length = 20
-    clip_inputs = Flag()
-    normalize_inputs = Flag()
+  cuda: bool  # cuda tend to be slower.
+  seed: int = 42
+  env_name: str = "FetchReach-v1"
+  n_workers: int = 1 if debug else 12
+  
+  v_lr: float = 1e-3
+  pi_lr: float = 1e-3
+  
+  n_initial_rollouts: int = 0 if debug else 100
+  n_test_rollouts: int = 15
+  demo_length: int = 20
+
+  clip_inputs: bool  # flag to clip inputs to [-1, 1]
+  normalize_inputs: bool  # flag to normalize inputs to [-1, 1]
 
 
 # this is the second schema
-class LfGR(PrefixProto):
-    # reporting
-    use_lfgr = True
-    start = 0 if Args.debug else 10
-    store_interval = 10
-    visualization_interval = 10
+@proto.prefix
+class LfGR:
+  use_lfgr: bool = True  # enable LfGR reporting
+  start: int = 0 if Args.debug else 10  # start epoch for reporting
+  store_interval: int = 10  # interval for storing checkpoints
+  visualization_interval: int = 10  # interval for visualization updates
+
 ```
 
 ### Step 2: Sweeping Hyper-parameters :fire:

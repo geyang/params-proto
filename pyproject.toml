@@ -1,0 +1,87 @@
+[project]
+name = "params-proto"
+version = "3.0.0"
+description = "Modern Hyper Parameter Management for Machine Learning"
+authors = [
+    { name = "Ge Yang", email = "ge.ike.yang@gmail.com" }
+]
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.8"
+keywords = [
+    "params_proto",
+    "decorator",
+    "argparse",
+    "argcomplete",
+    "auto-completion",
+    "autocomplete",
+    "shell arguments",
+    "argument parser",
+    "hyperparameter",
+    "machine learning",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+dependencies = [
+    "waterbear>=2.6.8",
+    "argparse",
+    "argcomplete",
+    "expandvars",
+    "termcolor",
+]
+
+[project.urls]
+Homepage = "https://github.com/geyang/params-proto"
+Documentation = "https://params-proto.readthedocs.io"
+Repository = "https://github.com/geyang/params-proto"
+"Bug Tracker" = "https://github.com/geyang/params-proto/issues"
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "restructuredtext-lint",
+    "twine",
+    "ruff",
+    "pandas",  # Required for sweep loading tests
+]
+docs = [
+    "sphinx>=4.0",
+    "furo",
+    "myst-parser",
+    "sphinx-copybutton",
+    "sphinx-autobuild",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/params_proto"]
+
+[tool.ruff]
+target-version = "py38"
+line-length = 140
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+addopts = "--capture=sys"
