@@ -1,3 +1,0 @@
-pytest   
-restructuredtext-lint
-twine
