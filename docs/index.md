@@ -52,9 +52,9 @@ python train.py --Args.debug --Args.learning_rate 0.01 --Args.model_name "transf
 :caption: User Guide
 
 quick_start
+release_notes
 examples/index
 api/index
-release_notes
 ```
 
 ## What Problem Does This Solve?

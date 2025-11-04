@@ -3,7 +3,7 @@ from collections import defaultdict, namedtuple
 from contextlib import contextmanager
 from typing import ContextManager, Dict, Iterable, TypeVar, Union
 
-from .proto import Meta, ParamsProto, Proto
+from params_proto.v2.proto import Meta, ParamsProto, Proto
 
 
 def dot_join(*keys):

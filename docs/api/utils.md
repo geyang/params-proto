@@ -11,13 +11,13 @@ The `utils` module provides utility functions for configuration management, ANSI
 Convert dot-separated dictionary keys into nested dependencies.
 
 ```{eval-rst}
-.. autofunction:: params_proto.utils.dot_to_deps
+.. autofunction:: params_proto.v2.utils.dot_to_deps
 ```
 
 **Usage Example:**
 
 ```python
-from params_proto.utils import dot_to_deps
+from params_proto.v2.utils import dot_to_deps
 
 # Convert dot notation to nested structure
 dot_dict = {
@@ -39,13 +39,13 @@ data_deps = dot_to_deps(dot_dict, "data")
 Flatten nested dictionaries into dot-separated keys.
 
 ```{eval-rst}
-.. autofunction:: params_proto.utils.flatten
+.. autofunction:: params_proto.v2.utils.flatten
 ```
 
 **Usage Example:**
 
 ```python
-from params_proto.utils import flatten
+from params_proto.v2.utils import flatten
 
 nested_config = {
     "model": {
@@ -79,7 +79,7 @@ flat_config = flatten(nested_config)
 Read and process YAML configuration files with template inheritance.
 
 ```{eval-rst}
-.. autofunction:: params_proto.utils.read_deps
+.. autofunction:: params_proto.v2.utils.read_deps
 ```
 
 **Features:**
@@ -90,7 +90,7 @@ Read and process YAML configuration files with template inheritance.
 **Usage Example:**
 
 ```python
-from params_proto.utils import read_deps
+from params_proto.v2.utils import read_deps
 
 # Load configuration from YAML file
 config = read_deps("configs/experiment.yaml")
@@ -132,13 +132,13 @@ data:
 Remove ANSI color codes from strings.
 
 ```{eval-rst}
-.. autofunction:: params_proto.utils.clean_ansi
+.. autofunction:: params_proto.v2.utils.clean_ansi
 ```
 
 **Usage Example:**
 
 ```python
-from params_proto.utils import clean_ansi
+from params_proto.v2.utils import clean_ansi
 
 # Remove color codes from terminal output
 colored_text = "\x1b[31mError:\x1b[0m Something went wrong"
@@ -153,8 +153,8 @@ clean_text = clean_ansi(colored_text)
 Use `dot_to_deps` to create hierarchical parameter structures:
 
 ```python
-from params_proto.proto import ParamsProto, Proto
-from params_proto.utils import dot_to_deps
+from params_proto.v2.proto import ParamsProto, Proto
+from params_proto.v2.utils import dot_to_deps
 
 class ModelConfig(ParamsProto):
     learning_rate = Proto(default=0.001)
@@ -234,7 +234,7 @@ logging:
 ```python
 # In your application
 import os
-from params_proto.utils import read_deps
+from params_proto.v2.utils import read_deps
 
 # Set environment variables
 os.environ['DATABASE_URL'] = 'postgresql://user:pass@localhost/db'
@@ -264,7 +264,7 @@ training:
 ```
 
 ```python
-from params_proto.utils import read_deps
+from params_proto.v2.utils import read_deps
 
 config = read_deps("config.yaml")
 # Results in:
@@ -282,7 +282,7 @@ config = read_deps("config.yaml")
 ## Complete Module Reference
 
 ```{eval-rst}
-.. automodule:: params_proto.utils
+.. automodule:: params_proto.v2.utils
    :members:
    :undoc-members:
    :show-inheritance:

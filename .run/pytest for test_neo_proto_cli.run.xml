@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="pytest for test_neo_proto_cli" type="tests" factoryName="py.test" nameIsGenerated="true">
+  <configuration default="false" name="pytest for tests.test_v2.test_neo_proto_cli" type="tests" factoryName="py.test" nameIsGenerated="true">
     <module name="params-proto" />
     <option name="ENV_FILES" value="" />
     <option name="INTERPRETER_OPTIONS" value="" />
@@ -23,7 +23,7 @@
     <option name="_new_keywords" value="&quot;&quot;" />
     <option name="_new_parameters" value="&quot;&quot;" />
     <option name="_new_additionalArguments" value="&quot;&quot;" />
-    <option name="_new_target" value="&quot;test_neo_proto_cli&quot;" />
+    <option name="_new_target" value="&quot;tests.test_v2.test_neo_proto_cli&quot;" />
     <option name="_new_targetType" value="&quot;PYTHON&quot;" />
     <method v="2" />
   </configuration>

@@ -5,7 +5,7 @@
 Here's a basic example showing how to define and use a configuration class:
 
 ```python
-from params_proto.proto import ParamsProto, Flag, Proto
+from params_proto.v2.proto import ParamsProto, Flag, Proto
 
 class TrainingConfig(ParamsProto):
     """Configuration for model training"""
@@ -57,7 +57,7 @@ python train.py --help
 ## Data Loading Configuration
 
 ```python
-from params_proto.proto import ParamsProto, Proto, Flag
+from params_proto.v2.proto import ParamsProto, Proto, Flag
 
 class DataConfig(ParamsProto):
     """Data loading and preprocessing configuration"""
@@ -94,7 +94,7 @@ if __name__ == "__main__":
 You can use multiple configuration classes in the same script:
 
 ```python
-from params_proto.proto import ParamsProto, Proto, Flag
+from params_proto.v2.proto import ParamsProto, Proto, Flag
 
 class ModelConfig(ParamsProto):
     """Model architecture configuration"""

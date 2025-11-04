@@ -21,13 +21,13 @@ utils
 ### Main Classes
 
 ```{eval-rst}
-.. autoclass:: params_proto.proto.ParamsProto
+.. autoclass:: params_proto.v2.proto.ParamsProto
    :noindex:
 
-.. autoclass:: params_proto.proto.Proto
+.. autoclass:: params_proto.v2.proto.Proto
    :noindex:
 
-.. autoclass:: params_proto.proto.Flag
+.. autoclass:: params_proto.v2.proto.Flag
    :noindex:
 ```
 

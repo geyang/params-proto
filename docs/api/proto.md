@@ -9,7 +9,7 @@ The `proto` module contains the core classes for defining and managing parameter
 The main base class for creating parameter configurations. Inherit from this class to define your parameter schemas.
 
 ```{eval-rst}
-.. autoclass:: params_proto.proto.ParamsProto
+.. autoclass:: params_proto.v2.ParamsProto
    :members:
    :undoc-members:
    :show-inheritance:
@@ -25,7 +25,7 @@ The main base class for creating parameter configurations. Inherit from this cla
 #### Usage Example
 
 ```python
-from params_proto.proto import ParamsProto, Proto, Flag
+from params_proto.v2.proto import ParamsProto, Proto, Flag
 
 class Config(ParamsProto):
     learning_rate = Proto("Learning rate", default=0.001)
@@ -44,7 +44,7 @@ print(Config.debug)         # False
 Defines a parameter with type, default value, help text, and environment variable support.
 
 ```{eval-rst}
-.. autoclass:: params_proto.proto.Proto
+.. autoclass:: params_proto.v2.proto.Proto
    :members:
    :undoc-members:
    :show-inheritance:
@@ -79,7 +79,7 @@ api_key = Proto("API key", env="API_KEY", strict_parsing=True)
 A boolean parameter that can be enabled/disabled from command line.
 
 ```{eval-rst}
-.. autoclass:: params_proto.proto.Flag
+.. autoclass:: params_proto.v2.proto.Flag
    :members:
    :undoc-members:
    :show-inheritance:
@@ -113,7 +113,7 @@ verbose = Flag("Verbose output", to_value=2, default=0)
 A ParamsProto with automatic prefix generation for nested configurations.
 
 ```{eval-rst}
-.. autoclass:: params_proto.proto.PrefixProto
+.. autoclass:: params_proto.v2.proto.PrefixProto
    :members:
    :show-inheritance:
 ```
@@ -123,7 +123,7 @@ A ParamsProto with automatic prefix generation for nested configurations.
 The metaclass that powers ParamsProto functionality.
 
 ```{eval-rst}
-.. autoclass:: params_proto.proto.Meta
+.. autoclass:: params_proto.v2.proto.Meta
    :members:
    :show-inheritance:
 ```
@@ -173,7 +173,7 @@ class Config(ParamsProto):
 ## Complete Module Reference
 
 ```{eval-rst}
-.. automodule:: params_proto.proto
+.. automodule:: params_proto.v2.proto
    :members:
    :undoc-members:
    :show-inheritance:

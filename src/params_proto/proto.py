@@ -1,0 +1,2 @@
+def proto():
+  pass

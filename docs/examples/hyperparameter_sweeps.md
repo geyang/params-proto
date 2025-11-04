@@ -9,8 +9,8 @@ The `Sweep` class allows you to systematically explore different parameter combi
 ### Simple Grid Search
 
 ```python
-from params_proto.proto import ParamsProto, Proto
-from params_proto.hyper import Sweep
+from params_proto.v2.proto import ParamsProto, Proto
+from params_proto.v2.hyper import Sweep
 
 class ModelConfig(ParamsProto):
     learning_rate = Proto("Learning rate", default=0.001)
@@ -455,8 +455,8 @@ pareto_solutions = multi_objective_sweep()
 ```python
 import concurrent.futures
 import time
-from params_proto.proto import ParamsProto, Proto
-from params_proto.hyper import Sweep
+from params_proto.v2.proto import ParamsProto, Proto
+from params_proto.v2.hyper import Sweep
 
 class ParallelConfig(ParamsProto):
     learning_rate = Proto(default=0.001)
