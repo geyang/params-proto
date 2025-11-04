@@ -122,9 +122,12 @@ celerybeat-schedule
 .env
 
 # virtualenv
-.venv
+.venv/
 venv/
 ENV/
+
+# uv
+.python-version
 
 # Spyder project settings
 .spyderproject
