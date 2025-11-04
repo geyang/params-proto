@@ -6,10 +6,23 @@ __all__ = [
 import argparse
 import inspect
 import re
-from distutils import util
 from typing import TypeVar, Union, Callable
 
 from waterbear import DefaultBear
+
+
+def _strtobool(val):
+    """Convert a string representation of truth to true (1) or false (0).
+
+    Replacement for deprecated distutils.util.strtobool.
+    """
+    val = val.lower()
+    if val in ('y', 'yes', 't', 'true', 'on', '1'):
+        return 1
+    elif val in ('n', 'no', 'f', 'false', 'off', '0'):
+        return 0
+    else:
+        raise ValueError(f"invalid truth value {val!r}")
 
 
 def is_hidden(k: str) -> bool:
@@ -127,7 +140,7 @@ def BoolFlag(default: bool, help=None, aliases=None, **kwargs) -> T:
     return Proto(default, help=help, dtype="bool-flag", aliases=aliases, **kwargs)
 
 
-_bool = lambda v: v if v is None else bool(util.strtobool(v))
+_bool = lambda v: v if v is None else bool(_strtobool(v))
 
 PREFIXES = []
 LAZY = None
