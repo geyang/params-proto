@@ -24,7 +24,7 @@
 
 ## What is "Experiment Parameter Hell"?
 
-"Experiemnt Parameter Hell" occurs when you have more than twenty parameters for your ML project that are all defined as string/function parameters with `click` or `argparse`. Sometimes these parameters are defined in a launch script and passes through five layers of function calls during an experiment.
+"Experiment Parameter Hell" occurs when you have more than twenty parameters for your ML project that are all defined as string/function parameters with `click` or `argparse`. Sometimes these parameters are defined in a launch script and passes through five layers of function calls during an experiment.
 
 <img width="60%" align="right" alt="autocompletion demo" src="./figures/params-proto-autocompletion.gif"></img>
 
