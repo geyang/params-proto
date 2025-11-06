@@ -35,7 +35,7 @@ def test_proto_cli_envvar_with_value():
   os.environ["LEARNING_RATE"] = "0.01"
 
   try:
-    @proto.cli
+    @proto.cli(prog="train")
     def train(
       batch_size: int = EnvVar @ "BATCH_SIZE",  # Read from BATCH_SIZE env var
       learning_rate: float = EnvVar @ 0.001,  # Use 0.001 as default

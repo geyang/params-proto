@@ -431,13 +431,12 @@ def _generate_help_for_function(wrapper: ProtoWrapper) -> str:
     if wrapper._prog:
         # Use explicitly set program name
         script_name = wrapper._prog
+    elif sys.argv and sys.argv[0]:
+        # Use argv[0] basename (works for .py files, executables, etc.)
+        script_name = Path(sys.argv[0]).name
     else:
-        argv_name = Path(sys.argv[0]).name if sys.argv else None
-        # Use argv[0] if it looks like a real Python script, otherwise fallback to function name
-        if argv_name and argv_name.endswith('.py'):
-            script_name = argv_name
-        else:
-            script_name = wrapper.__name__
+        # Fallback to function name
+        script_name = wrapper.__name__
 
     # Build usage line with actual arguments
     usage_parts = [f"\nusage: {script_name}", "[-h]"]

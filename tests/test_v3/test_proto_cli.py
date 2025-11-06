@@ -28,7 +28,7 @@ def test_proto_basic_cli():
   """Test simple CLI help output for MNIST training."""
   from params_proto import proto
 
-  @proto.cli
+  @proto.cli(prog="train_mnist.py")
   def train_mnist(
     batch_size: int = 128,  # Training batch size
     epochs: int = 10,
@@ -42,7 +42,7 @@ def test_proto_basic_cli():
     print(f"Training MNIST with batch_size={batch_size}")
 
   expected = dedent("""
-  usage: train_mnist [-h] [--batch-size INT] [--epochs INT]
+  usage: train_mnist.py [-h] [--batch-size INT] [--epochs INT]
 
   Train an MLP on MNIST dataset.
 
@@ -58,7 +58,7 @@ def test_proto_cli_long_name():
   """Test CLI help output with long parameter names."""
   from params_proto import proto
 
-  @proto.cli
+  @proto.cli(prog="train_rl")
   def train_rl(
     seed: int = 0,
     this_is_a_very_long_parameter_name: int = 1000000,
@@ -114,7 +114,7 @@ def test_proto_cli_hierarchy():
     tau: float = 0.005  # Target network update rate
 
   # @proto.cli is the entry point - called only once
-  @proto.cli
+  @proto.cli(prog="train_rl")
   def train_rl(
     total_steps: int = 1000000,  # Total environment steps
     eval_freq: int = 5000,  # Evaluation frequency
@@ -161,7 +161,7 @@ def test_proto_cli_bool_flags():
   """Test CLI help output for boolean flags."""
   from params_proto import proto
 
-  @proto.cli
+  @proto.cli(prog="train")
   def train(
     verbose: bool = False,  # Enable verbose output
     cuda: bool = True,  # Use CUDA acceleration
@@ -190,7 +190,7 @@ def test_proto_cli_optional_types():
 
   from params_proto import proto
 
-  @proto.cli
+  @proto.cli(prog="train")
   def train(
     checkpoint: Optional[str] = None,  # Path to checkpoint file
     resume_step: Optional[int] = None,  # Step to resume from
@@ -220,7 +220,7 @@ def test_proto_cli_list_types():
 
   from params_proto import proto
 
-  @proto.cli
+  @proto.cli(prog="train")
   def train(
     gpu_ids: List[int] = [0, 1],  # GPU device IDs to use
     data_dirs: List[str] = ["./data"],  # Directories containing training data
@@ -250,7 +250,7 @@ def test_proto_cli_literal_types():
 
   from params_proto import proto
 
-  @proto.cli
+  @proto.cli(prog="train")
   def train(
     activation: Literal["relu", "gelu", "tanh"] = "relu",  # Activation function
     optimizer: Literal["adam", "sgd", "adamw"] = "adam",  # Optimizer algorithm
@@ -279,7 +279,7 @@ def test_proto_cli_tuple_types():
 
   from params_proto import proto
 
-  @proto.cli
+  @proto.cli(prog="train")
   def train(
     image_size: Tuple[int, int] = (224, 224),  # Image height and width
     norm_mean: Tuple[float, float, float] = (
@@ -326,7 +326,7 @@ def test_proto_cli_enum_types():
     FP16 = 16
     BF16 = "bf16"
 
-  @proto.cli
+  @proto.cli(prog="train")
   def train(
     optimizer: Optimizer = Optimizer.ADAM,  # Optimizer algorithm
     precision: Precision = Precision.FP32,  # Training precision mode
@@ -358,7 +358,7 @@ def test_proto_cli_path_types():
 
   from params_proto import proto
 
-  @proto.cli
+  @proto.cli(prog="train")
   def train(
     output_dir: Path = Path("./outputs"),  # Output directory for results
     checkpoint_path: Path = Path("./checkpoints/model.pt"),  # Path to checkpoint file
@@ -388,7 +388,7 @@ def test_proto_cli_union_types():
 
   from params_proto import proto
 
-  @proto.cli
+  @proto.cli(prog="train")
   def train(
     learning_rate: Union[float, str] = 0.001,  # Learning rate or 'auto'
     batch_size: Union[int, str] = 32,  # Batch size or 'auto'
