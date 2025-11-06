@@ -1,182 +1,227 @@
-# proto module
+# proto Module API Reference
 
-The `proto` module contains the core classes for defining and managing parameters in params-proto.
+The `proto` module provides the core decorators and functions for params-proto v3.
 
-## Core Classes
+## Decorators
 
-### ParamsProto
+### `@proto`
 
-The main base class for creating parameter configurations. Inherit from this class to define your parameter schemas.
-
-```{eval-rst}
-.. autoclass:: params_proto.v2.ParamsProto
-   :members:
-   :undoc-members:
-   :show-inheritance:
-```
-
-#### Key Methods
-
-- **`parse()`**: Parse command-line arguments and update parameter values
-- **`to_dict()`**: Convert the configuration to a dictionary
-- **`_update()`**: Update parameter values programmatically
-- **`__vars__`**: Property that returns nested dictionary representation
-
-#### Usage Example
+Base decorator for classes and functions.
 
 ```python
-from params_proto.v2.proto import ParamsProto, Proto, Flag
+from params_proto import proto
 
-class Config(ParamsProto):
-    learning_rate = Proto("Learning rate", default=0.001)
-    debug = Flag("Enable debug mode", default=False)
-
-# Parse command line arguments
-Config.parse()
-
-# Access parameters
-print(Config.learning_rate)  # 0.001
-print(Config.debug)         # False
+@proto
+class Config:
+    lr: float = 0.001
+    batch_size: int = 32
 ```
 
-### Proto
+**Usage:**
+- Works with both classes and functions
+- Requires type annotations
+- Enables attribute-based overrides
 
-Defines a parameter with type, default value, help text, and environment variable support.
+### `@proto.cli`
 
-```{eval-rst}
-.. autoclass:: params_proto.v2.proto.Proto
-   :members:
-   :undoc-members:
-   :show-inheritance:
-```
-
-#### Parameters
-
-- **`default`**: Default value for the parameter
-- **`help`**: Help text displayed in CLI
-- **`dtype`**: Type of the parameter (inferred from default if not specified)
-- **`env`**: Environment variable name to read default from
-- **`strict_parsing`**: Whether to raise error for unset environment variables
-
-#### Usage Examples
+Decorator for CLI entry points with automatic help generation.
 
 ```python
-# Basic parameter
-name = Proto("Model name", default="resnet50")
-
-# With type specification
-epochs = Proto("Training epochs", default=100, dtype=int)
-
-# With environment variable
-data_path = Proto("Data directory", default="${DATA_DIR:/tmp/data}")
-
-# With strict environment parsing
-api_key = Proto("API key", env="API_KEY", strict_parsing=True)
+@proto.cli
+def main(
+    lr: float = 0.001,  # Learning rate
+    epochs: int = 100,  # Number of epochs
+):
+    """Train a model."""
+    pass
 ```
 
-### Flag
+**Features:**
+- Automatic CLI argument parsing
+- Help text generation from inline comments
+- Support for all standard types
 
-A boolean parameter that can be enabled/disabled from command line.
+**CLI Arguments:**
+- `--param-name VALUE` - Set parameter value
+- `--flag` / `--no-flag` - Boolean flags
+- `-h` / `--help` - Show help message
 
-```{eval-rst}
-.. autoclass:: params_proto.v2.proto.Flag
-   :members:
-   :undoc-members:
-   :show-inheritance:
-```
+### `@proto.prefix`
 
-#### Parameters
-
-- **`help`**: Help text for the flag
-- **`to_value`**: Value when flag is enabled (default: True)
-- **`default`**: Default value when flag is not specified
-
-#### Usage Examples
+Decorator for singleton configuration groups with CLI prefixes.
 
 ```python
-# Basic flag
-debug = Flag("Enable debug logging")
-
-# Custom flag value
-verbose = Flag("Verbose output", to_value=2, default=0)
-
-# Usage from command line:
-# --Config.debug        # Sets debug=True
-# --no-Config.debug     # Sets debug=False
-# --Config.verbose      # Sets verbose=2
+@proto.prefix
+class Model:
+    """Model configuration."""
+    name: str = "resnet50"
 ```
 
-## Utility Classes
+**Features:**
+- Creates singleton instances
+- Automatic CLI prefix (`--Model.name value`)
+- Global access via class attributes
 
-### PrefixProto
+## Functions
 
-A ParamsProto with automatic prefix generation for nested configurations.
+### `proto.bind(**kwargs)`
 
-```{eval-rst}
-.. autoclass:: params_proto.v2.proto.PrefixProto
-   :members:
-   :show-inheritance:
-```
-
-### Meta
-
-The metaclass that powers ParamsProto functionality.
-
-```{eval-rst}
-.. autoclass:: params_proto.v2.proto.Meta
-   :members:
-   :show-inheritance:
-```
-
-## Advanced Features
-
-### Environment Variable Support
-
-Proto supports reading default values from environment variables:
+Context manager for parameter binding.
 
 ```python
-# Using environment variables
-database_url = Proto("Database URL", env="DATABASE_URL")
-debug_level = Proto("Debug level", env="DEBUG_LEVEL", dtype=int, default=0)
+# As context manager (scoped overrides)
+with proto.bind(lr=0.01, batch_size=64):
+    train()
 
-# With variable expansion
-log_dir = Proto("Log directory", default="${HOME}/logs")
+# As direct call (global overrides)
+proto.bind(lr=0.01)
+train()
+
+# With prefixed parameters
+proto.bind(**{"Model.name": "vit", "Training.lr": 0.0001})
 ```
 
-### Nested Configurations
+**Parameters:**
+- `**kwargs` - Parameter overrides as keyword arguments
+  - Direct parameters: `lr=0.01`
+  - Prefixed parameters: `**{"Model.name": "vit"}`
 
-Create hierarchical parameter structures:
+**Returns:**
+- `BindContext` - Context manager object
+
+**Usage:**
+- Scoped overrides with `with` statement
+- Global overrides with direct call
+- Supports dot-notation for prefixed configs
+
+### `proto.parse(func, **kwargs)`
+
+Parse overrides and call a function (utility wrapper).
 
 ```python
-class DatabaseConfig(ParamsProto):
-    host = Proto("Database host", default="localhost")
-    port = Proto("Database port", default=5432)
-
-class Config(ParamsProto):
-    database = DatabaseConfig
-    app_name = Proto("Application name", default="myapp")
+result = proto.parse(train, lr=0.01, batch_size=64)
 ```
 
-### Custom Validation
+**Parameters:**
+- `func` - Function to call
+- `**kwargs` - Parameter overrides
 
-Override methods to add custom validation:
+**Returns:**
+- Result of calling `func` with overrides applied
+
+## Type Support
+
+params-proto v3 supports the following type annotations:
+
+### Basic Types
+- `int` - Integer values
+- `float` - Floating point values
+- `str` - String values
+- `bool` - Boolean values (generates `--flag` / `--no-flag`)
+
+### Complex Types
+- `Union[A, B]` or `A | B` - Union types
+- `Literal["a", "b"]` - Literal values
+- `Enum` - Enumeration types
+- `tuple[int, ...]` - Tuple types
+- `Optional[T]` or `T | None` - Optional types
+
+### Example
 
 ```python
-class Config(ParamsProto):
-    learning_rate = Proto("Learning rate", default=0.001)
-    
-    @classmethod
-    def validate(cls):
-        assert 0 < cls.learning_rate < 1, "Learning rate must be between 0 and 1"
+from typing import Literal
+from enum import Enum, auto
+
+class Optimizer(Enum):
+    ADAM = auto()
+    SGD = auto()
+
+@proto
+class Config:
+    # Basic types
+    lr: float = 0.001
+    batch_size: int = 32
+
+    # Union type
+    precision: Literal["fp16", "fp32", "fp64"] = "fp32"
+
+    # Enum
+    optimizer: Optimizer = Optimizer.ADAM
+
+    # Tuple
+    image_size: tuple[int, int] = (224, 224)
+
+    # Optional
+    checkpoint: str | None = None
 ```
 
-## Complete Module Reference
+## Documentation Extraction
 
-```{eval-rst}
-.. automodule:: params_proto.v2.proto
-   :members:
-   :undoc-members:
-   :show-inheritance:
-   :exclude-members: ParamsProto, Proto, Flag, PrefixProto, Meta, Bear, SimpleNamespace, ChainMap, defaultdict, suppress, isfunction, ismethod, BuiltinFunctionType, chain
-   :imported-members: False
+params-proto automatically extracts documentation from:
+
+1. **Inline comments**: `param: type = value  # Documentation here`
+2. **Function docstrings**: The main docstring becomes the program description
+3. **Class docstrings**: Used for config group descriptions
+
+### Example
+
+```python
+@proto.cli
+def train(
+    lr: float = 0.001,  # Learning rate - appears in help
+    batch_size: int = 32,  # Batch size - appears in help
+):
+    """Main description - appears at top of help."""
+    pass
 ```
+
+Generates:
+```
+usage: train.py [-h] [--lr FLOAT] [--batch-size INT]
+
+Main description - appears at top of help.
+
+options:
+  -h, --help           show this help message and exit
+  --lr FLOAT           Learning rate (default: 0.001)
+  --batch-size INT     Batch size (default: 32)
+```
+
+## Special Attributes
+
+Decorated objects get special attributes:
+
+### `__help_str__`
+
+Available on `@proto.cli` decorated functions:
+
+```python
+@proto.cli
+def main(lr: float = 0.001):
+    """Train a model."""
+    pass
+
+print(main.__help_str__)  # Prints the generated help text
+```
+
+## Import Paths
+
+```python
+# Main import
+from params_proto import proto
+
+# All decorators are accessed via proto
+@proto  # Base decorator
+@proto.cli  # CLI decorator
+@proto.prefix  # Prefix decorator
+
+# Functions
+proto.bind(**kwargs)  # Parameter binding
+proto.parse(func, **kwargs)  # Parse and call
+```
+
+## See Also
+
+- [Decorators Guide](../guide/decorators.md) - Detailed decorator documentation
+- [Types Guide](../guide/types.md) - Supported type annotations
+- [Quick Start](../quick_start.md) - Getting started tutorial

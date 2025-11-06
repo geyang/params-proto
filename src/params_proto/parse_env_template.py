@@ -11,7 +11,8 @@ def parse_env_template(template: str) -> List[str]:
     :return: A list of environment variable names found in the template.
     """
     # Regex to match patterns like ${VAR_NAME}, $VAR_NAME
-    pattern = r"\$([A-Za-z_][A-Za-z0-9_]*)"
+    # Matches: $VAR or ${VAR}
+    pattern = r"\$\{?([A-Za-z_][A-Za-z0-9_]*)\}?"
     return re.findall(pattern, template)
 
 

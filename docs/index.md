@@ -1,58 +1,204 @@
-# params-proto: Modern Hyper Parameter Management for Machine Learning
+# Avoiding Hyperparameter Hell with `params-proto`
 
-**params-proto** is a modern hyperparameter management library designed to solve "Experiment Parameter Hell" in machine
-learning projects. 
+**params-proto v3**
+is a declarative hyperparameter management library for machine learning. Write your parameters once with type hints and
+inline comments to get automatic CLI parsing, help generation, and declarative parameter sweeps with explicit error
+messages.
+
+- Automatically parse type hints and inline comments into an CLI program
+- Your IDE will provide autocompletion and type checking for your parameters
+- As simple as a class namespace or a function, progressively build up to more complex programs.
+- Multiple override patterns: CLI, direct assignment, context managers, and yaml config files
 
 ## Quick Start
 
-Install params-proto:
+Install params-proto using uv or pip:
 
-```shell
-pip install params-proto
-```
-or
 ```shell
 uv add params-proto
 ```
 
-## Key Features
+or
 
-- **Declarative Parameter Definition**: Define parameters as Python classes for better IDE support
-- **Command-line Integration**: Automatically generate CLI interfaces with argparse
-- **Auto-completion**: Tab completion support for command-line arguments
-- **Environment Variable Support**: Use environment variables as parameter defaults
-- **Type Safety**: Full type hints and IDE support
+```shell
+pip install params-proto
+```
 
-## Basic Usage
+### Basic Function CLI
+
+Convert any Python function into a CLI program with a single decorator:
 
 ```python
-from params_proto.v2 import proto
+from params_proto import proto
+
+
+@proto.cli
+def train_mnist(
+    batch_size: int = 128,  # Training batch size
+    epochs: int = 10,  # Number of training epochs
+):
+    """Train an MLP on MNIST dataset.
+
+    Args:
+        batch_size: Training batch size
+        epochs: Number of training epochs
+    """
+    print(f"Training MNIST with batch_size={batch_size}")
+
+
+if __name__ == "__main__":
+    train_mnist()
+```
+
+Running `python train_mnist.py --help` gives you:
+
+```
+usage: train_mnist.py [-h] [--batch-size INT] [--epochs INT]
+
+Train an MLP on MNIST dataset.
+
+options:
+  -h, --help           show this help message and exit
+  --batch-size INT     Training batch size (default: 128)
+  --epochs INT         Number of training epochs (default: 10)
+```
+
+Override parameters from the command line:
+
+```shell
+$ python train_mnist.py --batch-size 256 --epochs 20
+Training MNIST with batch_size=256
+```
+
+### Hierarchical Configuration
+
+Use `@proto.prefix` to create organized, hierarchical configs:
+
+```python
+from params_proto import proto
 
 
 @proto.prefix
-class Args:
-    """My experiment configuration"""
+class Environment:
+    """dm_control environment configuration."""
+    domain: str = "cartpole"  # Domain name (e.g., cartpole, walker)
+    task: str = "swingup"  # Task name within the domain
+    time_limit: float = 10.0  # Episode time limit in seconds
 
-    debug: bool = False  # Enable debug mode
-    model_name: str = "resnet50"  # Model architecture to use
-    learning_rate: float = 0.001  # Learning rate for training
-    data_path: str = "${DATA_PATH}"  # Path to training data (supports env vars)
+
+@proto.prefix
+class Agent:
+    """SAC agent hyperparameters."""
+    algorithm: str = "SAC"  # RL algorithm (SAC or PPO)
+    buffer_size: int = 1000000  # Replay buffer capacity
+    gamma: float = 0.99  # Discount factor
+    tau: float = 0.005  # Target network update rate
+
+
+@proto.cli
+def train_rl(
+    total_steps: int = 1000000,  # Total environment steps
+    eval_freq: int = 5000,  # Evaluation frequency
+    seed: int = 0,  # Random seed
+):
+    """Train RL agent on dm_control environment."""
+    print(f"Training {Agent.algorithm} on {Environment.domain}-{Environment.task}")
+
+
+if __name__ == "__main__":
+    train_rl()
 ```
 
-Use from the command-line:
+Running `python train_rl.py --help` shows grouped options:
 
-```bash
-python train.py --Args.debug --Args.learning_rate 0.01 --Args.model_name "transformer"
+```
+usage: train_rl.py [-h] [--total-steps INT] [--eval-freq INT] [--seed INT] [OPTIONS]
+
+Train RL agent on dm_control environment.
+
+options:
+  -h, --help                   show this help message and exit
+  --total-steps INT            Total environment steps (default: 1000000)
+  --eval-freq INT              Evaluation frequency (default: 5000)
+  --seed INT                   Random seed (default: 0)
+
+Environment options:
+  dm_control environment configuration.
+
+  --Environment.domain STR     Domain name (e.g., cartpole, walker) (default: cartpole)
+  --Environment.task STR       Task name within the domain (default: swingup)
+  --Environment.time-limit FLOAT  Episode time limit in seconds (default: 10.0)
+
+Agent options:
+  SAC agent hyperparameters.
+
+  --Agent.algorithm STR        RL algorithm (SAC or PPO) (default: SAC)
+  --Agent.buffer-size INT      Replay buffer capacity (default: 1000000)
+  --Agent.gamma FLOAT          Discount factor (default: 0.99)
+  --Agent.tau FLOAT            Target network update rate (default: 0.005)
 ```
 
-## Documentation Sections
+Override any parameter:
+
+```shell
+$ python train_rl.py --Environment.domain walker --Agent.gamma 0.95
+Training SAC on walker-swingup
+```
+
+## Environment Variables
+
+Read configuration from environment variables with type-safe defaults:
+
+```python
+from params_proto import proto, EnvVar
+
+
+@proto.cli
+def train_model(
+    # Three ways to specify environment variables:
+    batch_size: int = EnvVar @ "BATCH_SIZE",  # Read from env var
+    learning_rate: float = EnvVar @ "LR" | 0.001,  # With default fallback
+    db_url: str = EnvVar("DATABASE_URL", default="localhost"),  # Function syntax
+    data_dir: str = EnvVar @ "$DATA_DIR/models",  # Template expansion
+):
+    """Train model with environment configuration."""
+    print(f"Training with batch_size={batch_size}, lr={learning_rate}")
+
+
+if __name__ == "__main__":
+    train_model()
+```
+
+The pipe operator (`|`) provides clean syntax for fallback values:
+
+```python
+# If LR env var is set, use it; otherwise use 0.001
+learning_rate: float = EnvVar @ "LR" | 0.001
+```
+
+Environment variables are resolved at decoration time and automatically converted to the annotated type (int, float, bool, str).
+
+## Documentation Contents
 
 ```{toctree}
 :maxdepth: 1
-:caption: User Guide
+:caption: Getting Started
 
 quick_start
-release_notes
+migration
+```
+
+```{toctree}
+:maxdepth: 2
+:caption: User Guide
+
+guide/decorators
+guide/functions
+guide/classes
+guide/types
+guide/overrides
+guide/prefixes
+guide/ansi_formatting
 ```
 
 ```{toctree}
@@ -60,10 +206,9 @@ release_notes
 :caption: Examples
 
 examples/basic_usage
-examples/advanced_features
-examples/environment_variables
-examples/nested_configs
-examples/hyperparameter_sweeps
+examples/ml_training
+examples/rl_agent
+examples/cli_applications
 ```
 
 ```{toctree}
@@ -71,14 +216,97 @@ examples/hyperparameter_sweeps
 :caption: API Reference
 
 api/proto
-api/hyper
 api/utils
 ```
 
-## What Problem Does This Solve?
+```{toctree}
+:maxdepth: 1
+:caption: Additional Resources
 
-"Experiment Parameter Hell" occurs when you have numerous parameters scattered across your ML codebase, making it hard
-to:
+release_notes
+```
+
+## The Parameter Hell and Other Anti-Patterns
+
+When is the last time you spent hours tracking down a config variable, jumping
+through layers of class inheritance and runtime values? Only to find out that
+the value you were looking for was never set?
+
+Good code should be self-explanatory and statically resolvable. You should be able
+to take a look at the code and understand what value the parameter will take. 
+A common anti-pattern that appears everywhere is to nest config classes, and pass
+a single `config` object to the constructure of the top-level class. This makes it 
+difficult to **connect config flags with where and how it is used**. Take a look
+at the example below:
+
+- **Nested Config Classes Without Type Hint**: A common anti-pattern is to nest
+  config classes, and pass a single `config` object to the constructor of the
+  top-level class.
+
+  ```python
+  class Impala:
+  def __init__(self, config: Config):
+      self.config = config
+
+      # All of these uses the same config!
+      self.critic = Critic(self.config)
+      self.actor = Actor(self.config)
+      # ...
+  
+  class Critic:
+  def __init__(self, config: Config):
+      self.config = config
+      self.lr = config.lr
+      self.ent_coef = config.critic.ent_coef
+      self.discount = config.critic.discount
+      # ...
+  
+  def loss(self, x):
+      if self.config.loss_type == "l2":
+        return nn.l2_loss(x) # ...
+  
+  
+  ```
+
+  This tends to make it impossible to understand what parameter is used where.
+
+## Single-Source-Of-Truth HyperParameter Management with `params-proto`
+
+For a simple MNIST example we can define the training parameters by the
+function signature of `def train(lr: float...):`, and `def eval(batch_size: int...):`.
+And for the overall training run parameters, we can have those defined by the entrypoint
+function `def main(seed: int...):`
+
+This way, your IDE can provide definition/usage intellisense, and you can
+easily see what parameters are used where. The idea is to **co-locate parameters
+with their usages** throughout the codebase.
+
+### When is Centralized Configuration Useful?
+
+It is helpful when we only need to look at one place to override default values, for
+example at the beginning of your training run. `params-proto` does so by keeping track
+of all configuration parameters in a single place. So to automatically override
+parameters, you can simply run
+
+```python
+from params_proto import proto
+
+@proto.cli
+def train(
+    lr: float = 0.001,  # Learning rate
+    batch_size: int = 32,  # Training batch size
+    n_epochs: int = 100,  # Number of training epochs
+):
+    """Train a neural network on CIFAR-10 dataset."""
+    print(f"Training with lr={lr}, batch_size={batch_size}, n_epochs={n_epochs}")
+    
+dep = {"train.lr": 0.01, "train.batch_size": 256, "train.n_epochs": 10}
+
+proto.bind(**dep: DepencencyDict)
+
+assert train.lr == 0.01, "this is now overriden."
+assert train.batch_size == 256, "this is now overriden."
+```
 
 - Track what parameters exist
 - Get IDE autocompletion and type checking
@@ -87,6 +315,29 @@ to:
 
 params-proto solves this by providing a declarative way to define parameters that integrates seamlessly with Python IDEs
 and command-line interfaces.
+
+## Why v3?
+
+`params-proto` v3 is a complete redesign focused on simplicity, that maximally takes
+advantage of Python's new type hint system. This new API is in fact quite similar to
+`params-proto` v1, but at that time when I developed v1 (back in 2018), the python
+type hint system was still in its infancy. v2 was a rewrite from v1 that introduced
+the `params_proto.hyper` module, that allowed us to create and load hyperparameter
+sweeps. 
+
+v2 simply returns us to that, but with a modern, polished, and unified API for both
+decorator-based cli programs and the same powerful parameter sweeps.
+
+| Feature     | v1                | v2                | v3           |
+|-------------|-------------------|-------------------|--------------|
+| API Style   | Decorators        | Class inheritance | Decorators   |
+| Type Hints  | Not available     | Optional          | Required     |
+| Inline Docs | Manual            | Manual            | Automatic    |
+| Functions   | Full support      | Not supported     | Full support |
+| Union Types | Not supported     | Limited           | Full support |
+| IDE Support | Basic             | Basic             | Excellent    |
+
+See the [Migration Guide](migration.md) for upgrading from v2.
 
 ## GitHub Repository
 

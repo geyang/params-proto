@@ -1,210 +1,236 @@
-# `params-proto`, Modern Hyper Parameter Management for Machine Learning
+# params-proto: Modern Declarative Parameters for Machine Learning
 
 [![Documentation Status](https://readthedocs.org/projects/params-proto/badge/?version=latest)](https://params-proto.readthedocs.io/en/latest/?badge=latest)
 [![GitHub Release](https://img.shields.io/github/release/geyang/params-proto.svg)](https://github.com/geyang/params-proto/releases)
 [![PyPI version](https://badge.fury.io/py/params-proto.svg)](https://badge.fury.io/py/params-proto)
 
-> **Note**: A snapshot of the pre-uv-migration codebase (v2.13.2) is preserved at [params-proto-v2](https://github.com/geyang/params-proto-v2).
+**params-proto** is a lightweight, decorator-based library for defining configurations in Python. Write your parameters once with type hints and inline documentation, and get automatic CLI parsing, validation, and help generation.
 
-## 📖 Documentation & Release Notes
+> **Note**: This is v3 with a completely redesigned API. For the v2 API, see [params-proto-v2](https://github.com/geyang/params-proto-v2).
 
-- 2025/11/03: A re-design of the params-protp API with a few key improvements
-    * Revisit the decorator-based API, to support dataclass and more complex commandline programs.
-    * Moving to the uv package manager
-- 2025/08/03: Add generated documentation at [params-proto.readthedocs.io](https://params-proto.readthedocs.io/)
-- 2022/07/04: 
-    * Move `neo_proto` to top-level, move older `params_proto` to `v1` namespace.
-    * Implement nested update via [global prefix](https://github.com/geyang/params_proto/blob/master/test_params_proto/test_neo_proto.py#L278). No relative update via `**kwargs`, yet
-    * Fix `to_value` bug in Flag
-- 2021/06/16: Proto now supports using environment variables as default.
-- 2021/06/13: 5 month into my postdoc at MIT, add `sweep.save("sweep.jsonl")` to dump
-    the sweep into a `jsonl` file for large scale experiments on AWS.
-- 2019/12/09: Just finished my DeepMind Internship. Now `params-proto` contain
-    a new proto implementation, and a complementary hyperparameter search
-    library! See `neo_proto` and `neo_hyper`.
-- 2019/06/11: Now supports `tab-completion` at the command line!
-- 2018/11/08: Now supports both python `3.52` as well as `3.6`! :bangbang::star:
+## Why params-proto?
 
-## What is "Experiment Parameter Hell"?
-
-"Experiment Parameter Hell" occurs when you have more than twenty parameters for your ML project that are all defined as string/function parameters with `click` or `argparse`. Sometimes these parameters are defined in a launch script and passes through five layers of function calls during an experiment.
-
-<img width="60%" align="right" alt="autocompletion demo" src="./figures/params-proto-autocompletion.gif"></img>
-
-Your Python IDEs work very hard on static code analysis to intelligently make you more productive, and the "parameter hell" breaks all of that.
-
-### Step 1: Declarative Pattern to the Rescue!
-
-For this reason, you want to avoid using dictionaries or opaque `argparse` definitions as much as possible. Instead, you want to write those declaratively, so that your IDE can actually help you navigate through those layers of function calls. The hyper-parameter library, `params_proto` makes this easy, by integrating python namespaces (a bare python class) with `argparse`,  so that on the python side you get auto-completion, and from the command line you can pass in changes.
-
-**Installation**
-
-First let's install `params-proto` and its supporting module `waterbear`
-
-```bash
-pip install neotype
-```
-
-Then to declare your hyperparameters, you can write the following in a `your_project/soft_ac/config.py` file:
+**Stop fighting with argparse and click.** With params-proto, your configuration **is** your documentation:
 
 ```python
-import sys
 from params_proto import proto
 
+@proto.cli
+def train_mnist(
+    batch_size: int = 128,  # Training batch size
+    lr: float = 0.001,  # Learning rate
+    epochs: int = 10,  # Number of training epochs
+):
+    """Train an MLP on MNIST dataset."""
+    print(f"Training with lr={lr}, batch_size={batch_size}, epochs={epochs}")
+    # Your training code here...
 
-# this is the first config schema
-@proto
-class Args:
-  """Soft-actor Critic Implementation with SOTA Performance"""
-
-  debug = True if "pydevd" in sys.modules else False
-  """this is the debug flag, and is set to true when present."""
-
-  cuda: bool  # cuda tend to be slower.
-  seed: int = 42
-  env_name: str = "FetchReach-v1"
-  n_workers: int = 1 if debug else 12
-  
-  v_lr: float = 1e-3
-  pi_lr: float = 1e-3
-  
-  n_initial_rollouts: int = 0 if debug else 100
-  n_test_rollouts: int = 15
-  demo_length: int = 20
-
-  clip_inputs: bool  # flag to clip inputs to [-1, 1]
-  normalize_inputs: bool  # flag to normalize inputs to [-1, 1]
-
-
-# this is the second schema
-@proto.prefix
-class LfGR:
-  use_lfgr: bool = True  # enable LfGR reporting
-  start: int = 0 if Args.debug else 10  # start epoch for reporting
-  store_interval: int = 10  # interval for storing checkpoints
-  visualization_interval: int = 10  # interval for visualization updates
-
+if __name__ == "__main__":
+    train_mnist()
 ```
 
-### Step 2: Sweeping Hyper-parameters :fire:
+**That's it!** No argparse boilerplate, no manual help strings, no type conversion logic. Just pure Python functions with type hints and inline comments.
 
-Then you an sweep the hyperparameter via the following declarative pattern:
+Run it:
+```bash
+$ python train.py --help
+usage: train.py [-h] [--batch-size INT] [--lr FLOAT] [--epochs INT]
 
-```python
-from rl import main, Args
-from params_proto.v2.hyper import Sweep
+Train an MLP on MNIST dataset.
 
-if __name__ == '__main__':
-    from lp_analysis import instr
+options:
+  -h, --help           show this help message and exit
+  --batch-size INT     Training batch size (default: 128)
+  --lr FLOAT           Learning rate (default: 0.001)
+  --epochs INT         Number of training epochs (default: 10)
 
-    with Sweep(Args, LfGR) as sweep:
-        # override the default
-        Args.pi_lr = 3e-3
-        Args.clip_inputs = True  # this was a flag
-
-        # override the second config object
-        LfGR.visualization_interval = 40
-
-        # product between the zipped and the seed
-        with sweep.product:
-            # similar to python zip, unpacks a list of values.
-            with sweep.zip:
-                Args.env_name = ['FetchReach-v1', 'FetchPush-v1', 'FetchPickAndPlace-v1', 'FetchSlide-v1']
-                Args.n_epochs = [4, 12, 12, 20]
-                Args.n_workers = [5, 150, 200, 500]
-
-                # the seed is sweeped at last
-            Args.seed = [100, 200, 300, 400, 500, 600]
-
-    # You can save the sweep into a `jsonl` file
-    sweep.save('sweep.jsonl')
-
-    for i, deps in sweep.items():
-        thunk = instr(main, deps, _job_postfix=f"{Args.env_name}")
-        print(deps)
+$ python train.py --lr 0.01 --batch-size 256
+Training with lr=0.01, batch_size=256, epochs=10
 ```
 
-and it should print out a list of dictionaries that looks like:
+## Installation
 
 ```bash
-{Args.pi_lr: 3e-3, Args.clip_inputs: True, LfGR.visualization_interval: 40, Args.env_name: "FetchReach-v1", ... Args.seed: 100}
-{Args.pi_lr: 3e-3, Args.clip_inputs: True, LfGR.visualization_interval: 40, Args.env_name: "FetchReach-v1", ... Args.seed: 200}
-{Args.pi_lr: 3e-3, Args.clip_inputs: True, LfGR.visualization_interval: 40, Args.env_name: "FetchReach-v1", ... Args.seed: 300}
-...
+pip install params-proto
 ```
 
-<img width="60%" align="right" alt="spec_files" src="figures/spec_files.png"></img>
-## Where Can I find Documentation?
+## Key Features
 
-Look at the specification file at [./test_params_proto/*.py](test_params_proto) , which is part of the integrated test. These scripts contains the most comprehensive set of usage patters!!
-
-The new version has a `neo_` prefix. We will deprecate the older (non-neo) version in a few month.
-
-
-## Writing documentation as uhm..., man page?
-
-<img width="60%" align="right" alt="man page" src="./figures/man-page.png"></img>
-
-`Params-Proto` exposes your argument namespace's doc string as the usage note. For users of your code, there is no better help than the one that comes with the script itself!
-
-> With `params-proto`, your help is only one `-h` away :)
-
-And **Your code becomes the documentation.**
-
-## Tab-completion for your script!
-
-`params_proto` uses `argparse` together with `argcomplete`, which enables command line autocomplete on tabs! To enable run
+### 1. Function-based Configs
+Define parameters using type-annotated functions:
 
 ```python
-pip install params-proto
-# then:
-activate-global-python-argcomplete
+@proto.cli
+def train(
+    model: str = "resnet50",  # Model architecture
+    dataset: str = "imagenet",  # Dataset to use
+    gpu: bool = True,  # Enable GPU acceleration
+):
+    """Train a model on a dataset."""
+    print(f"Training {model} on {dataset}")
 ```
 
-For details, see [`argcomplete`'s documentation](https://github.com/kislyuk/argcomplete#installation).
+### 2. Class-based Configs
+Or use classes for more structure:
 
+```python
+@proto
+class Config:
+    """Training configuration."""
 
-## Why Use Params_Proto Instead of Click or Argparse?
+    # Model settings
+    model: str = "resnet50"
+    pretrained: bool = True  # Use pretrained weights
 
-Because this declarative, singleton pattern allows you to:
+    # Training settings
+    lr: float = 0.001  # Learning rate
+    batch_size: int = 32  # Batch size
+    epochs: int = 100  # Number of epochs
+```
 
-> Place all of the arguments under a namespace that can be statically checked.
+### 3. Singleton Prefixed Configs
+Create modular, reusable configuration groups:
 
-so that your IDE can:
+```python
+from params_proto import proto
 
-1. Find usage of each argument
-2. jump from *anywhere* in your code base to the declaration of that argument
-3. refactor your argument name **in the entire code base** automatically
+@proto.prefix
+class Environment:
+    """Environment configuration."""
+    domain: str = "cartpole"  # Domain name
+    task: str = "swingup"  # Task name
+    time_limit: float = 10.0  # Episode time limit
 
-`Params_proto` is the declarative way to write command line arguments, and is the way to go for ML projects.
+@proto.prefix
+class Agent:
+    """Agent hyperparameters."""
+    algorithm: str = "SAC"  # RL algorithm
+    lr: float = 3e-4  # Learning rate
+    gamma: float = 0.99  # Discount factor
 
+@proto.cli
+def train_rl(
+    seed: int = 0,  # Random seed
+    total_steps: int = 1000000,  # Total training steps
+):
+    """Train RL agent on dm_control."""
+    print(f"Training {Agent.algorithm} on {Environment.domain}-{Environment.task}")
+    print(f"Agent LR: {Agent.lr}, Gamma: {Agent.gamma}")
+```
 
-## How to override when calling from python
+Command line:
+```bash
+$ python train_rl.py --Agent.lr 0.001 --Environment.domain walker --seed 42
+Training SAC on walker-swingup
+Agent LR: 0.001, Gamma: 0.99
+```
 
-It is very easy to over-ride the parameters when you call your function: have most of your training code **directly** reference the parser namespace (your configuration namespace really), and just monkey patch the attribute.
+### 4. Multiple Override Patterns
 
-`params-proto` works very well with the clound ML launch tool [jaynes](https://github.com/episodeyang/jaynes). Take a look at the automagic awesomeness of [jaynes](https://github.com/episodeyang/jaynes):)
+Override parameters in multiple ways:
 
-## To Develop And Contribute
+```python
+# 1. Command line
+$ python train.py --lr 0.01
+
+# 2. Direct attribute assignment
+Config.lr = 0.01
+
+# 3. Function call with kwargs
+train(lr=0.01, batch_size=256)
+
+# 4. Using proto.bind() context manager
+with proto.bind(lr=0.01, **{"train.epochs": 50}):
+    train()
+```
+
+### 5. Rich Type System
+
+Support for complex types:
+
+```python
+from typing import Literal, Union
+from enum import Enum, auto
+
+class Optimizer(Enum):
+    ADAM = auto()
+    SGD = auto()
+    RMSPROP = auto()
+
+@proto
+class Config:
+    # Union types
+    precision: Literal["fp16", "fp32", "fp64"] = "fp32"
+
+    # Enums
+    optimizer: Optimizer = Optimizer.ADAM
+
+    # Tuples
+    image_size: tuple[int, int] = (224, 224)
+
+    # Optional types
+    checkpoint: str | None = None
+```
+
+## Quick Start
+
+1. **Define your configuration** with a decorated function or class
+2. **Add type hints** for automatic validation
+3. **Add inline comments** for automatic documentation
+4. **Call your function** - params-proto handles the rest!
+
+See our [Quick Start Guide](https://params-proto.readthedocs.io/en/latest/quick_start.html) for more.
+
+## Documentation
+
+- **[Quick Start](https://params-proto.readthedocs.io/en/latest/quick_start.html)** - Get started in 5 minutes
+- **[User Guide](https://params-proto.readthedocs.io/en/latest/guide/)** - Detailed documentation
+- **[Examples](https://params-proto.readthedocs.io/en/latest/examples/)** - Real-world usage patterns
+- **[API Reference](https://params-proto.readthedocs.io/en/latest/api/)** - Complete API documentation
+- **[Migration from v2](https://params-proto.readthedocs.io/en/latest/migration.html)** - Upgrade guide
+
+## What Changed in v3?
+
+**v2 (old)**: Class-based with inheritance
+```python
+from params_proto import ParamsProto
+
+class Args(ParamsProto):
+    lr = 0.001
+    batch_size = 32
+```
+
+**v3 (new)**: Decorator-based with type hints
+```python
+from params_proto import proto
+
+@proto
+class Args:
+    lr: float = 0.001  # Learning rate
+    batch_size: int = 32  # Batch size
+```
+
+Key improvements:
+- ✅ Cleaner decorator syntax (no inheritance needed)
+- ✅ Full IDE support with type hints
+- ✅ Inline documentation becomes automatic help text
+- ✅ Support for functions, not just classes
+- ✅ Better Union types and Enum support
+- ✅ Simplified singleton pattern with `@proto.prefix`
+
+## Contributing
 
 ```bash
 git clone https://github.com/episodeyang/params_proto.git
 cd params_proto
-make dev
+make dev test
 ```
 
-To test, run the following under both python `3.52` and `3.6`.
-```bash
-make test
-```
-
-This `make dev` command should build the wheel and install it in your current python environment. Take a look at the [./Makefile](./Makefile) for details.
-
-**To publish**, first update the version number, then do:
+To publish:
 ```bash
 make publish
 ```
 
+## License
 
-
-
+MIT License - see [LICENSE](LICENSE) for details.
