@@ -82,9 +82,9 @@ def test_proto_cli_long_name():
     -h, --help           show this help message and exit
     --seed INT           Random seed (default: 0)
     --this-is-a-very-long-parameter-name INT
-                         This is a very long parameter name (default: 1000000)
+                         Very long parameter description (default: 1000000)
     --this-is-an-even-longer-long-parameter-name INT
-                         This is an even longer long parameter name (default: 1000000)
+                         Even longer long parameter description (default: 1000000)
   """)
   assert train_rl.__help_str__ == expected, (
     "we should be able to handle long parameter names"

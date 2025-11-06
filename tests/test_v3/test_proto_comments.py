@@ -115,20 +115,20 @@ def test_mixed_comments():
 
 
 def test_docstring_args_section():
-  """Test that inline comments take precedence over Args section in docstring."""
+  """Test that inline comments are concatenated with Args section in docstring."""
   from params_proto import proto
 
   @proto.cli(prog="train")
   def train(
-    batch_size: int = 128,  # Inline comment wins
-    learning_rate: float = 0.001,  # This is used
+    batch_size: int = 128,  # Training batch size
+    learning_rate: float = 0.001,  # Initial learning rate
     epochs: int = 10,
   ):
     """Train a model.
 
     Args:
-      batch_size: Batch size from docstring (ignored)
-      learning_rate: Learning rate from docstring (ignored)
+      batch_size: Controls memory usage and gradient noise
+      learning_rate: For the optimizer
       epochs: Number of training epochs
     """
     pass
@@ -140,12 +140,14 @@ def test_docstring_args_section():
 
   options:
     -h, --help           show this help message and exit
-    --batch-size INT     Inline comment wins (default: 128)
+    --batch-size INT     Training batch size. Controls memory usage and gradient noise (default: 128)
     --learning-rate FLOAT
-                         This is used (default: 0.001)
+                         Initial learning rate. For the optimizer (default: 0.001)
     --epochs INT         Number of training epochs (default: 10)
   """)
-  assert train.__help_str__ == expected, "inline comments should take precedence over docstring Args"
+  assert train.__help_str__ == expected, (
+    "inline comments and docstring Args should be concatenated"
+  )
 
 
 def test_no_comments():
@@ -183,7 +185,7 @@ def test_multiline_inline_comment():
   @proto.cli(prog="train")
   def train(
     batch_size: int = 128,  # Training batch size
-                            # This continuation is ignored
+    # This continuation is ignored
     learning_rate: float = 0.001,
   ):
     """Train a model."""

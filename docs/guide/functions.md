@@ -93,7 +93,30 @@ def train(
 - Documentation separated from parameter definition
 - More verbose
 
-Note: Currently, inline comments take precedence over Args: sections. If both are present, the inline comment will be used.
+### Combining Both Syntaxes
+
+If you provide both inline comments and docstring Args, params-proto will concatenate them intelligently:
+
+```python
+@proto.cli
+def train(
+    batch_size: int = 128,  # Training batch size
+):
+    """Train a model.
+
+    Args:
+        batch_size: Controls memory usage and gradient noise
+    """
+    pass
+```
+
+This generates: `Training batch size. Controls memory usage and gradient noise`
+
+Use this pattern to provide:
+- **Inline comment**: Brief, one-line summary
+- **Docstring Args**: Detailed explanation with context
+
+**Deduplication**: If both sources contain identical text, it will only appear once.
 
 ### 3. Auto-generated Descriptions (Fallback)
 
