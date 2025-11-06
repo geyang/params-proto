@@ -76,14 +76,34 @@ class ProtoWrapper:
             )
             default = param.default if param.default != inspect.Parameter.empty else None
 
+            # Resolve EnvVar instances at decoration time
+            # The environment variables are read from the declaration environment
+            is_env_var = (
+                hasattr(default, "__class__")
+                and default.__class__.__name__ == "_EnvVar"
+            )
+
+            if is_env_var:
+                # Resolve env var at decoration time
+                # NO auto-inference from parameter name for security reasons
+                env_value = default.get()
+
+                # Apply type conversion based on annotation
+                if env_value is not None:
+                    resolved_default = _convert_type(env_value, annotation)
+                else:
+                    resolved_default = default.default  # Use the EnvVar's default value
+            else:
+                resolved_default = default
+
             self._params[param_name] = {
                 "annotation": annotation,
-                "default": default,
+                "default": resolved_default,
                 "required": param.default == inspect.Parameter.empty,
             }
             self._annotations[param_name] = annotation
-            if default is not None or param.default != inspect.Parameter.empty:
-                self._defaults[param_name] = default
+            if resolved_default is not None or param.default != inspect.Parameter.empty:
+                self._defaults[param_name] = resolved_default
 
         # Extract documentation from source
         self._field_docs = _extract_docs_from_source(func)
@@ -277,51 +297,85 @@ class ProtoClass:
 
 def _extract_docs_from_source(obj: Any) -> Dict[str, str]:
     """Extract documentation from inline comments and docstrings."""
+    import re
     docs = {}
 
     try:
         source = inspect.getsource(obj)
         lines = source.split("\n")
 
+        # Pattern to match parameter definitions: identifier: type [= value]
+        # Must have a type annotation after the colon (not just a colon followed by nothing or newline)
+        param_pattern = re.compile(r'^\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*:\s*\w')
+
+        # Docstring section headers to skip
+        docstring_sections = {'Args', 'Returns', 'Raises', 'Yields', 'Examples', 'Example',
+                             'Attributes', 'Note', 'Notes', 'Warning', 'Warnings', 'See'}
+
+        # Track whether we're inside a docstring
+        inside_docstring = False
+
         i = 0
         while i < len(lines):
             line = lines[i]
 
+            # Track docstring boundaries
+            if '"""' in line or "'''" in line:
+                # Count quotes to determine if we're entering or exiting
+                quote_count = line.count('"""') + line.count("'''")
+                if quote_count % 2 == 1:  # Odd number means state change
+                    inside_docstring = not inside_docstring
+                # If both opening and closing on same line, we're not inside
+                elif quote_count == 2:
+                    inside_docstring = False
+
+            # Skip lines inside docstrings
+            if inside_docstring:
+                i += 1
+                continue
+
+            # Check if this looks like a parameter definition
+            param_match = param_pattern.match(line)
+            if not param_match:
+                i += 1
+                continue
+
+            field_name = param_match.group(1)
+
+            # Skip docstring section headers (shouldn't reach here if inside docstring, but just in case)
+            if field_name in docstring_sections:
+                i += 1
+                continue
+
             # Extract field name and inline comment
-            if ":" in line and "#" in line:
+            if "#" in line:
                 # Pattern: field: type = value  # comment
                 parts = line.split("#", 1)
                 if len(parts) == 2:
-                    field_part = parts[0].strip()
                     comment = parts[1].strip()
-                    if ":" in field_part:
-                        field_name = field_part.split(":")[0].strip()
-                        docs[field_name] = comment
+                    docs[field_name] = comment
 
             # Extract docstrings (look ahead for """ after field definition)
-            elif ":" in line:
-                # Check if next line has docstring
-                if i + 1 < len(lines):
-                    next_line = lines[i + 1].strip()
-                    if next_line.startswith('"""'):
-                        field_part = line.split(":")[0].strip()
-                        # Handle multi-line docstrings
-                        if next_line.endswith('"""') and len(next_line) > 6:
-                            # Single line docstring
-                            doc = next_line.strip('"""').strip()
-                            docs[field_part] = doc
-                        else:
-                            # Multi-line docstring
-                            doc_lines = [next_line.strip('"""').strip()]
-                            j = i + 2
-                            while j < len(lines):
-                                doc_line = lines[j].strip()
-                                if doc_line.endswith('"""'):
-                                    doc_lines.append(doc_line.rstrip('"""').strip())
-                                    break
-                                doc_lines.append(doc_line)
-                                j += 1
-                            docs[field_part] = " ".join(doc_lines).strip()
+            elif i + 1 < len(lines):
+                next_line = lines[i + 1].strip()
+                if next_line.startswith('"""'):
+                    # Handle multi-line docstrings
+                    if next_line.endswith('"""') and len(next_line) > 6:
+                        # Single line docstring
+                        doc = next_line.strip('"""').strip()
+                        docs[field_name] = doc
+                    else:
+                        # Multi-line docstring
+                        doc_lines = [next_line.strip('"""').strip()]
+                        j = i + 2
+                        while j < len(lines):
+                            doc_line = lines[j].strip()
+                            if doc_line.endswith('"""'):
+                                doc_lines.append(doc_line.rstrip('"""').strip())
+                                break
+                            doc_lines.append(doc_line)
+                            j += 1
+                        docs[field_name] = " ".join(doc_lines).strip()
 
             i += 1
     except (OSError, TypeError):
@@ -369,16 +423,16 @@ def _generate_help_for_function(wrapper: ProtoWrapper) -> str:
     """Generate help text for a proto function."""
     lines = []
 
-    # Derive script name from function name
-    func_name = wrapper.__name__
-    # Convert train_mnist -> mnist_train.py (move first word to end)
-    # But only if second part is substantial (>2 chars)
-    parts = func_name.split("_")
-    if len(parts) > 1 and len(parts[1]) > 2:
-        # Move first part to end: train_mnist -> mnist_train
-        script_name = "_".join(parts[1:] + [parts[0]]) + ".py"
+    # Get script name from sys.argv[0] if available, otherwise use function name
+    import sys
+    from pathlib import Path
+
+    argv_name = Path(sys.argv[0]).name if sys.argv else None
+    # Use argv[0] if it looks like a real Python script, otherwise fallback to function name
+    if argv_name and argv_name.endswith('.py'):
+        script_name = argv_name
     else:
-        script_name = f"{func_name}.py"
+        script_name = wrapper.__name__
 
     # Build usage line with actual arguments
     usage_parts = [f"\nusage: {script_name}", "[-h]"]
@@ -394,10 +448,12 @@ def _generate_help_for_function(wrapper: ProtoWrapper) -> str:
     lines.append(" ".join(usage_parts))
     lines.append("")
 
-    # Description
+    # Description - only include text before Args:/Returns:/etc sections
     if wrapper.__doc__:
-        lines.append(wrapper.__doc__.strip())
-        lines.append("")
+        doc = _extract_description_from_docstring(wrapper.__doc__)
+        if doc:
+            lines.append(doc)
+            lines.append("")
 
     # Options section
     lines.append("options:")
@@ -426,9 +482,6 @@ def _generate_help_for_function(wrapper: ProtoWrapper) -> str:
         else:
             option_str = f"  {arg_name}"
 
-        # Pad to align descriptions
-        option_str = option_str.ljust(main_padding)
-
         # Build description with default
         desc_parts = []
         if help_text:
@@ -436,7 +489,17 @@ def _generate_help_for_function(wrapper: ProtoWrapper) -> str:
         if default is not None:
             desc_parts.append(f"(default: {default})")
 
-        lines.append(option_str + " ".join(desc_parts))
+        full_desc = " ".join(desc_parts)
+
+        # If the option string is too long, put description on next line
+        if len(option_str) >= main_padding:
+            lines.append(option_str)
+            if full_desc:
+                lines.append(" " * main_padding + full_desc)
+        else:
+            # Pad to align descriptions
+            option_str = option_str.ljust(main_padding)
+            lines.append(option_str + full_desc)
 
     # Add sections for any @proto.prefix singletons
     for singleton_name, singleton in _SINGLETONS.items():
@@ -522,6 +585,59 @@ def _generate_help_for_class(wrapper: ProtoClass) -> str:
     """Generate help text for a proto class."""
     # Similar implementation for classes
     return ""
+
+
+def _extract_description_from_docstring(docstring: str) -> str:
+    """Extract the description part from a docstring (everything before Args:/Returns:/etc).
+
+    Args:
+        docstring: The full docstring text
+
+    Returns:
+        The description text with Args/Returns/etc sections removed
+    """
+    if not docstring:
+        return ""
+
+    doc = docstring.strip()
+
+    # Look for common docstring sections (with optional leading whitespace)
+    import re
+    # Match section headers like "Args:", "Returns:", etc. at start of line with optional whitespace
+    section_pattern = r'\n\s*(Args|Returns|Raises|Yields|Examples?|Attributes?|Note|Notes|Warning|Warnings|See Also):'
+
+    match = re.search(section_pattern, doc)
+    if match:
+        # Return everything before the first section
+        return doc[:match.start()].strip()
+
+    return doc
+
+
+def _convert_type(value: Any, annotation: Any) -> Any:
+    """Convert a value to match the given type annotation."""
+    # If value is already the right type or None, return as-is
+    if value is None:
+        return None
+
+    # Get the origin type for generics like List[int]
+    origin = get_origin(annotation)
+
+    # Handle basic types
+    if annotation == int or annotation is int:
+        return int(value)
+    elif annotation == float or annotation is float:
+        return float(value)
+    elif annotation == bool or annotation is bool:
+        # Handle common boolean string representations
+        if isinstance(value, str):
+            return value.lower() in ("true", "1", "yes", "on")
+        return bool(value)
+    elif annotation == str or annotation is str:
+        return str(value)
+
+    # For complex types, try to return the value as-is
+    return value
 
 
 def _get_type_name(annotation: Any) -> str:
@@ -675,6 +791,105 @@ def cli(obj: Any = None):
 
 
 proto.cli = cli
+
+
+class _EnvVar:
+    """
+    Environment variable reader that supports two syntaxes:
+
+    1. Matmul operator syntax:
+        batch_size: int = EnvVar @ "BATCH_SIZE"
+        learning_rate: float = EnvVar @ 0.001
+
+    2. Function call syntax:
+        db_url: str = EnvVar("DATABASE_URL", default="localhost")
+        data_dir: str = EnvVar("$DATA_DIR/models", default="/tmp/models")
+    """
+
+    def __init__(self, template: str = None, *, default: Any = None):
+        """
+        Create an environment variable reader.
+
+        Args:
+            template: Environment variable name or template string (e.g., "$VAR" or "VAR")
+            default: Default value if environment variable is not set
+        """
+        self.template = template
+        self.default = default
+        self._env_name = None
+
+    def __matmul__(self, other: Any):
+        """
+        Support EnvVar @ "VAR_NAME" or EnvVar @ default_value syntax.
+
+        Args:
+            other: Either an environment variable name (str) or a default value
+
+        Returns:
+            New _EnvVar instance configured with the given parameter
+        """
+        if isinstance(other, str):
+            # EnvVar @ "VAR_NAME" - treat as env var name
+            return _EnvVar(template=other, default=None)
+        else:
+            # EnvVar @ some_value - treat as default value
+            return _EnvVar(template=None, default=other)
+
+    def __call__(self, template: str, *, default: Any = None):
+        """
+        Support EnvVar("VAR_NAME", default=...) function call syntax.
+
+        Args:
+            template: Environment variable name or template string
+            default: Default value if environment variable is not set
+
+        Returns:
+            New _EnvVar instance configured with the given parameters
+        """
+        return _EnvVar(template=template, default=default)
+
+    def get(self) -> Any:
+        """
+        Get the value from environment variable.
+
+        Returns:
+            Value from environment or default
+        """
+        import os
+        from params_proto.parse_env_template import parse_env_template
+
+        # Use only the explicitly set template
+        # NO auto-inference for security reasons
+        if not self.template:
+            return self.default
+
+        name = self.template
+
+        # Handle template strings with $ prefix or ${} syntax
+        if name.startswith("$") or "${" in name:
+            # Parse and expand template
+            vars_in_template = parse_env_template(name)
+            if vars_in_template:
+                # Expansion for both $VAR and ${VAR} syntax
+                expanded = name
+                for var in vars_in_template:
+                    var_value = os.environ.get(var, "")
+                    # Replace both ${VAR} and $VAR forms
+                    expanded = expanded.replace(f"${{{var}}}", var_value)
+                    expanded = expanded.replace(f"${var}", var_value)
+                return expanded if expanded != name else self.default
+
+        # Simple env var lookup
+        return os.environ.get(name, self.default)
+
+    def __repr__(self):
+        if self.template:
+            return f"EnvVar({self.template!r}, default={self.default!r})"
+        return f"EnvVar(default={self.default!r})"
+
+
+# Create singleton instance for @ syntax, but also keep class available
+EnvVar = _EnvVar()
 
 
 def get_var(default: Any = None, *, env: str = None):
