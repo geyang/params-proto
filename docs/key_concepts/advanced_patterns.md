@@ -460,8 +460,7 @@ class ModelArchitecture:
 
 # ✗ Avoid
 @proto.prefix
-class Config:
-    h: int = 256
+class Params:    h: int = 256
 ```
 
 ### 2. Group Related Settings

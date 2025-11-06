@@ -3,8 +3,7 @@ from params_proto.v1 import Proto, cli_parse
 
 
 @cli_parse
-class Config:
-  """
+class Params:  """
   Your ICLR best paper project
 
   -- Ge
@@ -14,4 +13,4 @@ class Config:
 
 
 if __name__ == "__main__":
-  print(f"seed is {Config.seed}")
+  print(f"seed is {Params.seed}")

@@ -30,7 +30,7 @@ def train(
     epochs: int = 100,  # Number of epochs
 ):
     """Train a model."""
-    print(f"Training: lr={lr}, batch_size={batch_size}, epochs={epochs}")
+    print(lr, batch_size, epochs)
 
 if __name__ == "__main__":
     train()
@@ -166,10 +166,10 @@ print(config1.lr, config2.lr)  # 0.001 0.01
 
 ```python
 # Access class defaults
-print(TrainConfig.lr)  # 0.001
+print(TrainParams.lr)  # 0.001
 
 # Modify class default (affects new instances)
-TrainConfig.lr = 0.01
+TrainParams.lr = 0.01
 
 config3 = TrainConfig()
 print(config3.lr)  # 0.01 (uses new default)
@@ -219,8 +219,7 @@ from dataclasses import dataclass
 
 @proto
 @dataclass
-class Config:
-    """Model configuration."""
+class Params:    """Model configuration."""
     hidden_size: int = 256
     num_layers: int = 4
     dropout: float = 0.1
@@ -393,8 +392,7 @@ def train(
 
 ```python
 @proto
-class Config:
-    model_type: str = "resnet"
+class Params:    model_type: str = "resnet"
     hidden_size: int = 256
 
 def create_model(config: Config):

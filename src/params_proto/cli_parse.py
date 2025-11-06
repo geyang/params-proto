@@ -26,22 +26,21 @@ def parse_cli_args(wrapper) -> Dict[str, Any]:
     add_help=False,  # We handle --help manually
   )
 
-  # Add parameters
-  # First pass: add required parameters as positional arguments
-  # Second pass: add all parameters as optional --flag arguments
+  # Collect required parameters for positional args
+  required_params = []
   for param_name, param_info in wrapper._params.items():
-    annotation = param_info["annotation"]
-    default = param_info.get("default")
-    required = param_info.get("required", False)
+    if param_info.get("required", False) and param_info["annotation"] != bool:
+      required_params.append(param_name)
 
-    # Add positional argument for required parameters (non-boolean)
-    if required and annotation != bool:
-      parser.add_argument(
-        param_name,
-        type=_get_converter_for_type(annotation),
-        nargs='?',  # Make it optional so --flag syntax also works
-        dest=f"_pos_{param_name}",  # Use temporary dest to avoid conflict
-      )
+  # Add positional arguments for required parameters
+  for param_name in required_params:
+    param_info = wrapper._params[param_name]
+    annotation = param_info["annotation"]
+    parser.add_argument(
+      param_name,
+      type=_get_converter_for_type(annotation),
+      nargs='?',  # Make it optional so --flag syntax also works
+    )
 
   # Add all parameters as optional --flag arguments
   for param_name, param_info in wrapper._params.items():
@@ -56,42 +55,51 @@ def parse_cli_args(wrapper) -> Dict[str, Any]:
       parser.add_argument(
         arg_name,
         action="store_true",
-        dest=param_name,
-        default=default,
+        dest=f"_opt_{param_name}",
+        default=None,
       )
       parser.add_argument(
         f"--no-{param_name.replace('_', '-')}",
         action="store_false",
-        dest=param_name,
+        dest=f"_opt_{param_name}",
       )
     else:
-      # Regular arguments
+      # Regular arguments (use different dest to avoid conflict with positional)
       parser.add_argument(
         arg_name,
         type=_get_converter_for_type(annotation),
-        default=default if not required else argparse.SUPPRESS,
-        required=False,  # Never required since we have positional option
-        dest=param_name,
+        default=None,
+        dest=f"_opt_{param_name}",
       )
 
   # Parse arguments
   args = parser.parse_args()
 
-  # Convert to dict and merge positional args with named args
-  result = vars(args)
+  # Build result by merging positional and optional arguments
+  result = {}
 
-  # Merge positional arguments (prefer positional if both exist)
-  for param_name in wrapper._params.keys():
-    pos_key = f"_pos_{param_name}"
-    if pos_key in result:
-      pos_value = result.pop(pos_key)
-      # If positional value was provided, use it (overrides named arg)
-      if pos_value is not None:
-        result[param_name] = pos_value
-      # If positional wasn't provided but named arg wasn't either,
-      # and it's required, we need to raise an error
-      elif param_name not in result and wrapper._params[param_name].get("required", False):
-        raise SystemExit(f"error: the following argument is required: {param_name}")
+  for param_name, param_info in wrapper._params.items():
+    annotation = param_info["annotation"]
+    default = param_info.get("default")
+    required = param_info.get("required", False)
+
+    # Check positional value (if this was a required param)
+    pos_value = getattr(args, param_name, None) if param_name in required_params else None
+
+    # Check optional flag value
+    opt_value = getattr(args, f"_opt_{param_name}", None)
+
+    # Determine final value (optional flags take precedence)
+    if opt_value is not None:
+      result[param_name] = opt_value
+    elif pos_value is not None:
+      result[param_name] = pos_value
+    elif not required:
+      # Use default for optional parameters
+      result[param_name] = default
+    else:
+      # Required parameter with no value provided
+      raise SystemExit(f"error: the following argument is required: {param_name}")
 
   return result
 

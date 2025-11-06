@@ -61,8 +61,7 @@ class Config(ParamsProto):
 from params_proto import proto
 
 @proto
-class Config:
-    lr: float = 0.001
+class Params:    lr: float = 0.001
     batch_size: int = 32
 ```
 
@@ -82,8 +81,7 @@ class Config(ParamsProto):
 **v3:**
 ```python
 @proto
-class Config:
-    lr: float = 0.001
+class Params:    lr: float = 0.001
     batch_size: int = 32
     model_name: str = "resnet50"
     use_gpu: bool = True
@@ -110,8 +108,7 @@ class Config(ParamsProto):
 **v3:**
 ```python
 @proto
-class Config:
-    """Training configuration."""
+class Params:    """Training configuration."""
     lr: float = 0.001  # Learning rate for optimizer
     batch_size: int = 32  # Size of training batches
 ```
@@ -233,8 +230,7 @@ class Config(ParamsProto):
 import os
 
 @proto
-class Config:
-    data_path: str = os.getenv("DATA_PATH", "./data")
+class Params:    data_path: str = os.getenv("DATA_PATH", "./data")
 ```
 
 ### Flags (Boolean Arguments)
@@ -251,8 +247,7 @@ class Config(ParamsProto):
 **v3:**
 ```python
 @proto
-class Config:
-    debug: bool = False
+class Params:    debug: bool = False
     use_cuda: bool = False
 ```
 
@@ -275,8 +270,7 @@ class Model:
     name: str = "resnet50"
 
 @proto
-class Config:
-    lr: float = 0.001
+class Params:    lr: float = 0.001
 
 # Access as Model.name from CLI or code
 ```

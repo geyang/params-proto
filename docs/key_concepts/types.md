@@ -17,8 +17,7 @@ from dataclasses import dataclass
 from params_proto import proto
 
 @dataclass
-class Config:
-    lr: float = 0.001
+class Params:    lr: float = 0.001
     batch_size: int = 32
 
 @proto.cli
@@ -466,8 +465,7 @@ from params_proto import proto
 
 @proto
 @dataclass
-class Config:
-    lr: float = 0.001
+class Params:    lr: float = 0.001
     batch_size: int = 32
 
     def __post_init__(self):

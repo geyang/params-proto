@@ -66,6 +66,7 @@ class ProtoWrapper:
     self._prog = prog  # Override script name for help generation
     self._overrides = {}
     self._name = func.__name__
+    self._sweep_hooks = []  # Minimal hooks support for Sweep
 
     # Copy function metadata
     self.__name__ = func.__name__
@@ -134,6 +135,12 @@ class ProtoWrapper:
     ):
       object.__setattr__(self, name, value)
     else:
+      # Call sweep hooks if present
+      if hasattr(self, "_sweep_hooks"):
+        for hook in self._sweep_hooks:
+          result = hook(self, name, value)
+          if result is not None:
+            return result
       # Store override
       if not hasattr(self, "_overrides"):
         object.__setattr__(self, "_overrides", {})
@@ -142,6 +149,11 @@ class ProtoWrapper:
   def __getattr__(self, name):
     if name in self._overrides:
       return self._overrides[name]
+
+    # Try to get default value
+    if hasattr(self, "_defaults") and name in self._defaults:
+      return self._defaults[name]
+
     raise AttributeError(
       f"'{self.__class__.__name__}' object has no attribute '{name}'"
     )
@@ -244,6 +256,7 @@ class ProtoWrapper:
           _BIND_CONTEXT[key] = prev_bindings[key]
 
 
+
 class ProtoClass:
   """Wrapper for proto-decorated classes."""
 
@@ -252,6 +265,7 @@ class ProtoClass:
     self._is_cli = is_cli
     self._is_prefix = is_prefix
     self._overrides = {}
+    self._sweep_hooks = []  # Minimal hooks support for Sweep
 
     # Extract annotations and defaults
     self._annotations = getattr(cls, "__annotations__", {})
@@ -324,17 +338,33 @@ class ProtoClass:
     if name.startswith("_") or name in ("__help_str__",):
       object.__setattr__(self, name, value)
     else:
+      # Call sweep hooks if present
+      if hasattr(self, "_sweep_hooks"):
+        for hook in self._sweep_hooks:
+          result = hook(self, name, value)
+          if result is not None:
+            return result
       # Store override at class level
       if not hasattr(self, "_overrides"):
         object.__setattr__(self, "_overrides", {})
       self._overrides[name] = value
 
   def __getattr__(self, name):
-    if hasattr(self, "_overrides") and name in self._overrides:
-      return self._overrides[name]
-    if hasattr(self, "_cls"):
-      attr = getattr(self._cls, name)
+    # Use object.__getattribute__ to avoid recursion during deepcopy
+    try:
+      overrides = object.__getattribute__(self, "_overrides")
+      if name in overrides:
+        return overrides[name]
+    except AttributeError:
+      pass
+
+    try:
+      cls = object.__getattribute__(self, "_cls")
+      attr = getattr(cls, name)
       return attr
+    except AttributeError:
+      pass
+
     raise AttributeError(
       f"'{self.__class__.__name__}' object has no attribute '{name}'"
     )
