@@ -35,10 +35,11 @@ def test_proto_cli_envvar_with_value():
   os.environ["LEARNING_RATE"] = "0.01"
 
   try:
+
     @proto.cli(prog="train")
     def train(
       batch_size: int = EnvVar @ "BATCH_SIZE",  # Read from BATCH_SIZE env var
-      learning_rate: float = EnvVar @ 0.001,  # Use 0.001 as default
+      learning_rate: float = EnvVar @ "LR" | 0.001,  # Use 0.001 as default
       epochs: int = 10,  # Regular default
     ):
       """Train model with environment variable configuration."""
@@ -100,16 +101,21 @@ def test_proto_cli_envvar_function_syntax():
   os.environ["DATABASE_URL"] = "postgres://localhost/mydb"
 
   try:
+
     @proto.cli
     def connect(
-      db_url: str = EnvVar("DATABASE_URL", default="sqlite:///local.db"),  # Env var with default
+      db_url: str = EnvVar(
+        "DATABASE_URL", default="sqlite:///local.db"
+      ),  # Env var with default
       timeout: int = EnvVar("DB_TIMEOUT", default=30),  # Missing env var, use default
     ):
       """Connect to database."""
       return db_url, timeout
 
     result = connect()
-    assert result == ("postgres://localhost/mydb", 30), f"Expected database URL from env and default timeout, got {result}"
+    assert result == ("postgres://localhost/mydb", 30), (
+      f"Expected database URL from env and default timeout, got {result}"
+    )
 
   finally:
     del os.environ["DATABASE_URL"]
@@ -124,6 +130,7 @@ def test_proto_cli_envvar_simple_name():
   os.environ["API_KEY"] = "secret-key-123"
 
   try:
+
     @proto.cli
     def api_call(
       api_key: str = EnvVar @ "API_KEY",  # Simple var name
@@ -147,6 +154,7 @@ def test_proto_cli_envvar_dollar_prefix():
   os.environ["DATA_DIR"] = "/mnt/data"
 
   try:
+
     @proto.cli
     def load_data(
       data_dir: str = EnvVar @ "$DATA_DIR",  # Dollar prefix syntax
@@ -170,6 +178,7 @@ def test_proto_cli_envvar_braces_syntax():
   os.environ["LOG_DIR"] = "/var/log"
 
   try:
+
     @proto.cli
     def setup_logging(
       log_dir: str = EnvVar("${LOG_DIR}", default="/tmp/logs"),  # Braces syntax
@@ -194,6 +203,7 @@ def test_proto_cli_envvar_multiple_vars():
   os.environ["PROJECT_NAME"] = "myproject"
 
   try:
+
     @proto.cli
     def get_path(
       project_path: str = EnvVar @ "$BASE_DIR/$PROJECT_NAME",  # Multiple vars
@@ -220,6 +230,7 @@ def test_proto_cli_envvar_type_conversion():
   os.environ["ENABLED"] = "true"
 
   try:
+
     @proto.cli
     def config(
       port: int = EnvVar @ "PORT",  # String to int
@@ -239,3 +250,30 @@ def test_proto_cli_envvar_type_conversion():
     del os.environ["PORT"]
     del os.environ["RATIO"]
     del os.environ["ENABLED"]
+
+
+def test_proto_cli_envvar_pipe_operator():
+  """Test EnvVar with pipe operator for default values."""
+  import os
+
+  from params_proto import EnvVar, proto
+
+  # Set only one env var
+  os.environ["BATCH_SIZE"] = "256"
+
+  try:
+
+    @proto.cli
+    def train(
+      batch_size: int = EnvVar @ "BATCH_SIZE" | 128,  # Env var set, use it
+      learning_rate: float = EnvVar @ "LR" | 0.001,  # Env var not set, use default
+      epochs: int = EnvVar @ "EPOCHS" | 10,  # Env var not set, use default
+    ):
+      """Train with pipe operator defaults."""
+      return batch_size, learning_rate, epochs
+
+    result = train()
+    assert result == (256, 0.001, 10), f"Expected (256, 0.001, 10), got {result}"
+
+  finally:
+    del os.environ["BATCH_SIZE"]

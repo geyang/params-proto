@@ -801,15 +801,19 @@ proto.cli = cli
 
 class _EnvVar:
     """
-    Environment variable reader that supports two syntaxes:
+    Environment variable reader that supports three syntaxes:
 
-    1. Matmul operator syntax:
+    1. Matmul operator with env var name:
         batch_size: int = EnvVar @ "BATCH_SIZE"
-        learning_rate: float = EnvVar @ 0.001
 
-    2. Function call syntax:
+    2. Matmul operator with pipe for default:
+        learning_rate: float = EnvVar @ "LR" | 0.001
+
+    3. Function call syntax:
         db_url: str = EnvVar("DATABASE_URL", default="localhost")
         data_dir: str = EnvVar("$DATA_DIR/models", default="/tmp/models")
+
+    The pipe operator (|) allows clean chaining of env var name with fallback value.
     """
 
     def __init__(self, template: str = None, *, default: Any = None):
@@ -840,6 +844,20 @@ class _EnvVar:
         else:
             # EnvVar @ some_value - treat as default value
             return _EnvVar(template=None, default=other)
+
+    def __or__(self, other: Any):
+        """
+        Support chaining with | to specify default value.
+
+        Syntax: EnvVar @ "VAR_NAME" | default_value
+
+        Args:
+            other: Default value to use if env var is not set
+
+        Returns:
+            New _EnvVar instance with both template and default
+        """
+        return _EnvVar(template=self.template, default=other)
 
     def __call__(self, template: str, *, default: Any = None):
         """

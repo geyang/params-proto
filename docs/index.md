@@ -145,6 +145,39 @@ $ python train_rl.py --Environment.domain walker --Agent.gamma 0.95
 Training SAC on walker-swingup
 ```
 
+## Environment Variables
+
+Read configuration from environment variables with type-safe defaults:
+
+```python
+from params_proto import proto, EnvVar
+
+
+@proto.cli
+def train_model(
+    # Three ways to specify environment variables:
+    batch_size: int = EnvVar @ "BATCH_SIZE",  # Read from env var
+    learning_rate: float = EnvVar @ "LR" | 0.001,  # With default fallback
+    db_url: str = EnvVar("DATABASE_URL", default="localhost"),  # Function syntax
+    data_dir: str = EnvVar @ "$DATA_DIR/models",  # Template expansion
+):
+    """Train model with environment configuration."""
+    print(f"Training with batch_size={batch_size}, lr={learning_rate}")
+
+
+if __name__ == "__main__":
+    train_model()
+```
+
+The pipe operator (`|`) provides clean syntax for fallback values:
+
+```python
+# If LR env var is set, use it; otherwise use 0.001
+learning_rate: float = EnvVar @ "LR" | 0.001
+```
+
+Environment variables are resolved at decoration time and automatically converted to the annotated type (int, float, bool, str).
+
 ## Documentation Contents
 
 ```{toctree}
