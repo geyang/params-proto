@@ -176,15 +176,17 @@ def train(
 ```
 
 Generates:
-```
-usage: train.py [-h] [--lr FLOAT] [--batch-size INT]
+```{ansi-block}
+:string_escape:
+
+usage: train.py [-h] [--lr \x1b[1m\x1b[94mFLOAT\x1b[0m] [--batch-size \x1b[1m\x1b[94mINT\x1b[0m]
 
 Main description - appears at top of help.
 
 options:
   -h, --help           show this help message and exit
-  --lr FLOAT           Learning rate (default: 0.001)
-  --batch-size INT     Batch size (default: 32)
+  --lr \x1b[1m\x1b[94mFLOAT\x1b[0m           Learning rate \x1b[36m(default:\x1b[0m \x1b[1m\x1b[36m0.001\x1b[0m\x1b[36m)\x1b[0m
+  --batch-size \x1b[1m\x1b[94mINT\x1b[0m     Batch size \x1b[36m(default:\x1b[0m \x1b[1m\x1b[36m32\x1b[0m\x1b[36m)\x1b[0m
 ```
 
 ## Special Attributes
@@ -222,6 +224,6 @@ proto.parse(func, **kwargs)  # Parse and call
 
 ## See Also
 
-- [Decorators Guide](../guide/decorators.md) - Detailed decorator documentation
-- [Types Guide](../guide/types.md) - Supported type annotations
+- [Configuration Basics](../key_concepts/configuration_basics.md) - Functions and classes
+- [Types Guide](../key_concepts/types.md) - Supported type annotations
 - [Quick Start](../quick_start.md) - Getting started tutorial

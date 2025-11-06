@@ -48,6 +48,29 @@ $ python train.py --lr 0.01 --batch-size 256
 Training with lr=0.01, batch_size=256, epochs=10
 ```
 
+> **Note**: The actual terminal output includes beautiful ANSI colors! See the demo below or check the [documentation](https://params-proto.readthedocs.io/) for colorized examples.
+
+## Try It Now
+
+Want to see the colorized help in action? Clone the repo and run the demo:
+
+```bash
+# Clone and setup
+git clone https://github.com/geyang/params-proto.git
+cd params-proto
+uv sync
+
+# See the colorized help (with bright blue types, bold cyan defaults, bold red required)
+uv run python scratch/demo_v3.py --help
+
+# Try running without required --seed (shows error)
+uv run python scratch/demo_v3.py
+# Error: the following arguments are required: --seed
+
+# Run with required parameter
+uv run python scratch/demo_v3.py --seed 42
+```
+
 ## Installation
 
 ```bash

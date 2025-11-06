@@ -410,3 +410,170 @@ def test_proto_cli_union_types():
     --seed INT           Random seed (default: 42)
   """)
   assert train.__help_str__ == expected, "help string is not correct"
+
+
+# ===== CLI PARSING TESTS =====
+
+
+def test_cli_parse_basic_arguments(monkeypatch):
+  """Test CLI argument parsing with basic int and float types."""
+  from params_proto import proto
+
+  @proto.cli
+  def train(
+    seed: int,  # Random seed (required)
+    lr: float = 0.001,  # Learning rate
+    batch_size: int = 32,  # Batch size
+  ):
+    """Train a model."""
+    return {"seed": seed, "lr": lr, "batch_size": batch_size}
+
+  # Mock sys.argv
+  monkeypatch.setattr("sys.argv", ["train.py", "--seed", "42", "--lr", "0.01", "--batch-size", "64"])
+
+  result = train()
+  assert result["seed"] == 42
+  assert result["lr"] == 0.01
+  assert result["batch_size"] == 64
+
+
+def test_cli_parse_required_parameter(monkeypatch):
+  """Test that required parameters are enforced."""
+  from params_proto import proto
+
+  @proto.cli
+  def train(
+    seed: int,  # Required seed
+    lr: float = 0.001,
+  ):
+    """Train a model."""
+    return {"seed": seed, "lr": lr}
+
+  # Missing required --seed should raise error
+  monkeypatch.setattr("sys.argv", ["train.py", "--lr", "0.01"])
+
+  with pytest.raises(SystemExit):
+    train()
+
+
+def test_cli_parse_defaults(monkeypatch):
+  """Test that default values are used when not provided."""
+  from params_proto import proto
+
+  @proto.cli
+  def train(
+    seed: int = 42,
+    lr: float = 0.001,
+    batch_size: int = 32,
+  ):
+    """Train a model."""
+    return {"seed": seed, "lr": lr, "batch_size": batch_size}
+
+  # Only override seed, others use defaults
+  monkeypatch.setattr("sys.argv", ["train.py", "--seed", "100"])
+
+  result = train()
+  assert result["seed"] == 100
+  assert result["lr"] == 0.001
+  assert result["batch_size"] == 32
+
+
+def test_cli_parse_underscore_conversion(monkeypatch):
+  """Test that underscores in parameter names are converted to hyphens in CLI."""
+  from params_proto import proto
+
+  @proto.cli
+  def train(
+    learning_rate: float = 0.001,
+    batch_size: int = 32,
+    num_epochs: int = 10,
+  ):
+    """Train a model."""
+    return {"learning_rate": learning_rate, "batch_size": batch_size, "num_epochs": num_epochs}
+
+  # Use hyphenated names in CLI
+  monkeypatch.setattr("sys.argv", ["train.py", "--learning-rate", "0.01", "--batch-size", "64", "--num-epochs", "20"])
+
+  result = train()
+  assert result["learning_rate"] == 0.01
+  assert result["batch_size"] == 64
+  assert result["num_epochs"] == 20
+
+
+def test_cli_parse_boolean_flags(monkeypatch):
+  """Test boolean flag parsing (--flag / --no-flag)."""
+  from params_proto import proto
+
+  @proto.cli
+  def train(
+    verbose: bool = False,
+    use_cuda: bool = True,
+    debug: bool = False,
+  ):
+    """Train a model."""
+    return {"verbose": verbose, "use_cuda": use_cuda, "debug": debug}
+
+  # Test --flag sets to True
+  monkeypatch.setattr("sys.argv", ["train.py", "--verbose", "--debug"])
+  result = train()
+  assert result["verbose"] == True
+  assert result["use_cuda"] == True  # Default
+  assert result["debug"] == True
+
+  # Test --no-flag sets to False
+  monkeypatch.setattr("sys.argv", ["train.py", "--no-use-cuda"])
+  result = train()
+  assert result["verbose"] == False  # Default
+  assert result["use_cuda"] == False
+  assert result["debug"] == False  # Default
+
+
+def test_cli_parse_help_exits(monkeypatch, capsys):
+  """Test that --help prints help and exits without calling function."""
+  from params_proto import proto
+
+  called = []
+
+  @proto.cli
+  def train(seed: int):
+    """Train a model."""
+    called.append(True)
+    return {"seed": seed}
+
+  # --help should exit without calling function
+  monkeypatch.setattr("sys.argv", ["train.py", "--help"])
+
+  with pytest.raises(SystemExit) as excinfo:
+    train()
+
+  # Should exit with code 0
+  assert excinfo.value.code == 0
+
+  # Function should NOT have been called
+  assert len(called) == 0
+
+  # Help text should be printed
+  captured = capsys.readouterr()
+  assert "usage:" in captured.out
+  assert "--seed" in captured.out
+
+
+def test_cli_programmatic_call_bypasses_argv(monkeypatch):
+  """Test that calling with kwargs bypasses CLI parsing."""
+  from params_proto import proto
+
+  @proto.cli
+  def train(
+    seed: int,
+    lr: float = 0.001,
+  ):
+    """Train a model."""
+    return {"seed": seed, "lr": lr}
+
+  # Set sys.argv to something else
+  monkeypatch.setattr("sys.argv", ["train.py", "--seed", "999"])
+
+  # Call with kwargs should use kwargs, not sys.argv
+  result = train(seed=42, lr=0.01)
+  assert result["seed"] == 42  # From kwargs, not sys.argv
+  assert result["lr"] == 0.01

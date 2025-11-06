@@ -68,31 +68,33 @@ if __name__ == "__main__":
 
 Running `python train_rl.py --help` shows:
 
-```
-usage: train_rl.py [-h] [--total-steps INT] [--eval-freq INT] [--seed INT] [OPTIONS]
+```{ansi-block}
+:string_escape:
+
+usage: train_rl.py [-h] [--total-steps \x1b[1m\x1b[94mINT\x1b[0m] [--eval-freq \x1b[1m\x1b[94mINT\x1b[0m] [--seed \x1b[1m\x1b[94mINT\x1b[0m] [OPTIONS]
 
 Train RL agent on dm_control environment.
 
 options:
   -h, --help                   show this help message and exit
-  --total-steps INT            Total environment steps (default: 1000000)
-  --eval-freq INT              Evaluation frequency (default: 5000)
-  --seed INT                   Random seed (default: 0)
+  --total-steps \x1b[1m\x1b[94mINT\x1b[0m            Total environment steps \x1b[36m(default:\x1b[0m \x1b[1m\x1b[36m1000000\x1b[0m\x1b[36m)\x1b[0m
+  --eval-freq \x1b[1m\x1b[94mINT\x1b[0m              Evaluation frequency \x1b[36m(default:\x1b[0m \x1b[1m\x1b[36m5000\x1b[0m\x1b[36m)\x1b[0m
+  --seed \x1b[1m\x1b[94mINT\x1b[0m                   Random seed \x1b[36m(default:\x1b[0m \x1b[1m\x1b[36m0\x1b[0m\x1b[36m)\x1b[0m
 
 Environment options:
   dm_control environment configuration.
 
-  --Environment.domain STR     Domain name (e.g., cartpole, walker) (default: cartpole)
-  --Environment.task STR       Task name within the domain (default: swingup)
-  --Environment.time-limit FLOAT  Episode time limit in seconds (default: 10.0)
+  --Environment.domain \x1b[1m\x1b[94mSTR\x1b[0m     Domain name (e.g., cartpole, walker) \x1b[36m(default:\x1b[0m \x1b[1m\x1b[36mcartpole\x1b[0m\x1b[36m)\x1b[0m
+  --Environment.task \x1b[1m\x1b[94mSTR\x1b[0m       Task name within the domain \x1b[36m(default:\x1b[0m \x1b[1m\x1b[36mswingup\x1b[0m\x1b[36m)\x1b[0m
+  --Environment.time-limit \x1b[1m\x1b[94mFLOAT\x1b[0m  Episode time limit in seconds \x1b[36m(default:\x1b[0m \x1b[1m\x1b[36m10.0\x1b[0m\x1b[36m)\x1b[0m
 
 Agent options:
   SAC agent hyperparameters.
 
-  --Agent.algorithm STR        RL algorithm (SAC or PPO) (default: SAC)
-  --Agent.buffer-size INT      Replay buffer capacity (default: 1000000)
-  --Agent.gamma FLOAT          Discount factor (default: 0.99)
-  --Agent.tau FLOAT            Target network update rate (default: 0.005)
+  --Agent.algorithm \x1b[1m\x1b[94mSTR\x1b[0m        RL algorithm (SAC or PPO) \x1b[36m(default:\x1b[0m \x1b[1m\x1b[36mSAC\x1b[0m\x1b[36m)\x1b[0m
+  --Agent.buffer-size \x1b[1m\x1b[94mINT\x1b[0m      Replay buffer capacity \x1b[36m(default:\x1b[0m \x1b[1m\x1b[36m1000000\x1b[0m\x1b[36m)\x1b[0m
+  --Agent.gamma \x1b[1m\x1b[94mFLOAT\x1b[0m          Discount factor \x1b[36m(default:\x1b[0m \x1b[1m\x1b[36m0.99\x1b[0m\x1b[36m)\x1b[0m
+  --Agent.tau \x1b[1m\x1b[94mFLOAT\x1b[0m            Target network update rate \x1b[36m(default:\x1b[0m \x1b[1m\x1b[36m0.005\x1b[0m\x1b[36m)\x1b[0m
 ```
 
 ## Usage Examples
@@ -135,4 +137,4 @@ python train_rl.py \
 
 - See [Basic Usage](basic_usage.md) for simpler examples
 - Check [ML Training](ml_training.md) for another complete example
-- Read [Prefixes Guide](../guide/prefixes.md) for more on `@proto.prefix`
+- Read [Prefixes Guide](../key_concepts/prefixes.md) for more on `@proto.prefix`

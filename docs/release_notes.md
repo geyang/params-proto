@@ -41,7 +41,7 @@ params-proto v3 is a complete rewrite focused on simplicity and modern Python ty
 - **Function CLI**: Decorate functions with `@proto.cli` for instant CLI programs
 - **prog Parameter**: Override script name for predictable help output in tests
 - **Rich Type Support**: Optional, List, Literal, Tuple, Enum, Path, Union types
-- **Hierarchical Configs**: Use `@proto.prefix` for organized, modular configurations
+- **Multi-namespace Configs**: Use `@proto.prefix` for organized, modular configurations
 
 ### 🔄 API Changes
 - **Decorator-based**: `@proto` and `@proto.cli` instead of class inheritance

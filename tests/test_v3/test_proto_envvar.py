@@ -24,75 +24,65 @@ def clear_proto_state():
     proto_module._BIND_STACK.clear()
 
 
-def test_proto_cli_envvar_with_value():
+def test_proto_envvar_with_value():
   """Test EnvVar with environment variable set."""
   import os
 
   from params_proto import EnvVar, proto
 
-  # Set environment variable before decorating
+  # Set environment variables that will actually be used
   os.environ["BATCH_SIZE"] = "256"
-  os.environ["LEARNING_RATE"] = "0.01"
+  os.environ["LR"] = "0.01"  # This one is actually used (not LEARNING_RATE)
 
   try:
 
-    @proto.cli(prog="train")
+    @proto
     def train(
-      batch_size: int = EnvVar @ "BATCH_SIZE",  # Read from BATCH_SIZE env var
-      learning_rate: float = EnvVar @ "LR" | 0.001,  # Use 0.001 as default
-      epochs: int = 10,  # Regular default
+      batch_size: int = EnvVar @ "BATCH_SIZE",  # Reads "256" from BATCH_SIZE
+      learning_rate: float = EnvVar @ "LR" | 0.001,  # Reads "0.01" from LR
+      epochs: int = 10,  # Regular default (no env var)
     ):
       """Train model with environment variable configuration."""
       return batch_size, learning_rate, epochs
 
-    # Check that env var was read and converted to correct type
+    # Values should come from env vars (256, 0.01) and default (10)
     result = train()
-    assert result == (256, 0.001, 10), f"Expected (256, 0.001, 10), got {result}"
+    assert result == (256, 0.01, 10), f"Expected (256, 0.01, 10), got {result}"
 
-    # Check help string
-    expected = dedent("""
-    usage: train [-h] [--batch-size INT] [--learning-rate FLOAT] [--epochs INT]
-
-    Train model with environment variable configuration.
-
-    options:
-      -h, --help           show this help message and exit
-      --batch-size INT     Read from BATCH_SIZE env var (default: 256)
-      --learning-rate FLOAT
-                           Use 0.001 as default (default: 0.001)
-      --epochs INT         Regular default (default: 10)
-    """)
-    assert train.__help_str__ == expected, "help string is not correct"
+    # Test override with kwargs still works
+    result2 = train(batch_size=128)
+    assert result2 == (128, 0.01, 10), "kwargs should override env vars"
 
   finally:
     # Clean up environment variables
     del os.environ["BATCH_SIZE"]
-    del os.environ["LEARNING_RATE"]
+    del os.environ["LR"]
 
 
-def test_proto_cli_envvar_without_value():
-  """Test EnvVar when environment variable is not set."""
+def test_proto_envvar_without_value():
+  """Test EnvVar when environment variable is not set (uses fallback or None)."""
   import os
 
   from params_proto import EnvVar, proto
 
-  # Make sure env var is not set
+  # Make sure env vars are not set
   os.environ.pop("MISSING_VAR", None)
+  os.environ.pop("ANOTHER_VAR", None)
 
-  @proto.cli
+  @proto
   def train(
-    value: int = EnvVar @ "MISSING_VAR",  # Env var not set
-    fallback: float = EnvVar @ 42.0,  # Use default value
+    value: int = EnvVar @ "MISSING_VAR" | 100,  # Env var NOT set → fallback to 100
+    port: int = EnvVar @ "ANOTHER_VAR",  # Env var NOT set, no fallback → None
   ):
     """Train with missing environment variables."""
-    return value, fallback
+    return value, port
 
-  # Check that we get None for missing env var, and default for the other
+  # Check fallback works when env var not set
   result = train()
-  assert result == (None, 42.0), f"Expected (None, 42.0), got {result}"
+  assert result == (100, None), f"Expected (100, None) - fallback and None, got {result}"
 
 
-def test_proto_cli_envvar_function_syntax():
+def test_proto_envvar_function_syntax():
   """Test EnvVar with function call syntax."""
   import os
 
@@ -102,7 +92,7 @@ def test_proto_cli_envvar_function_syntax():
 
   try:
 
-    @proto.cli
+    @proto
     def connect(
       db_url: str = EnvVar(
         "DATABASE_URL", default="sqlite:///local.db"
@@ -121,7 +111,7 @@ def test_proto_cli_envvar_function_syntax():
     del os.environ["DATABASE_URL"]
 
 
-def test_proto_cli_envvar_simple_name():
+def test_proto_envvar_simple_name():
   """Test EnvVar with simple environment variable name."""
   import os
 
@@ -131,7 +121,7 @@ def test_proto_cli_envvar_simple_name():
 
   try:
 
-    @proto.cli
+    @proto
     def api_call(
       api_key: str = EnvVar @ "API_KEY",  # Simple var name
     ):
@@ -145,7 +135,7 @@ def test_proto_cli_envvar_simple_name():
     del os.environ["API_KEY"]
 
 
-def test_proto_cli_envvar_dollar_prefix():
+def test_proto_envvar_dollar_prefix():
   """Test EnvVar with $VAR_NAME syntax."""
   import os
 
@@ -155,7 +145,7 @@ def test_proto_cli_envvar_dollar_prefix():
 
   try:
 
-    @proto.cli
+    @proto
     def load_data(
       data_dir: str = EnvVar @ "$DATA_DIR",  # Dollar prefix syntax
     ):
@@ -169,7 +159,7 @@ def test_proto_cli_envvar_dollar_prefix():
     del os.environ["DATA_DIR"]
 
 
-def test_proto_cli_envvar_braces_syntax():
+def test_proto_envvar_braces_syntax():
   """Test EnvVar with ${VAR_NAME} syntax."""
   import os
 
@@ -179,7 +169,7 @@ def test_proto_cli_envvar_braces_syntax():
 
   try:
 
-    @proto.cli
+    @proto
     def setup_logging(
       log_dir: str = EnvVar("${LOG_DIR}", default="/tmp/logs"),  # Braces syntax
     ):
@@ -193,7 +183,7 @@ def test_proto_cli_envvar_braces_syntax():
     del os.environ["LOG_DIR"]
 
 
-def test_proto_cli_envvar_multiple_vars():
+def test_proto_envvar_multiple_vars():
   """Test EnvVar with multiple variables in template."""
   import os
 
@@ -204,7 +194,7 @@ def test_proto_cli_envvar_multiple_vars():
 
   try:
 
-    @proto.cli
+    @proto
     def get_path(
       project_path: str = EnvVar @ "$BASE_DIR/$PROJECT_NAME",  # Multiple vars
     ):
@@ -219,7 +209,7 @@ def test_proto_cli_envvar_multiple_vars():
     del os.environ["PROJECT_NAME"]
 
 
-def test_proto_cli_envvar_type_conversion():
+def test_proto_envvar_type_conversion():
   """Test EnvVar type conversion for different types."""
   import os
 
@@ -231,7 +221,7 @@ def test_proto_cli_envvar_type_conversion():
 
   try:
 
-    @proto.cli
+    @proto
     def config(
       port: int = EnvVar @ "PORT",  # String to int
       ratio: float = EnvVar @ "RATIO",  # String to float
@@ -252,22 +242,23 @@ def test_proto_cli_envvar_type_conversion():
     del os.environ["ENABLED"]
 
 
-def test_proto_cli_envvar_pipe_operator():
+def test_proto_envvar_pipe_operator():
   """Test EnvVar with pipe operator for default values."""
   import os
 
   from params_proto import EnvVar, proto
 
-  # Set only one env var
+  # Set only one env var to test both cases
   os.environ["BATCH_SIZE"] = "256"
+  # LR and EPOCHS are NOT set - should use defaults
 
   try:
 
-    @proto.cli
+    @proto
     def train(
-      batch_size: int = EnvVar @ "BATCH_SIZE" | 128,  # Env var set, use it
-      learning_rate: float = EnvVar @ "LR" | 0.001,  # Env var not set, use default
-      epochs: int = EnvVar @ "EPOCHS" | 10,  # Env var not set, use default
+      batch_size: int = EnvVar @ "BATCH_SIZE" | 128,  # Env var set → 256
+      learning_rate: float = EnvVar @ "LR" | 0.001,  # Env var NOT set → fallback to 0.001
+      epochs: int = EnvVar @ "EPOCHS" | 10,  # Env var NOT set → fallback to 10
     ):
       """Train with pipe operator defaults."""
       return batch_size, learning_rate, epochs
@@ -275,5 +266,109 @@ def test_proto_cli_envvar_pipe_operator():
     result = train()
     assert result == (256, 0.001, 10), f"Expected (256, 0.001, 10), got {result}"
 
+    # Verify fallback actually works by checking types
+    assert isinstance(result[0], int) and result[0] == 256, "BATCH_SIZE from env"
+    assert isinstance(result[1], float) and result[1] == 0.001, "LR fallback to default"
+    assert isinstance(result[2], int) and result[2] == 10, "EPOCHS fallback to default"
+
   finally:
     del os.environ["BATCH_SIZE"]
+
+
+def test_proto_envvar_complex_templates():
+  """Test EnvVar with complex template strings containing multiple variables."""
+  import os
+
+  from params_proto import EnvVar, proto
+
+  os.environ["USER"] = "alice"
+  os.environ["PROJECT"] = "ml-research"
+  os.environ["EXPERIMENT"] = "exp001"
+  os.environ["VERSION"] = "v2"
+
+  try:
+
+    @proto
+    def configure(
+      # Complex path with multiple vars (use ${VAR} syntax for templates not starting with $)
+      workspace: str = EnvVar("/home/${USER}/projects/${PROJECT}", default="/tmp"),
+      # Even more complex with subdirectories
+      checkpoint_dir: str = EnvVar("/data/${PROJECT}/${EXPERIMENT}/checkpoints/${VERSION}", default="/tmp/checkpoints"),
+      # Mixed braces and dollar syntax (starts with $ so both syntaxes work)
+      log_file: str = EnvVar("${USER}_${PROJECT}_$EXPERIMENT.log", default="default.log"),
+    ):
+      """Configure paths with complex templates."""
+      return workspace, checkpoint_dir, log_file
+
+    result = configure()
+    assert result == (
+      "/home/alice/projects/ml-research",
+      "/data/ml-research/exp001/checkpoints/v2",
+      "alice_ml-research_exp001.log",
+    ), f"Expected complex template expansion, got {result}"
+
+  finally:
+    del os.environ["USER"]
+    del os.environ["PROJECT"]
+    del os.environ["EXPERIMENT"]
+    del os.environ["VERSION"]
+
+
+def test_proto_envvar_template_with_missing_vars():
+  """Test EnvVar template behavior when some variables are missing."""
+  import os
+
+  from params_proto import EnvVar, proto
+
+  # Set only some of the required vars
+  os.environ["BASE"] = "/data"
+  # SUBDIR is NOT set - will be replaced with empty string
+
+  try:
+
+    @proto
+    def get_path(
+      # Template with missing var - missing vars become empty strings
+      data_path: str = EnvVar("$BASE/$SUBDIR/output", default="/tmp/output"),
+    ):
+      """Get path with potentially missing vars."""
+      return data_path
+
+    result = get_path()
+    # Missing SUBDIR becomes empty string: "/data//output"
+    assert result == "/data//output", f"Expected /data//output (missing var → empty), got {result}"
+
+  finally:
+    del os.environ["BASE"]
+
+
+def test_proto_envvar_explicit_dtype():
+  """Test EnvVar with explicit dtype parameter for type control."""
+  import os
+
+  from params_proto import EnvVar, proto
+
+  os.environ["WORKERS"] = "4"
+  os.environ["THRESHOLD"] = "0.75"
+
+  try:
+
+    @proto
+    def configure(
+      # Union type with explicit dtype=int (converts "4" → 4)
+      workers: int | str = EnvVar("WORKERS", dtype=int, default="auto"),
+      # Explicit dtype overrides annotation (str → float)
+      threshold: str = EnvVar("THRESHOLD", dtype=float, default=0.5),
+    ):
+      """Configure with explicit type conversion."""
+      return workers, threshold
+
+    result = configure()
+    # Workers should be int (not str) because dtype=int
+    assert result == (4, 0.75), f"Expected (4, 0.75), got {result}"
+    assert isinstance(result[0], int), "workers should be int due to dtype=int"
+    assert isinstance(result[1], float), "threshold should be float due to dtype=float"
+
+  finally:
+    del os.environ["WORKERS"]
+    del os.environ["THRESHOLD"]
