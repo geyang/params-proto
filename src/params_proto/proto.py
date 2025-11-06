@@ -48,10 +48,11 @@ class ProtoResult:
 class ProtoWrapper:
     """Wrapper for proto-decorated functions."""
 
-    def __init__(self, func: Callable, is_cli: bool = False, is_prefix: bool = False):
+    def __init__(self, func: Callable, is_cli: bool = False, is_prefix: bool = False, prog: str = None):
         self._func = func
         self._is_cli = is_cli
         self._is_prefix = is_prefix
+        self._prog = prog  # Override script name for help generation
         self._overrides = {}
         self._name = func.__name__
 
@@ -423,16 +424,20 @@ def _generate_help_for_function(wrapper: ProtoWrapper) -> str:
     """Generate help text for a proto function."""
     lines = []
 
-    # Get script name from sys.argv[0] if available, otherwise use function name
+    # Get script name from prog override, sys.argv[0], or function name
     import sys
     from pathlib import Path
 
-    argv_name = Path(sys.argv[0]).name if sys.argv else None
-    # Use argv[0] if it looks like a real Python script, otherwise fallback to function name
-    if argv_name and argv_name.endswith('.py'):
-        script_name = argv_name
+    if wrapper._prog:
+        # Use explicitly set program name
+        script_name = wrapper._prog
     else:
-        script_name = wrapper.__name__
+        argv_name = Path(sys.argv[0]).name if sys.argv else None
+        # Use argv[0] if it looks like a real Python script, otherwise fallback to function name
+        if argv_name and argv_name.endswith('.py'):
+            script_name = argv_name
+        else:
+            script_name = wrapper.__name__
 
     # Build usage line with actual arguments
     usage_parts = [f"\nusage: {script_name}", "[-h]"]
@@ -656,7 +661,7 @@ def _get_type_name(annotation: Any) -> str:
         return "VALUE"
 
 
-def proto(cls_or_func: Callable = None, *, cli: bool = False, prefix: bool = False):
+def proto(cls_or_func: Callable = None, *, cli: bool = False, prefix: bool = False, prog: str = None):
     """
     Main proto decorator that converts a class or function into a proto config object.
 
@@ -664,6 +669,7 @@ def proto(cls_or_func: Callable = None, *, cli: bool = False, prefix: bool = Fal
         cls_or_func: The class or function to decorate
         cli: If True, this is a CLI entry point (generates help)
         prefix: If True, creates a singleton instance with prefix in CLI
+        prog: Optional program name override for help generation (useful for testing)
 
     Returns:
         Decorated class/function with attribute setting and calling support
@@ -671,7 +677,7 @@ def proto(cls_or_func: Callable = None, *, cli: bool = False, prefix: bool = Fal
 
     def decorator(obj):
         if inspect.isfunction(obj):
-            wrapper = ProtoWrapper(obj, is_cli=cli, is_prefix=prefix)
+            wrapper = ProtoWrapper(obj, is_cli=cli, is_prefix=prefix, prog=prog)
             if prefix:
                 _SINGLETONS[obj.__name__] = wrapper
             return wrapper
@@ -685,7 +691,7 @@ def proto(cls_or_func: Callable = None, *, cli: bool = False, prefix: bool = Fal
             return obj
 
     if cls_or_func is None:
-        # Called with arguments: @proto(cli=True)
+        # Called with arguments: @proto(cli=True, prog="train.py")
         return decorator
     else:
         # Called without arguments: @proto
@@ -765,20 +771,21 @@ def parse(func: Callable, **kwargs):
 proto.parse = parse
 
 
-def cli(obj: Any = None):
+def cli(obj: Any = None, *, prog: str = None):
     """
     Set up an object as a CLI entry point.
 
     Args:
         obj: The class, function, or Union type to setup as CLI.
-             If None, this is a no-op (for compatibility).
+             If None, returns a decorator.
+        prog: Optional program name override for help generation (useful for testing)
 
     Returns:
-        The object with CLI capabilities, or None if obj is None
+        The object with CLI capabilities, or a decorator if obj is None
     """
     if obj is None:
-        # No-op when called without arguments
-        return None
+        # Called with arguments: @proto.cli(prog="train.py")
+        return lambda f: proto(f, cli=True, prog=prog)
 
     # Handle Union types
     origin = get_origin(obj)
@@ -787,7 +794,7 @@ def cli(obj: Any = None):
         # For Union[A, B], we don't decorate it, just return it
         return obj
 
-    return proto(obj, cli=True)
+    return proto(obj, cli=True, prog=prog)
 
 
 proto.cli = cli
