@@ -198,6 +198,7 @@ guide/classes
 guide/types
 guide/overrides
 guide/prefixes
+guide/ansi_formatting
 ```
 
 ```{toctree}
