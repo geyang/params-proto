@@ -30,7 +30,7 @@ def test_canonical_usage():
     # this also a position argument, following the seed.
     camera: Perspect | Orthographic
     """The camera can be either perspective or orthographic.
-    
+
     In the command line, `main.py 42 camera:orthographic --lr 0.001`
     """
 
@@ -46,7 +46,7 @@ def test_canonical_usage():
 
     optimizer: Literal["adam", "sgd", "rms-prop"] = "adam"
     """Optimizer to use for training. The supported values are: adam,
-    sgd, rmsprop. Default is adam with default learning 
+    sgd, rmsprop. Default is adam with default learning
     rate.
     """
 
@@ -268,16 +268,16 @@ def test_singleton_override():
 
   """
   Command line examples:
-  
+
   # Run with default values
   python main.py
-  
+
   # Override train learning rate and eval batch size
   python main.py --train.lr 0.01 --eval.batch-size 128
-  
+
   # Set seed and enable debug mode
   python main.py --seed 123 --debug
-  
+
   # Full customization
   python main.py --seed 99 --debug --train.lr 0.001 --train.epochs 200 --train.batch-size 64 --eval.batch-size 256 --eval.checkpoint "./best.pt"
   """
@@ -288,9 +288,7 @@ def test_documentation_styles():
   from typing import Dict, List, Optional
 
   @proto
-  class Config:
-    # === Basic Types with Different Doc Styles ===
-
+  class Params:  # === Basic Types with Different Doc Styles ===
     # Simple single-line hash comment
     learning_rate: float = 0.001
 

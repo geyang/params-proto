@@ -116,7 +116,7 @@ from params_proto import proto
 
 
 @proto
-class Params:
+class Params::
   """Training configuration."""
 
   # Model settings
@@ -141,7 +141,7 @@ config = Params()
 print(f"Batch size: {config.batch_size}")
 ```
 
-**Key difference**: Classes use attributes (`Config.lr`), functions use parameters (`train(lr=0.001)`).
+**Key difference**: Classes use attributes (`Params.lr`), functions use parameters (`train(lr=0.001)`).
 
 ## Composing Configurations from Multiple Locations
 

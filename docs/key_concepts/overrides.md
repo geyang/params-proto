@@ -71,13 +71,12 @@ train()  # Uses lr=0.01, batch_size=64
 **With classes:**
 ```python
 @proto
-class Config:
-    lr: float = 0.001
+class Params:    lr: float = 0.001
     batch_size: int = 32
 
 # Modify class defaults
-Config.lr = 0.01
-Config.batch_size = 64
+Params.lr = 0.01
+Params.batch_size = 64
 
 # New instances use updated defaults
 config = Config()

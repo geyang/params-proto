@@ -577,3 +577,108 @@ def test_cli_programmatic_call_bypasses_argv(monkeypatch):
   result = train(seed=42, lr=0.01)
   assert result["seed"] == 42  # From kwargs, not sys.argv
   assert result["lr"] == 0.01
+
+
+def test_cli_parse_positional_argument(monkeypatch):
+  """Test that required parameters can be passed as positional arguments."""
+  from params_proto import proto
+
+  @proto.cli
+  def train(
+    seed: int,  # Required seed
+    lr: float = 0.001,  # Learning rate
+    batch_size: int = 32,  # Batch size
+  ):
+    """Train a model."""
+    return {"seed": seed, "lr": lr, "batch_size": batch_size}
+
+  # Pass seed as positional argument
+  monkeypatch.setattr("sys.argv", ["train.py", "42"])
+
+  result = train()
+  assert result["seed"] == 42
+  assert result["lr"] == 0.001  # Default
+  assert result["batch_size"] == 32  # Default
+
+
+def test_cli_parse_positional_with_named_args(monkeypatch):
+  """Test mixing positional and named arguments."""
+  from params_proto import proto
+
+  @proto.cli
+  def train(
+    seed: int,  # Required seed
+    lr: float = 0.001,  # Learning rate
+    batch_size: int = 32,  # Batch size
+  ):
+    """Train a model."""
+    return {"seed": seed, "lr": lr, "batch_size": batch_size}
+
+  # Pass seed as positional, others as named
+  monkeypatch.setattr("sys.argv", ["train.py", "42", "--lr", "0.01", "--batch-size", "64"])
+
+  result = train()
+  assert result["seed"] == 42
+  assert result["lr"] == 0.01
+  assert result["batch_size"] == 64
+
+
+def test_cli_parse_named_overrides_positional(monkeypatch):
+  """Test that named arguments can still be used even when positional is available."""
+  from params_proto import proto
+
+  @proto.cli
+  def train(
+    seed: int,  # Required seed
+    lr: float = 0.001,
+  ):
+    """Train a model."""
+    return {"seed": seed, "lr": lr}
+
+  # Use named argument instead of positional
+  monkeypatch.setattr("sys.argv", ["train.py", "--seed", "99"])
+
+  result = train()
+  assert result["seed"] == 99
+  assert result["lr"] == 0.001
+
+
+def test_cli_parse_multiple_required_positional(monkeypatch):
+  """Test multiple required parameters as positional arguments."""
+  from params_proto import proto
+
+  @proto.cli
+  def train(
+    seed: int,  # Required seed
+    num_epochs: int,  # Required epochs
+    lr: float = 0.001,  # Learning rate
+  ):
+    """Train a model."""
+    return {"seed": seed, "num_epochs": num_epochs, "lr": lr}
+
+  # Pass both required params as positional
+  monkeypatch.setattr("sys.argv", ["train.py", "42", "100"])
+
+  result = train()
+  assert result["seed"] == 42
+  assert result["num_epochs"] == 100
+  assert result["lr"] == 0.001
+
+
+def test_cli_parse_positional_missing_required(monkeypatch):
+  """Test that error is raised when required positional arg is missing."""
+  from params_proto import proto
+
+  @proto.cli
+  def train(
+    seed: int,  # Required seed
+    lr: float = 0.001,
+  ):
+    """Train a model."""
+    return {"seed": seed, "lr": lr}
+
+  # Missing required seed parameter
+  monkeypatch.setattr("sys.argv", ["train.py", "--lr", "0.01"])
+
+  with pytest.raises(SystemExit):
+    train()

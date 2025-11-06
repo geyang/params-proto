@@ -60,11 +60,15 @@ docs = [
     "sphinx-copybutton",
     "sphinx-autobuild",
     "tomli>=1.1.0; python_version < '3.11'",  # For reading pyproject.toml in conf.py
+    "sphinxcontrib-ansi @ git+https://github.com/geyang/ansi.git@c0d28fe",
 ]
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.hatch.metadata]
+allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/params_proto"]
@@ -123,8 +127,3 @@ python_files = "test_*.py"
 python_classes = "Test*"
 python_functions = "test_*"
 addopts = "--capture=sys"
-
-[dependency-groups]
-docs = [
-    "sphinxcontrib-ansi @ git+https://github.com/brentyi/ansi.git",
-]

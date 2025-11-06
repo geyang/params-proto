@@ -67,8 +67,11 @@ uv run python scratch/demo_v3.py --help
 uv run python scratch/demo_v3.py
 # Error: the following arguments are required: --seed
 
-# Run with required parameter
+# Run with required parameter (keyword syntax)
 uv run python scratch/demo_v3.py --seed 42
+
+# Or use positional syntax
+uv run python scratch/demo_v3.py 42
 ```
 
 ## Installation
@@ -98,8 +101,7 @@ Or use classes for more structure:
 
 ```python
 @proto
-class Config:
-    """Training configuration."""
+class Params:    """Training configuration."""
 
     # Model settings
     model: str = "resnet50"
@@ -157,7 +159,7 @@ Override parameters in multiple ways:
 $ python train.py --lr 0.01
 
 # 2. Direct attribute assignment
-Config.lr = 0.01
+Params.lr = 0.01
 
 # 3. Function call with kwargs
 train(lr=0.01, batch_size=256)
@@ -181,8 +183,7 @@ class Optimizer(Enum):
     RMSPROP = auto()
 
 @proto
-class Config:
-    # Union types
+class Params:    # Union types
     precision: Literal["fp16", "fp32", "fp64"] = "fp32"
 
     # Enums
