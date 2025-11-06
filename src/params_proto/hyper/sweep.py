@@ -3,7 +3,7 @@ import itertools
 from collections import defaultdict, namedtuple
 from contextlib import contextmanager
 from copy import deepcopy
-from typing import ContextManager, Dict, Iterable, Union
+from typing import Any, ContextManager, Dict, Iterable, Union
 
 from ..proto import ProtoClass, ProtoWrapper
 from .proxies import ClassProxy, FuncProxy, PrefixProxy
@@ -173,34 +173,19 @@ class ProtoProxy:
         return []
 
     def __getstate__(self):
-        """Support for pickling/deepcopy - only serialize parameter values."""
+        """Support for pickling/deepcopy - serialize the wrapped proto object."""
         proto = object.__getattribute__(self, "_proto")
-        state = {}
-        if isinstance(proto, ProtoClass):
-            for name in proto._annotations:
-                try:
-                    state[name] = getattr(proto, name)
-                except AttributeError:
-                    pass
-        elif isinstance(proto, ProtoWrapper):
-            for name in proto._params:
-                try:
-                    state[name] = getattr(proto, name)
-                except AttributeError:
-                    pass
-        return state
+        return {
+            "_proto": proto,
+            "_set_hooks": [],  # Don't copy hooks
+            "_get_hooks": [],  # Don't copy hooks
+        }
 
     def __setstate__(self, state):
-        """Support for unpickling - requires proto to already exist."""
-        # Note: deepcopy will call __init__ first, so _proto should exist
-        proto = object.__getattribute__(self, "_proto")
-        for key, value in state.items():
-            if isinstance(proto, ProtoClass):
-                if key in proto._annotations:
-                    proto._overrides[key] = value
-            elif isinstance(proto, ProtoWrapper):
-                if key in proto._params:
-                    proto._overrides[key] = value
+        """Support for unpickling/deepcopy - restore the wrapped proto object."""
+        object.__setattr__(self, "_proto", state["_proto"])
+        object.__setattr__(self, "_set_hooks", state.get("_set_hooks", []))
+        object.__setattr__(self, "_get_hooks", state.get("_get_hooks", []))
 
 
 class Sweep:

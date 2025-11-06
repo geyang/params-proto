@@ -66,7 +66,6 @@ class ProtoWrapper:
     self._prog = prog  # Override script name for help generation
     self._overrides = {}
     self._name = func.__name__
-    self._sweep_hooks = []  # Minimal hooks support for Sweep
 
     # Copy function metadata
     self.__name__ = func.__name__
@@ -135,12 +134,6 @@ class ProtoWrapper:
     ):
       object.__setattr__(self, name, value)
     else:
-      # Call sweep hooks if present
-      if hasattr(self, "_sweep_hooks"):
-        for hook in self._sweep_hooks:
-          result = hook(self, name, value)
-          if result is not None:
-            return result
       # Store override
       if not hasattr(self, "_overrides"):
         object.__setattr__(self, "_overrides", {})
@@ -265,7 +258,6 @@ class ProtoClass:
     self._is_cli = is_cli
     self._is_prefix = is_prefix
     self._overrides = {}
-    self._sweep_hooks = []  # Minimal hooks support for Sweep
 
     # Extract annotations and defaults
     self._annotations = getattr(cls, "__annotations__", {})
@@ -338,12 +330,6 @@ class ProtoClass:
     if name.startswith("_") or name in ("__help_str__",):
       object.__setattr__(self, name, value)
     else:
-      # Call sweep hooks if present
-      if hasattr(self, "_sweep_hooks"):
-        for hook in self._sweep_hooks:
-          result = hook(self, name, value)
-          if result is not None:
-            return result
       # Store override at class level
       if not hasattr(self, "_overrides"):
         object.__setattr__(self, "_overrides", {})
