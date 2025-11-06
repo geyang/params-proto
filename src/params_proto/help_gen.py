@@ -5,6 +5,7 @@ Generates comprehensive CLI help text from function signatures,
 inline comments, and docstrings.
 """
 
+import textwrap
 from typing import TYPE_CHECKING
 
 from params_proto.documentation import (
@@ -20,6 +21,28 @@ if TYPE_CHECKING:
 # Global singleton registry - imported from proto.py at runtime
 # This is set by proto.py when it imports this module
 _SINGLETONS = {}
+
+
+def _wrap_text(text: str, width: int = 80, initial_indent: str = "", subsequent_indent: str = "") -> list:
+  """Wrap text to specified width with proper indentation.
+
+  Args:
+      text: Text to wrap
+      width: Maximum line width (default: 80)
+      initial_indent: Indentation for first line
+      subsequent_indent: Indentation for subsequent lines
+
+  Returns:
+      List of wrapped lines
+  """
+  wrapper = textwrap.TextWrapper(
+    width=width,
+    initial_indent=initial_indent,
+    subsequent_indent=subsequent_indent,
+    break_long_words=False,
+    break_on_hyphens=False,
+  )
+  return wrapper.wrap(text)
 
 
 def _generate_help_for_function(wrapper: "ProtoWrapper") -> str:
