@@ -405,8 +405,8 @@ def _extract_docs_from_source(obj: Any) -> Dict[str, str]:
                 # Same text, use only once
                 combined_docs[param] = inline
             else:
-                # Different text: concatenate with ". " separator
-                combined_docs[param] = f"{inline}. {docstring}"
+                # Different text: concatenate with newline separator
+                combined_docs[param] = f"{inline}\n{docstring}"
         elif inline:
             # Only inline comment
             combined_docs[param] = inline
@@ -573,23 +573,47 @@ def _generate_help_for_function(wrapper: ProtoWrapper) -> str:
             option_str = f"  {arg_name}"
 
         # Build description with default
-        desc_parts = []
-        if help_text:
-            desc_parts.append(help_text)
-        if default is not None:
-            desc_parts.append(f"(default: {default})")
+        # Handle multi-line help text (from concatenated inline + docstring)
+        help_lines = help_text.split('\n') if help_text else []
 
-        full_desc = " ".join(desc_parts)
+        # Build first line of description
+        desc_parts = []
+        if help_lines:
+            desc_parts.append(help_lines[0])
+        if default is not None:
+            # Add default to the last line
+            if len(help_lines) > 1:
+                # Multi-line: add default to last line
+                pass  # Will add below
+            else:
+                # Single line: add default to first line
+                desc_parts.append(f"(default: {default})")
+
+        first_line_desc = " ".join(desc_parts)
 
         # If the option string is too long, put description on next line
         if len(option_str) >= main_padding:
             lines.append(option_str)
-            if full_desc:
-                lines.append(" " * main_padding + full_desc)
+            if first_line_desc:
+                lines.append(" " * main_padding + first_line_desc)
+            # Add subsequent lines from multi-line help
+            for i, help_line in enumerate(help_lines[1:], start=1):
+                if i == len(help_lines) - 1 and default is not None:
+                    # Last line: add default
+                    lines.append(" " * main_padding + help_line + f" (default: {default})")
+                else:
+                    lines.append(" " * main_padding + help_line)
         else:
             # Pad to align descriptions
             option_str = option_str.ljust(main_padding)
-            lines.append(option_str + full_desc)
+            lines.append(option_str + first_line_desc)
+            # Add subsequent lines from multi-line help
+            for i, help_line in enumerate(help_lines[1:], start=1):
+                if i == len(help_lines) - 1 and default is not None:
+                    # Last line: add default
+                    lines.append(" " * main_padding + help_line + f" (default: {default})")
+                else:
+                    lines.append(" " * main_padding + help_line)
 
     # Add sections for any @proto.prefix singletons
     for singleton_name, singleton in _SINGLETONS.items():

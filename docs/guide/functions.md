@@ -95,7 +95,7 @@ def train(
 
 ### Combining Both Syntaxes
 
-If you provide both inline comments and docstring Args, params-proto will concatenate them intelligently:
+If you provide both inline comments and docstring Args, params-proto will concatenate them on separate lines:
 
 ```python
 @proto.cli
@@ -110,7 +110,12 @@ def train(
     pass
 ```
 
-This generates: `Training batch size. Controls memory usage and gradient noise`
+This generates help text with multiple lines:
+
+```
+--batch-size INT     Training batch size
+                     Controls memory usage and gradient noise (default: 128)
+```
 
 Use this pattern to provide:
 - **Inline comment**: Brief, one-line summary
