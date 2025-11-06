@@ -2,6 +2,61 @@
 
 This page contains the release history and changelog for params-proto.
 
+## Version 3.0.0 (Upcoming)
+
+### 🎉 Major Release: Complete v3 Redesign
+
+params-proto v3 is a complete rewrite focused on simplicity and modern Python type hints.
+
+### ✨ Key Features
+
+#### Documentation & Help Generation
+- **Multi-line Documentation**: Inline comments and docstring Args are now concatenated on separate lines for better readability
+  ```python
+  @proto.cli
+  def train(
+      batch_size: int = 32,  # Training batch size
+  ):
+      """Args:
+          batch_size: Controls memory usage and gradient noise
+      """
+  ```
+  Generates:
+  ```
+  --batch-size INT     Training batch size
+                       Controls memory usage and gradient noise (default: 32)
+  ```
+- **Automatic Help Generation**: Parse inline comments (`#`) for parameter documentation
+- **Docstring Args Support**: Extract parameter docs from Google/NumPy-style docstrings
+- **Smart Deduplication**: Identical inline and docstring descriptions are shown only once
+- **Auto-generated Descriptions**: Fallback descriptions generated from parameter names
+
+#### Environment Variables
+- **EnvVar Support**: Read configuration from environment variables with type conversion
+- **Pipe Operator Syntax**: Clean default value syntax: `EnvVar @ "VAR" | default`
+- **Template Expansion**: Support for `$VAR`, `${VAR}`, and multiple variable substitution
+- **Type Conversion**: Automatic conversion of env var strings to annotated types
+
+#### CLI Improvements
+- **Function CLI**: Decorate functions with `@proto.cli` for instant CLI programs
+- **prog Parameter**: Override script name for predictable help output in tests
+- **Rich Type Support**: Optional, List, Literal, Tuple, Enum, Path, Union types
+- **Hierarchical Configs**: Use `@proto.prefix` for organized, modular configurations
+
+### 🔄 API Changes
+- **Decorator-based**: `@proto` and `@proto.cli` instead of class inheritance
+- **Type Hints Required**: Full type hint support for IDE integration
+- **Simplified Singleton**: `@proto.prefix` for singleton configs
+- **Function Support**: First-class support for function-based configs
+
+### 📚 Documentation
+- **Complete Rewrite**: All documentation updated for v3 API
+- **Comprehensive Examples**: Real-world ML training and RL agent examples
+- **Migration Guide**: Step-by-step guide for upgrading from v2
+- **Type System Guide**: Complete documentation of supported type hints
+
+---
+
 ## Version 2.13.2 (2025-08-03)
 
 ### 📚 Documentation

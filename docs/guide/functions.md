@@ -123,6 +123,63 @@ Use this pattern to provide:
 
 **Deduplication**: If both sources contain identical text, it will only appear once.
 
+#### Complete Example
+
+Here's a practical example showing the power of combining both syntaxes:
+
+```python
+from params_proto import proto
+
+
+@proto.cli
+def train_model(
+    batch_size: int = 32,  # Training batch size
+    learning_rate: float = 0.001,  # Initial learning rate
+    warmup_steps: int = 1000,  # Learning rate warmup steps
+):
+    """Train a neural network model.
+
+    Args:
+        batch_size: Controls memory usage and gradient noise. Larger batches
+                   are more memory-intensive but provide more stable gradients.
+        learning_rate: For the Adam optimizer. Will be scaled during warmup.
+        warmup_steps: Linear warmup from 0 to learning_rate over this many steps.
+                     Helps stabilize training in the early phase.
+    """
+    print(f"Training with batch_size={batch_size}, lr={learning_rate}")
+
+
+if __name__ == "__main__":
+    train_model()
+```
+
+Running `python train_model.py --help`:
+
+```
+usage: train_model.py [-h] [--batch-size INT] [--learning-rate FLOAT] [--warmup-steps INT]
+
+Train a neural network model.
+
+options:
+  -h, --help           show this help message and exit
+  --batch-size INT     Training batch size
+                       Controls memory usage and gradient noise. Larger batches are more
+                       memory-intensive but provide more stable gradients. (default: 32)
+  --learning-rate FLOAT
+                       Initial learning rate
+                       For the Adam optimizer. Will be scaled during warmup. (default: 0.001)
+  --warmup-steps INT   Learning rate warmup steps
+                       Linear warmup from 0 to learning_rate over this many steps. Helps
+                       stabilize training in the early phase. (default: 1000)
+```
+
+Notice how each parameter has:
+- **First line**: Brief summary from inline comment
+- **Subsequent lines**: Detailed explanation from docstring Args
+- **Last line**: Default value
+
+This provides both quick reference and comprehensive documentation!
+
 ### 3. Auto-generated Descriptions (Fallback)
 
 If no documentation is provided, params-proto auto-generates descriptions from parameter names:
