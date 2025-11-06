@@ -115,20 +115,20 @@ def test_mixed_comments():
 
 
 def test_docstring_args_section():
-  """Test that Args section in docstring takes precedence over inline comments."""
+  """Test that inline comments take precedence over Args section in docstring."""
   from params_proto import proto
 
   @proto.cli(prog="train")
   def train(
-    batch_size: int = 128,  # This inline comment is ignored
-    learning_rate: float = 0.001,  # This too
+    batch_size: int = 128,  # Inline comment wins
+    learning_rate: float = 0.001,  # This is used
     epochs: int = 10,
   ):
     """Train a model.
 
     Args:
-      batch_size: Batch size from docstring
-      learning_rate: Learning rate from docstring
+      batch_size: Batch size from docstring (ignored)
+      learning_rate: Learning rate from docstring (ignored)
       epochs: Number of training epochs
     """
     pass
@@ -140,12 +140,12 @@ def test_docstring_args_section():
 
   options:
     -h, --help           show this help message and exit
-    --batch-size INT     Batch size from docstring (default: 128)
+    --batch-size INT     Inline comment wins (default: 128)
     --learning-rate FLOAT
-                         Learning rate from docstring (default: 0.001)
+                         This is used (default: 0.001)
     --epochs INT         Number of training epochs (default: 10)
   """)
-  assert train.__help_str__ == expected, "docstring Args should take precedence"
+  assert train.__help_str__ == expected, "inline comments should take precedence over docstring Args"
 
 
 def test_no_comments():
