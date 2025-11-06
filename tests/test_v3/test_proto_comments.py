@@ -53,23 +53,27 @@ def test_inline_comments():
 
 
 def test_line_above_comments():
-  """Test comments on the line above parameter."""
+  """Test that comments on the line above parameter are ignored.
+
+  Line-above comments should NOT be extracted. This test proves they are
+  ignored by showing that auto-generated descriptions are used instead.
+  """
   from params_proto import proto
 
   @proto.cli(prog="train")
   def train(
-    # Training batch size
+    # This line-above comment should be IGNORED
     batch_size: int = 128,
-    # Initial learning rate
+    # This line-above comment should also be IGNORED
     learning_rate: float = 0.001,
-    # Number of training epochs
+    # This should be IGNORED too
     epochs: int = 10,
   ):
     """Train a model."""
     pass
 
-  # Line-above comments are NOT currently supported
-  # They should be ignored
+  # If line-above comments were extracted, we'd see them in the help text
+  # Instead, we should see auto-generated descriptions
   expected = dedent("""
   usage: train [-h] [--batch-size INT] [--learning-rate FLOAT] [--epochs INT]
 
@@ -82,23 +86,29 @@ def test_line_above_comments():
                          Learning rate (default: 0.001)
     --epochs INT         Number of training epochs (default: 10)
   """)
-  assert train.__help_str__ == expected, "line-above comments should be ignored"
+  assert train.__help_str__ == expected, "line-above comments should be ignored; auto-generated descriptions should be used"
 
 
 def test_mixed_comments():
-  """Test mix of inline and line-above comments."""
+  """Test that line-above comments are ignored even when mixed with inline comments.
+
+  Proves that:
+  - Inline comments ARE extracted
+  - Line-above comments are IGNORED (auto-generated description used instead)
+  """
   from params_proto import proto
 
   @proto.cli(prog="train")
   def train(
-    batch_size: int = 128,  # Training batch size (inline)
-    # This comment is ignored
+    batch_size: int = 128,  # Training batch size (inline - USED)
+    # This line-above comment should be IGNORED, not used
     learning_rate: float = 0.001,
-    epochs: int = 10,  # Number of epochs (inline)
+    epochs: int = 10,  # Number of epochs (inline - USED)
   ):
     """Train a model."""
     pass
 
+  # Note: learning_rate has "Learning rate" (auto-generated), NOT "This line-above comment..."
   expected = dedent("""
   usage: train [-h] [--batch-size INT] [--learning-rate FLOAT] [--epochs INT]
 
@@ -106,12 +116,12 @@ def test_mixed_comments():
 
   options:
     -h, --help           show this help message and exit
-    --batch-size INT     Training batch size (inline) (default: 128)
+    --batch-size INT     Training batch size (inline - USED) (default: 128)
     --learning-rate FLOAT
                          Learning rate (default: 0.001)
-    --epochs INT         Number of epochs (inline) (default: 10)
+    --epochs INT         Number of epochs (inline - USED) (default: 10)
   """)
-  assert train.__help_str__ == expected, "only inline comments should be used"
+  assert train.__help_str__ == expected, "only inline comments should be used; line-above comments must be ignored"
 
 
 def test_docstring_args_section():
