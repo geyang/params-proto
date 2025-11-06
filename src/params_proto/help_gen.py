@@ -78,6 +78,7 @@ def _generate_help_for_function(wrapper: "ProtoWrapper") -> str:
     arg_name = f"--{name.replace('_', '-')}"
     type_name = _get_type_name(param_info["annotation"])
     default = wrapper._defaults.get(name)
+    is_required = param_info.get("required", False)
     help_text = wrapper._field_docs.get(name, "")
 
     # Auto-generate description if missing
@@ -90,7 +91,7 @@ def _generate_help_for_function(wrapper: "ProtoWrapper") -> str:
     else:
       option_str = f"  {arg_name}"
 
-    # Build description with default
+    # Build description with default or required marker
     # Handle multi-line help text (from concatenated inline + docstring)
     help_lines = help_text.split("\n") if help_text else []
 
@@ -98,14 +99,26 @@ def _generate_help_for_function(wrapper: "ProtoWrapper") -> str:
     desc_parts = []
     if help_lines:
       desc_parts.append(help_lines[0])
-    if default is not None:
-      # Add default to the last line
-      if len(help_lines) > 1:
-        # Multi-line: add default to last line
-        pass  # Will add below
-      else:
-        # Single line: add default to first line
-        desc_parts.append(f"(default: {default})")
+
+    # Determine what to show: (required) or (default: value)
+    if is_required and default is None:
+      # Required parameter with no default
+      suffix = "(required)"
+    elif default is not None:
+      # Optional parameter with default
+      suffix = f"(default: {default})"
+    else:
+      # Has a default but it's None
+      suffix = None
+
+    # Add suffix to appropriate line
+    if len(help_lines) > 1:
+      # Multi-line: add suffix to last line
+      pass  # Will add below
+    else:
+      # Single line: add suffix to first line
+      if suffix:
+        desc_parts.append(suffix)
 
     first_line_desc = " ".join(desc_parts)
 
@@ -116,9 +129,9 @@ def _generate_help_for_function(wrapper: "ProtoWrapper") -> str:
         lines.append(" " * main_padding + first_line_desc)
       # Add subsequent lines from multi-line help
       for i, help_line in enumerate(help_lines[1:], start=1):
-        if i == len(help_lines) - 1 and default is not None:
-          # Last line: add default
-          lines.append(" " * main_padding + help_line + f" (default: {default})")
+        if i == len(help_lines) - 1 and suffix:
+          # Last line: add suffix (required or default)
+          lines.append(" " * main_padding + help_line + f" {suffix}")
         else:
           lines.append(" " * main_padding + help_line)
     else:
@@ -127,9 +140,9 @@ def _generate_help_for_function(wrapper: "ProtoWrapper") -> str:
       lines.append(option_str + first_line_desc)
       # Add subsequent lines from multi-line help
       for i, help_line in enumerate(help_lines[1:], start=1):
-        if i == len(help_lines) - 1 and default is not None:
-          # Last line: add default
-          lines.append(" " * main_padding + help_line + f" (default: {default})")
+        if i == len(help_lines) - 1 and suffix:
+          # Last line: add suffix (required or default)
+          lines.append(" " * main_padding + help_line + f" {suffix}")
         else:
           lines.append(" " * main_padding + help_line)
 

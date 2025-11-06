@@ -185,8 +185,9 @@ def _extract_args_from_docstring(docstring: str) -> Dict[str, str]:
   # Parse parameter entries
   # Pattern: param_name: description (Google style)
   # or param_name : description (NumPy style allows spaces)
+  # Note: Use \Z (end of string) not $ (end of line) to avoid stopping at newlines
   param_pattern = re.compile(
-    r"^\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*:\s*(.+?)(?=^\s+[a-zA-Z_][a-zA-Z0-9_]*\s*:|$)",
+    r"^\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*:\s*(.+?)(?=^\s+[a-zA-Z_][a-zA-Z0-9_]*\s*:|\Z)",
     re.MULTILINE | re.DOTALL,
   )
 
