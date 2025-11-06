@@ -12,6 +12,7 @@ from typing import (
   Type,
   TypeVar,
   get_origin,
+  overload,
 )
 
 # Import utilities from separate modules
@@ -20,6 +21,7 @@ from params_proto.documentation import _extract_docs_from_source
 from params_proto.help_gen import _generate_help_for_function, _generate_help_for_class
 
 T = TypeVar("T")
+F = TypeVar("F", bound=Callable)
 
 # Global registry for singleton instances
 _SINGLETONS: Dict[str, Any] = {}
@@ -97,9 +99,11 @@ class ProtoWrapper:
         # NO auto-inference from parameter name for security reasons
         env_value = default.get()
 
-        # Apply type conversion based on annotation
+        # Apply type conversion based on dtype (if provided) or annotation
         if env_value is not None:
-          resolved_default = _convert_type(env_value, annotation)
+          # Use explicit dtype if provided, otherwise infer from annotation
+          target_type = default.dtype if default.dtype is not None else annotation
+          resolved_default = _convert_type(env_value, target_type)
         else:
           resolved_default = default.default  # Use the EnvVar's default value
       else:
@@ -143,6 +147,29 @@ class ProtoWrapper:
     )
 
   def __call__(self, *args, **kwargs):
+    # If this is a CLI entry point and no args/kwargs provided, parse CLI args
+    # Only parse CLI if we're actually being run as a script (not from tests)
+    if self._is_cli and not args and not kwargs:
+      import sys
+      import os
+
+      # Check if we should parse CLI args
+      # Don't parse if running under pytest, unittest, or other test runners
+      argv0 = os.path.basename(sys.argv[0]) if sys.argv else ""
+      is_test_runner = any(runner in argv0 for runner in ['pytest', 'py.test', 'unittest', 'nose', 'tox'])
+
+      if not is_test_runner:
+        # Check for help flag first - block execution if present
+        if '--help' in sys.argv or '-h' in sys.argv:
+          # Import ANSI colorization
+          from params_proto.ansi_help import colorize_help
+          print(colorize_help(self.__help_str__))
+          sys.exit(0)
+
+        # Parse CLI arguments from sys.argv into kwargs
+        from params_proto.cli_parse import parse_cli_args
+        kwargs = parse_cli_args(self)
+
     # Build final kwargs by merging:
     # 1. Defaults from function signature
     # 2. Stored overrides (from attr assignment)
@@ -429,6 +456,18 @@ def parse(func: Callable, **kwargs):
 proto.parse = parse
 
 
+@overload
+def cli(obj: F, *, prog: str = None) -> F:
+  """Decorate a function/class as CLI entry point (preserves type)."""
+  ...
+
+
+@overload
+def cli(obj: None = None, *, prog: str = None) -> Callable[[F], F]:
+  """Return a decorator for CLI entry points (preserves type)."""
+  ...
+
+
 def cli(obj: Any = None, *, prog: str = None):
   """
   Set up an object as a CLI entry point.
@@ -471,20 +510,23 @@ class _EnvVar:
   3. Function call syntax:
       db_url: str = EnvVar("DATABASE_URL", default="localhost")
       data_dir: str = EnvVar("$DATA_DIR/models", default="/tmp/models")
+      port: int = EnvVar("PORT", dtype=int, default=8080)
 
   The pipe operator (|) allows clean chaining of env var name with fallback value.
   """
 
-  def __init__(self, template: str = None, *, default: Any = None):
+  def __init__(self, template: str = None, *, default: Any = None, dtype: type = None):
     """
     Create an environment variable reader.
 
     Args:
         template: Environment variable name or template string (e.g., "$VAR" or "VAR")
         default: Default value if environment variable is not set
+        dtype: Optional type to convert the value to (overrides annotation inference)
     """
     self.template = template
     self.default = default
+    self.dtype = dtype
     self._env_name = None
 
   def __matmul__(self, other: Any):
@@ -516,20 +558,21 @@ class _EnvVar:
     Returns:
         New _EnvVar instance with both template and default
     """
-    return _EnvVar(template=self.template, default=other)
+    return _EnvVar(template=self.template, default=other, dtype=self.dtype)
 
-  def __call__(self, template: str, *, default: Any = None):
+  def __call__(self, template: str, *, default: Any = None, dtype: type = None):
     """
-    Support EnvVar("VAR_NAME", default=...) function call syntax.
+    Support EnvVar("VAR_NAME", default=..., dtype=...) function call syntax.
 
     Args:
         template: Environment variable name or template string
         default: Default value if environment variable is not set
+        dtype: Optional type to convert the value to
 
     Returns:
         New _EnvVar instance configured with the given parameters
     """
-    return _EnvVar(template=template, default=default)
+    return _EnvVar(template=template, default=default, dtype=dtype)
 
   def get(self) -> Any:
     """

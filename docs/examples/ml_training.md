@@ -87,17 +87,19 @@ python train_mnist.py --help
 ```
 
 Output:
-```
-usage: mnist_train.py [-h] [--batch-size INT] [--epochs INT] [--lr FLOAT] [--seed INT]
+```{ansi-block}
+:string_escape:
+
+usage: mnist_train.py [-h] [--batch-size \x1b[1m\x1b[94mINT\x1b[0m] [--epochs \x1b[1m\x1b[94mINT\x1b[0m] [--lr \x1b[1m\x1b[94mFLOAT\x1b[0m] [--seed \x1b[1m\x1b[94mINT\x1b[0m]
 
 Train an MLP on MNIST dataset.
 
 options:
   -h, --help           show this help message and exit
-  --batch-size INT     Training batch size (default: 128)
-  --epochs INT         Number of training epochs (default: 10)
-  --lr FLOAT           Learning rate (default: 0.001)
-  --seed INT           Random seed (default: 42)
+  --batch-size \x1b[1m\x1b[94mINT\x1b[0m     Training batch size \x1b[36m(default:\x1b[0m \x1b[1m\x1b[36m128\x1b[0m\x1b[36m)\x1b[0m
+  --epochs \x1b[1m\x1b[94mINT\x1b[0m         Number of training epochs \x1b[36m(default:\x1b[0m \x1b[1m\x1b[36m10\x1b[0m\x1b[36m)\x1b[0m
+  --lr \x1b[1m\x1b[94mFLOAT\x1b[0m           Learning rate \x1b[36m(default:\x1b[0m \x1b[1m\x1b[36m0.001\x1b[0m\x1b[36m)\x1b[0m
+  --seed \x1b[1m\x1b[94mINT\x1b[0m           Random seed \x1b[36m(default:\x1b[0m \x1b[1m\x1b[36m42\x1b[0m\x1b[36m)\x1b[0m
 ```
 
 ## Advanced: Parameter Sweeps

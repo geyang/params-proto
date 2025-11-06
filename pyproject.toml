@@ -123,3 +123,8 @@ python_files = "test_*.py"
 python_classes = "Test*"
 python_functions = "test_*"
 addopts = "--capture=sys"
+
+[dependency-groups]
+docs = [
+    "sphinxcontrib-ansi @ git+https://github.com/brentyi/ansi.git",
+]

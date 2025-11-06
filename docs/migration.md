@@ -382,7 +382,7 @@ You can migrate gradually:
 
 ## Need Help?
 
-- Check the [User Guide](guide/decorators.md) for detailed v3 documentation
+- Check the [User Guide](key_concepts/decorators.md) for detailed v3 documentation
 - See [Examples](examples/) for real-world v3 patterns
 - Open an issue on [GitHub](https://github.com/geyang/params-proto/issues)
 

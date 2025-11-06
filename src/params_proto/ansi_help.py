@@ -117,10 +117,11 @@ def colorize_help(help_str: str, width: Optional[int] = None) -> str:
   """Add ANSI colors and line wrapping to help text.
 
   Colorization:
-  - Type names (INT, STR, FLOAT, etc.) -> bold cyan
-  - (required) -> bold red
-  - (default: ...) -> dim cyan
-  - Option names (--foo) -> bold
+  - Type names (INT, STR, FLOAT, etc.) -> bold bright blue (\x1b[1m\x1b[94m)
+  - (required) -> bold red (\x1b[1m\x1b[31m)
+  - (default: value) -> cyan parentheses with bold cyan value
+    Example: \x1b[36m(default:\x1b[0m \x1b[1m\x1b[36m128\x1b[0m\x1b[36m)\x1b[0m
+  - Option names (--foo) -> plain text (no formatting)
 
   Args:
       help_str: Plain text help string
@@ -157,11 +158,11 @@ def colorize_help(help_str: str, width: Optional[int] = None) -> str:
         # Build the option part (everything before description)
         option_part = indent_str + option_name + type_part
 
-        # Colorize components
-        colored_option = f'{indent_str}{Colors.BOLD}{option_name}{Colors.RESET}'
+        # Colorize components (no bold for option names)
+        colored_option = f'{indent_str}{option_name}'
         if type_part:
           type_name = type_part.strip()
-          colored_type = f' {Colors.BOLD}{Colors.CYAN}{type_name}{Colors.RESET}'
+          colored_type = f' {Colors.BOLD}{Colors.BRIGHT_BLUE}{type_name}{Colors.RESET}'
         else:
           colored_type = ''
 
@@ -225,10 +226,10 @@ def _colorize_description(text: str) -> str:
     text
   )
 
-  # Dim cyan for (default: ...)
+  # Cyan for (default: with bold cyan value
   text = re.sub(
-    r'(\(default:[^)]+\))',
-    f'{Colors.DIM}{Colors.CYAN}\\1{Colors.RESET}',
+    r'\(default:\s*([^)]+)\)',
+    f'{Colors.CYAN}(default:{Colors.RESET} {Colors.BOLD}{Colors.CYAN}\\1{Colors.RESET}{Colors.CYAN}){Colors.RESET}',
     text
   )
 
@@ -286,18 +287,12 @@ def _colorize_option_line(line: str) -> str:
 
   Example: "  --batch-size INT     Training batch size (default: 32)"
   """
-  # Bold the option name (--foo-bar)
-  line = re.sub(
-    r'(--[a-z0-9-]+)',
-    f'{Colors.BOLD}\\1{Colors.RESET}',
-    line,
-    flags=re.IGNORECASE
-  )
+  # Option names are not bolded (just left as-is)
 
-  # Bold cyan for type names (INT, STR, FLOAT, etc.)
+  # Bold bright blue for type names (INT, STR, FLOAT, etc.)
   line = re.sub(
     r'\b(INT|STR|FLOAT|BOOL|VALUE)\b',
-    f'{Colors.BOLD}{Colors.CYAN}\\1{Colors.RESET}',
+    f'{Colors.BOLD}{Colors.BRIGHT_BLUE}\\1{Colors.RESET}',
     line
   )
 
@@ -308,10 +303,10 @@ def _colorize_option_line(line: str) -> str:
     line
   )
 
-  # Dim cyan for (default: ...)
+  # Cyan for (default: with bold cyan value
   line = re.sub(
-    r'(\(default:[^)]+\))',
-    f'{Colors.DIM}{Colors.CYAN}\\1{Colors.RESET}',
+    r'\(default:\s*([^)]+)\)',
+    f'{Colors.CYAN}(default:{Colors.RESET} {Colors.BOLD}{Colors.CYAN}\\1{Colors.RESET}{Colors.CYAN}){Colors.RESET}',
     line
   )
 
@@ -327,10 +322,10 @@ def _colorize_continuation_line(line: str) -> str:
     line
   )
 
-  # Dim cyan for (default: ...) on continuation lines
+  # Cyan for (default: with bold cyan value on continuation lines
   line = re.sub(
-    r'(\(default:[^)]+\))',
-    f'{Colors.DIM}{Colors.CYAN}\\1{Colors.RESET}',
+    r'\(default:\s*([^)]+)\)',
+    f'{Colors.CYAN}(default:{Colors.RESET} {Colors.BOLD}{Colors.CYAN}\\1{Colors.RESET}{Colors.CYAN}){Colors.RESET}',
     line
   )
 

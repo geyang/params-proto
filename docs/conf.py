@@ -35,6 +35,7 @@ extensions = [
     "sphinx.ext.mathjax",
     "myst_parser",
     "sphinx_copybutton",
+    "sphinxcontrib.ansi",
 ]
 
 rst_epilog = f".. |version| replace:: {version}"
@@ -53,6 +54,9 @@ def setup(app):
 
     app.add_config_value("REPLACEMENT_LIST", {}, True)
     app.connect("source-read", versioning)
+
+    # Add ANSI color CSS
+    app.add_css_file("ansi.css")
 
 
 templates_path = ["_templates"]

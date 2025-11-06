@@ -124,14 +124,19 @@ def _generate_help_for_function(wrapper: "ProtoWrapper") -> str:
       desc_parts.append(help_lines[0])
 
     # Determine what to show: (required) or (default: value)
-    if is_required and default is None:
-      # Required parameter with no default
+    # Check if help text already contains (required) or (default:...)
+    help_text_lower = help_text.lower()
+    has_required_in_help = "(required)" in help_text_lower
+    has_default_in_help = "(default:" in help_text_lower
+
+    if is_required and default is None and not has_required_in_help:
+      # Required parameter with no default, and help doesn't already say (required)
       suffix = "(required)"
-    elif default is not None:
-      # Optional parameter with default
+    elif default is not None and not has_default_in_help:
+      # Optional parameter with default, and help doesn't already say (default:...)
       suffix = f"(default: {default})"
     else:
-      # Has a default but it's None
+      # Has a default but it's None, or help already contains the marker
       suffix = None
 
     # Add suffix to appropriate line
