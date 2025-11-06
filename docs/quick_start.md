@@ -1,103 +1,304 @@
 # Quick Start Guide
 
+Get started with params-proto v3 in 5 minutes!
+
 ## Installation
 
-Install params-proto using pip:
-
 ```bash
-pip install params-proto waterbear
+pip install params-proto
 ```
 
-## Basic Example
+Or with uv:
+```bash
+uv add params-proto
+```
 
-Here's a simple example to get you started with params-proto:
+## Your First Configuration
+
+Let's create a simple training script with params-proto.
+
+### Step 1: Define Your Parameters
+
+Create a file called `train.py`:
 
 ```python
-# config.py
-from params_proto.v2.proto import ParamsProto, Flag, Proto
+from params_proto import proto
 
-class Config(ParamsProto):
-    """Training configuration for my ML model"""
-    
-    # Boolean flags
-    debug = Flag("Enable debug logging", default=False)
-    use_gpu = Flag("Use GPU for training", default=True)
-    
-    # String parameters
-    model_name = Proto("Model architecture", default="resnet50")
-    dataset = Proto("Dataset to use", default="cifar10")
-    
-    # Numeric parameters
-    learning_rate = Proto("Learning rate", default=0.001)
-    batch_size = Proto("Batch size", default=32)
-    epochs = Proto("Number of training epochs", default=100)
-    
-    # Path parameters with environment variable support
-    data_dir = Proto("Data directory", default="${DATA_DIR:/tmp/data}")
-    output_dir = Proto("Output directory", default="./outputs")
+@proto.cli
+def train_model(
+    lr: float = 0.001,  # Learning rate
+    batch_size: int = 32,  # Training batch size
+    epochs: int = 100,  # Number of training epochs
+    model: str = "resnet50",  # Model architecture
+):
+    """Train a neural network on CIFAR-10."""
+    print(f"Training {model} for {epochs} epochs")
+    print(f"  Learning rate: {lr}")
+    print(f"  Batch size: {batch_size}")
 
-# train.py
-from config import Config
+    # Your training code goes here
+    for epoch in range(epochs):
+        print(f"Epoch {epoch + 1}/{epochs}")
+        # ... training logic ...
 
-def main():
-    # Parse command line arguments
-    Config.parse()
-    
-    print(f"Training {Config.model_name} on {Config.dataset}")
-    print(f"Learning rate: {Config.learning_rate}")
-    print(f"Batch size: {Config.batch_size}")
-    print(f"Debug mode: {Config.debug}")
+if __name__ == "__main__":
+    train_model()
+```
+
+That's it! No argparse boilerplate, no manual help strings. Just a normal Python function with type hints and inline comments.
+
+### Step 2: Run from Command Line
+
+Get automatic help:
+```bash
+$ python train.py --help
+usage: train.py [-h] [--lr FLOAT] [--batch-size INT] [--epochs INT] [--model STR]
+
+Train a neural network on CIFAR-10.
+
+options:
+  -h, --help           show this help message and exit
+  --lr FLOAT           Learning rate (default: 0.001)
+  --batch-size INT     Training batch size (default: 32)
+  --epochs INT         Number of training epochs (default: 100)
+  --model STR          Model architecture (default: resnet50)
+```
+
+Run with default values:
+```bash
+$ python train.py
+Training resnet50 for 100 epochs
+  Learning rate: 0.001
+  Batch size: 32
+```
+
+Override parameters:
+```bash
+$ python train.py --lr 0.01 --batch-size 64 --epochs 50
+Training resnet50 for 50 epochs
+  Learning rate: 0.01
+  Batch size: 64
+```
+
+## Using Classes
+
+Prefer classes? No problem:
+
+```python
+from params_proto import proto
+
+@proto
+class Config:
+    """Training configuration."""
+
+    # Model settings
+    model: str = "resnet50"  # Model architecture
+    pretrained: bool = True  # Use pretrained weights
+
+    # Training settings
+    lr: float = 0.001  # Learning rate
+    batch_size: int = 32  # Batch size
+    epochs: int = 100  # Number of epochs
+
+    # Data settings
+    data_dir: str = "./data"  # Data directory
+    num_workers: int = 4  # Number of data loading workers
+
+# Create instance
+config = Config()
+print(f"Training {config.model} with lr={config.lr}")
+```
+
+## Modular Configurations
+
+For larger projects, split your configuration into logical groups:
+
+```python
+from params_proto import proto
+
+@proto.prefix
+class Model:
+    """Model configuration."""
+    name: str = "resnet50"  # Architecture name
+    pretrained: bool = True  # Use pretrained weights
+    dropout: float = 0.5  # Dropout rate
+
+@proto.prefix
+class Data:
+    """Data configuration."""
+    dataset: str = "cifar10"  # Dataset name
+    data_dir: str = "./data"  # Data directory
+    num_workers: int = 4  # Data loading workers
+
+@proto.prefix
+class Training:
+    """Training hyperparameters."""
+    lr: float = 0.001  # Learning rate
+    batch_size: int = 32  # Batch size
+    epochs: int = 100  # Number of epochs
+
+@proto.cli
+def main(
+    seed: int = 42,  # Random seed
+    device: str = "cuda",  # Device to use (cuda/cpu)
+):
+    """Train a model on a dataset."""
+    print(f"Training {Model.name} on {Data.dataset}")
+    print(f"  LR: {Training.lr}, Batch size: {Training.batch_size}")
+    print(f"  Device: {device}, Seed: {seed}")
+
+    # Your training code here
 
 if __name__ == "__main__":
     main()
 ```
 
-## Command Line Usage
-
-Run your script with different parameters:
-
+Run with prefixed arguments:
 ```bash
-# Use default values
-python train.py
+$ python main.py --help
+usage: main.py [-h] [--seed INT] [--device STR] [OPTIONS]
 
-# Override specific parameters
-python train.py --Config.learning_rate 0.01 --Config.batch_size 64
+Train a model on a dataset.
 
-# Enable debug mode
-python train.py --Config.debug
+options:
+  -h, --help                   show this help message and exit
+  --seed INT                   Random seed (default: 42)
+  --device STR                 Device to use (cuda/cpu) (default: cuda)
 
-# Use environment variables
-DATA_DIR=/path/to/data python train.py
+Model options:
+  Model configuration.
 
-# Get help
-python train.py --help
+  --Model.name STR             Architecture name (default: resnet50)
+  --Model.pretrained           Use pretrained weights (default: True)
+  --Model.dropout FLOAT        Dropout rate (default: 0.5)
+
+Data options:
+  Data configuration.
+
+  --Data.dataset STR           Dataset name (default: cifar10)
+  --Data.data-dir STR          Data directory (default: ./data)
+  --Data.num-workers INT       Data loading workers (default: 4)
+
+Training options:
+  Training hyperparameters.
+
+  --Training.lr FLOAT          Learning rate (default: 0.001)
+  --Training.batch-size INT    Batch size (default: 32)
+  --Training.epochs INT        Number of epochs (default: 100)
+
+$ python main.py --Model.name vit --Training.lr 0.0001 --seed 123
+Training vit on cifar10
+  LR: 0.0001, Batch size: 32
+  Device: cuda, Seed: 123
 ```
 
-## Key Concepts
+## Override Patterns
 
-### ParamsProto Class
-The base class for defining parameter schemas. Inherit from it to create your configuration classes.
+There are multiple ways to override parameters:
 
-### Proto Fields
-Use `Proto()` to define parameters with type hints, default values, and help text.
+### 1. Command Line (shown above)
+```bash
+python train.py --lr 0.01 --batch-size 64
+```
 
-### Flag Fields  
-Use `Flag()` for boolean parameters that can be enabled with `--flag` or disabled with `--no-flag`.
+### 2. Direct Attribute Assignment
+```python
+Config.lr = 0.01
+Config.batch_size = 64
+```
 
-### Environment Variables
-Use `${VAR_NAME}` syntax in default values to read from environment variables. You can provide fallback values with `${VAR_NAME:fallback}`.
+### 3. Function Call with kwargs
+```python
+train_model(lr=0.01, batch_size=64)
+```
 
-## IDE Support
+### 4. Using `proto.bind()`
+```python
+# Context manager (scoped overrides)
+with proto.bind(lr=0.01, batch_size=64):
+    train_model()
 
-params-proto provides excellent IDE support:
+# Direct call (global overrides)
+proto.bind(lr=0.01, batch_size=64)
+train_model()
+```
 
-- **Autocompletion**: Access parameters with `Config.parameter_name`
-- **Type hints**: Full type safety and checking
-- **Documentation**: Hover over parameters to see help text
-- **Refactoring**: Rename parameters safely across your codebase
+## Type Annotations
 
-## Next Steps
+params-proto supports rich type annotations:
 
-- Explore the [Examples](examples/index.md) for more advanced usage patterns
-- Check the [API Reference](api/index.md) for detailed documentation
-- Learn about nested configurations and parameter sweeps
+```python
+from typing import Literal
+from enum import Enum, auto
+
+class Optimizer(Enum):
+    ADAM = auto()
+    SGD = auto()
+    RMSPROP = auto()
+
+@proto
+class Config:
+    # Union types (Python 3.10+)
+    precision: Literal["fp16", "fp32", "fp64"] = "fp32"
+
+    # Enums
+    optimizer: Optimizer = Optimizer.ADAM
+
+    # Tuples
+    image_size: tuple[int, int] = (224, 224)
+
+    # Optional types
+    checkpoint: str | None = None
+```
+
+## What's Next?
+
+Now that you've got the basics, explore:
+
+- **[User Guide](guide/decorators.md)** - Deep dive into decorators, types, and patterns
+- **[Examples](examples/)** - Real-world usage examples
+- **[API Reference](api/proto.md)** - Complete API documentation
+
+## Common Patterns
+
+### ML Training Script
+```python
+@proto.prefix
+class Model:
+    name: str = "resnet50"
+    pretrained: bool = True
+
+@proto.prefix
+class Optimizer:
+    name: str = "adam"
+    lr: float = 0.001
+    weight_decay: float = 0.0001
+
+@proto.cli
+def train(epochs: int = 100, seed: int = 42):
+    """Train a model."""
+    # Your code here
+```
+
+### Experiment Sweeps
+```python
+# Override in Python code
+for lr in [0.001, 0.01, 0.1]:
+    Config.lr = lr
+    with proto.bind(**{"Model.name": "vit"}):
+        train()
+```
+
+### Config Files
+```python
+import json
+
+# Load from JSON
+with open("config.json") as f:
+    config = json.load(f)
+
+proto.bind(**config)
+main()
+```
+
+Ready to learn more? Continue to the [User Guide](guide/decorators.md)!

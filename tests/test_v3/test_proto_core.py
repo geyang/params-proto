@@ -134,7 +134,7 @@ def test_function_usage():
     log_interval: int = 10,
     **kwargs,
   ):
-    r = vars(locals())
+    r = dict(locals())
     print(r)
     return r
 
@@ -267,20 +267,20 @@ def test_singleton_override():
   assert result["seed"] != 400  # Back to defaults or previous values
 
   """
-    Command line examples:
+  Command line examples:
   
-    # Run with default values
-    python main.py
+  # Run with default values
+  python main.py
   
-    # Override train learning rate and eval batch size
-    python main.py --train.lr 0.01 --eval.batch-size 128
+  # Override train learning rate and eval batch size
+  python main.py --train.lr 0.01 --eval.batch-size 128
   
-    # Set seed and enable debug mode
-    python main.py --seed 123 --debug
+  # Set seed and enable debug mode
+  python main.py --seed 123 --debug
   
-    # Full customization
-    python main.py --seed 99 --debug --train.lr 0.001 --train.epochs 200 --train.batch-size 64 --eval.batch-size 256 --eval.checkpoint "./best.pt"
-    """
+  # Full customization
+  python main.py --seed 99 --debug --train.lr 0.001 --train.epochs 200 --train.batch-size 64 --eval.batch-size 256 --eval.checkpoint "./best.pt"
+  """
 
 
 def test_documentation_styles():

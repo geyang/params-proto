@@ -1,9 +1,9 @@
 [project]
 name = "params-proto"
-version = "3.0.0"
+version = "3.0.0-rc1"
 description = "Modern Hyper Parameter Management for Machine Learning"
 authors = [
-    { name = "Ge Yang", email = "ge.ike.yang@gmail.com" }
+    { name = "Ge Yang" }
 ]
 readme = "README.md"
 license = { text = "MIT" }

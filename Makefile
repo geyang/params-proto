@@ -1,14 +1,26 @@
-.PHONY: docs preview
+.PHONY: build-docs docs preview clean help
 
-# Build documentation
-build-docs:
+help:
+	@echo "Available targets:"
+	@echo "  build-docs  - Build the Sphinx documentation"
+	@echo "  docs        - Build and serve documentation with auto-reload"
+	@echo "  preview     - Clean, build and preview documentation in browser"
+	@echo "  clean       - Remove the documentation build directory"
+
+clean:
+	@echo "Cleaning documentation build directory..."
 	rm -rf docs/_build
-	uv run --extra docs sphinx-build docs docs/_build/html
 
-# Build and serve documentation
+build-docs:
+	@echo "Building documentation..."
+	uv run sphinx-build -M html docs docs/_build
+
 docs: build-docs
-	cd docs/_build/html && python -m http.server 8000
+	@echo "Starting documentation server at http://localhost:8001"
+	@echo "Press Ctrl+C to stop the server"
+	cd docs/_build/html && uv run python -m http.server 8000
 
-# Live-reload documentation server
-preview: build-docs
-	uv run --extra docs sphinx-autobuild --host 0.0.0.0 docs docs/_build/html
+preview: clean build-docs
+	@echo "Starting documentation server with auto-reload..."
+	@echo "Documentation will be available at http://localhost:8000"
+	uv run sphinx-autobuild docs docs/_build/html --port 8000 --open-browser
