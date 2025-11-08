@@ -3,7 +3,7 @@ import itertools
 from collections import defaultdict, namedtuple
 from contextlib import contextmanager
 from copy import deepcopy
-from typing import Any, ContextManager, Dict, Iterable, Union
+from typing import Any, ContextManager, Dict, Iterable, List, Union, overload
 
 from ..proto import ProtoClass, ProtoWrapper, ptype
 from .proxies import ClassProxy, FuncProxy, PrefixProxy
@@ -523,6 +523,21 @@ class Sweep:
                     sweep.append(json.loads(line.strip()))
                 line = f.readline().strip()
         return sweep
+
+    @overload
+    def load(self, file: str, strict: bool = True, silent: bool = False) -> "Sweep":
+        """Load sweep configurations from JSONL file."""
+        ...
+
+    @overload
+    def load(self, file: List[Dict[str, Any]], strict: bool = True, silent: bool = False) -> "Sweep":
+        """Load sweep configurations from list of dicts."""
+        ...
+
+    @overload
+    def load(self, file: Any, strict: bool = True, silent: bool = False) -> "Sweep":
+        """Load sweep configurations from pandas DataFrame."""
+        ...
 
     def load(self, file="sweep.jsonl", strict=True, silent=False):
         """
