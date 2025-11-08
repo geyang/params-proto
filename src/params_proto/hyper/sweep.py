@@ -5,7 +5,7 @@ from contextlib import contextmanager
 from copy import deepcopy
 from typing import Any, ContextManager, Dict, Iterable, Union
 
-from ..proto import ProtoClass, ProtoWrapper
+from ..proto import ProtoClass, ProtoWrapper, ptype
 from .proxies import ClassProxy, FuncProxy, PrefixProxy
 
 
@@ -51,10 +51,10 @@ class ProtoProxy:
 
     def __init__(self, proto_obj):
         """
-        Wrap a v3 ProtoClass or ProtoWrapper.
+        Wrap a v3 ProtoClass, ProtoWrapper, or metaclass-based proto class.
 
         Args:
-            proto_obj: A ProtoClass or ProtoWrapper instance
+            proto_obj: A ProtoClass, ProtoWrapper instance, or metaclass-based class
         """
         object.__setattr__(self, "_proto", proto_obj)
         object.__setattr__(self, "_set_hooks", [])
@@ -64,7 +64,12 @@ class ProtoProxy:
     def _prefix(self):
         """Return prefix for the proto object (lowercase for v3)."""
         proto = object.__getattribute__(self, "_proto")
-        if isinstance(proto, ProtoClass):
+
+        # Check if it's a metaclass-based proto class
+        if isinstance(proto, type) and isinstance(proto, ptype):
+            return type.__getattribute__(proto, "__proto_prefix__")
+        # Check if it's a ProtoClass wrapper (old style)
+        elif isinstance(proto, ProtoClass):
             return proto._cls.__name__.lower() if proto._is_prefix else None
         elif isinstance(proto, ProtoWrapper):
             return proto._name.lower() if proto._is_prefix else None
@@ -73,18 +78,55 @@ class ProtoProxy:
     def _add_hooks(self, set_hook, get_hook=None):
         """Add setter/getter hooks for Sweep integration."""
         proto = object.__getattribute__(self, "_proto")
-        # Add hook directly to the underlying proto object
-        proto._sweep_hooks.append(set_hook)
+
+        # Check if it's a metaclass-based proto class
+        if isinstance(proto, type) and isinstance(proto, ptype):
+            # Access __proto_sweep_hooks__ via type.__getattribute__ to bypass metaclass
+            hooks = type.__getattribute__(proto, "__proto_sweep_hooks__")
+            hooks.append(set_hook)
+        # Old wrapper-based approach (for backward compatibility during transition)
+        elif hasattr(proto, "_sweep_hooks"):
+            proto._sweep_hooks.append(set_hook)
 
     def _pop_hooks(self):
         """Remove last hook."""
         proto = object.__getattribute__(self, "_proto")
-        if proto._sweep_hooks:
-            proto._sweep_hooks.pop()
+
+        # Check if it's a metaclass-based proto class
+        if isinstance(proto, type) and isinstance(proto, ptype):
+            hooks = type.__getattribute__(proto, "__proto_sweep_hooks__")
+            if hooks:
+                hooks.pop()
+        # Old wrapper-based approach
+        elif hasattr(proto, "_sweep_hooks"):
+            if proto._sweep_hooks:
+                proto._sweep_hooks.pop()
 
     def _update(self, __d: Dict[str, Any] = None, **kwargs):
         """Update overrides from dict or kwargs."""
         proto = object.__getattribute__(self, "_proto")
+
+        # Helper to get annotations
+        def get_annotations():
+            if isinstance(proto, type) and isinstance(proto, ptype):
+                return type.__getattribute__(proto, "__proto_annotations__")
+            elif isinstance(proto, ProtoClass):
+                return proto._annotations
+            elif isinstance(proto, ProtoWrapper):
+                return proto._params
+            return {}
+
+        # Helper to set override
+        def set_override(key, value):
+            if isinstance(proto, type) and isinstance(proto, ptype):
+                overrides = type.__getattribute__(proto, "__proto_overrides__")
+                overrides[key] = value
+            elif isinstance(proto, ProtoClass):
+                proto._overrides[key] = value
+            elif isinstance(proto, ProtoWrapper):
+                proto._overrides[key] = value
+
+        annotations = get_annotations()
 
         if __d:
             prefix = self._prefix
@@ -93,36 +135,20 @@ class ProtoProxy:
                 for k, v in __d.items():
                     if k.startswith(prefix_key):
                         param_name = k[len(prefix_key):]
-                        if isinstance(proto, ProtoClass):
-                            if param_name in proto._annotations:
-                                proto._overrides[param_name] = v
-                        elif isinstance(proto, ProtoWrapper):
-                            if param_name in proto._params:
-                                proto._overrides[param_name] = v
+                        if param_name in annotations:
+                            set_override(param_name, v)
                     elif "." not in k:
-                        if isinstance(proto, ProtoClass):
-                            if k in proto._annotations:
-                                proto._overrides[k] = v
-                        elif isinstance(proto, ProtoWrapper):
-                            if k in proto._params:
-                                proto._overrides[k] = v
+                        if k in annotations:
+                            set_override(k, v)
             else:
                 for k, v in __d.items():
                     if "." not in k:
-                        if isinstance(proto, ProtoClass):
-                            if k in proto._annotations:
-                                proto._overrides[k] = v
-                        elif isinstance(proto, ProtoWrapper):
-                            if k in proto._params:
-                                proto._overrides[k] = v
+                        if k in annotations:
+                            set_override(k, v)
 
         for k, v in kwargs.items():
-            if isinstance(proto, ProtoClass):
-                if k in proto._annotations:
-                    proto._overrides[k] = v
-            elif isinstance(proto, ProtoWrapper):
-                if k in proto._params:
-                    proto._overrides[k] = v
+            if k in annotations:
+                set_override(k, v)
 
     def __getattr__(self, name):
         """Delegate attribute access to wrapped proto object, with hook support."""
@@ -166,7 +192,10 @@ class ProtoProxy:
     def __dir__(self):
         """Return parameters only, not internals."""
         proto = object.__getattribute__(self, "_proto")
-        if isinstance(proto, ProtoClass):
+        if isinstance(proto, type) and isinstance(proto, ptype):
+            annotations = type.__getattribute__(proto, "__proto_annotations__")
+            return list(annotations.keys())
+        elif isinstance(proto, ProtoClass):
             return list(proto._annotations.keys())
         elif isinstance(proto, ProtoWrapper):
             return list(proto._params.keys())
@@ -200,12 +229,17 @@ class Sweep:
         Initialize Sweep with proto objects.
 
         Args:
-            *protos: ProtoClass or ProtoWrapper instances
+            *protos: ProtoClass, ProtoWrapper instances, or metaclass-based proto classes
         """
         # Wrap v3 proto objects in ProtoProxy
         self.root: Dict[Union[str, object], ProtoProxy] = {}
         for p in protos:
-            if isinstance(p, (ProtoClass, ProtoWrapper)):
+            # Check if it's a metaclass-based proto class
+            if isinstance(p, type) and isinstance(p, ptype):
+                proxy = ProtoProxy(p)
+                key = proxy._prefix or proxy
+                self.root[key] = proxy
+            elif isinstance(p, (ProtoClass, ProtoWrapper)):
                 proxy = ProtoProxy(p)
                 # Use prefix as key if available, otherwise use the proxy itself
                 key = proxy._prefix or proxy

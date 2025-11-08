@@ -250,6 +250,135 @@ class ProtoWrapper:
 
 
 
+class ptype(type):
+  """Metaclass for proto-decorated classes that intercepts attribute access."""
+
+  def __setattr__(cls, name, value):
+    # Allow setting internal proto attributes
+    if name.startswith("__proto_"):
+      type.__setattr__(cls, name, value)
+    elif name.startswith("_"):
+      # Allow private attributes
+      type.__setattr__(cls, name, value)
+    else:
+      # Store in overrides
+      if not hasattr(cls, "__proto_overrides__"):
+        type.__setattr__(cls, "__proto_overrides__", {})
+      cls.__proto_overrides__[name] = value
+
+      # Call sweep hooks if any
+      if hasattr(cls, "__proto_sweep_hooks__"):
+        for hook in cls.__proto_sweep_hooks__:
+          # Hooks expect (proxy, name, value) signature
+          hook(cls, name, value)
+
+  def __getattribute__(cls, name):
+    # Allow access to internal proto attributes
+    if name.startswith("__proto_") or name.startswith("_"):
+      return type.__getattribute__(cls, name)
+
+    # Check overrides first
+    try:
+      overrides = type.__getattribute__(cls, "__proto_overrides__")
+      if name in overrides:
+        return overrides[name]
+    except AttributeError:
+      pass
+
+    # Check bind context
+    try:
+      prefix = type.__getattribute__(cls, "__proto_prefix__")
+      if prefix:
+        # Look for prefixed keys like "config.lr"
+        key = f"{prefix}.{name}"
+        if key in _BIND_CONTEXT:
+          return _BIND_CONTEXT[key]
+      else:
+        # Look for direct keys
+        if name in _BIND_CONTEXT and "." not in name:
+          return _BIND_CONTEXT[name]
+    except AttributeError:
+      pass
+
+    # Fall back to defaults, then class attributes
+    try:
+      defaults = type.__getattribute__(cls, "__proto_defaults__")
+      if name in defaults:
+        return defaults[name]
+    except AttributeError:
+      pass
+
+    return type.__getattribute__(cls, name)
+
+  def __call__(cls, *args, **kwargs):
+    """Create instance with merged values from defaults, overrides, and bind context."""
+    final_kwargs = {}
+
+    # Start with defaults
+    if hasattr(cls, "__proto_defaults__"):
+      final_kwargs.update(cls.__proto_defaults__)
+
+    # Apply class-level overrides
+    if hasattr(cls, "__proto_overrides__"):
+      final_kwargs.update(cls.__proto_overrides__)
+
+    # Apply bind context
+    if hasattr(cls, "__proto_prefix__"):
+      prefix = cls.__proto_prefix__
+      if prefix:
+        # Handle prefixed keys
+        for key, value in _BIND_CONTEXT.items():
+          if key.startswith(f"{prefix}."):
+            param_name = key.split(".", 1)[1]
+            final_kwargs[param_name] = value
+      else:
+        # Handle non-prefixed keys
+        annotations = getattr(cls, "__proto_annotations__", {})
+        for key, value in _BIND_CONTEXT.items():
+          if "." not in key and key in annotations:
+            final_kwargs[key] = value
+
+    # Apply direct kwargs
+    final_kwargs.update(kwargs)
+
+    # Get the original class
+    original_cls = type.__getattribute__(cls, "__proto_original_class__")
+
+    # Create instance
+    instance = object.__new__(original_cls)
+
+    # Set attributes
+    annotations = getattr(cls, "__proto_annotations__", {})
+    for name in annotations.keys():
+      if name in final_kwargs:
+        setattr(instance, name, final_kwargs[name])
+      elif hasattr(cls, "__proto_defaults__") and name in cls.__proto_defaults__:
+        setattr(instance, name, cls.__proto_defaults__[name])
+      else:
+        # Required field
+        setattr(instance, name, None)
+
+    # Copy methods from original class and wrap to return self
+    for name in dir(original_cls):
+      if not name.startswith("__"):
+        attr = getattr(original_cls, name)
+        if callable(attr):
+          # Get the bound method
+          bound_method = attr.__get__(instance, original_cls)
+
+          # Wrap it to return self if it returns None
+          def make_wrapper(method):
+            def wrapper(*args, **kwargs):
+              result = method(*args, **kwargs)
+              return instance if result is None else result
+
+            return wrapper
+
+          setattr(instance, name, make_wrapper(bound_method))
+
+    return instance
+
+
 class ProtoClass:
   """Wrapper for proto-decorated classes."""
 
@@ -383,10 +512,77 @@ def proto(
         _SINGLETONS[obj.__name__] = wrapper
       return wrapper
     elif inspect.isclass(obj):
-      wrapper = ProtoClass(obj, is_cli=cli, is_prefix=prefix)
+      # New metaclass-based approach for classes
+      # Extract annotations and defaults
+      annotations = getattr(obj, "__annotations__", {})
+      defaults = {}
+      field_docs = _extract_docs_from_source(obj)
+
+      for name in annotations.keys():
+        if hasattr(obj, name):
+          value = getattr(obj, name)
+          # Skip methods
+          if not callable(value):
+            defaults[name] = value
+
+      # Handle existing metaclass
+      existing_meta = type(obj)
+      if existing_meta is not type:
+        # Merge with existing metaclass
+        class MergedMeta(existing_meta, ptype):
+          pass
+        metaclass = MergedMeta
+      else:
+        metaclass = ptype
+
+      # Recreate the class with ptype as its metaclass
+      # Collect class namespace (attributes and methods)
+      namespace = {}
+      for key in dir(obj):
+        if not key.startswith("__") or key in ("__annotations__", "__module__", "__qualname__", "__doc__"):
+          try:
+            namespace[key] = getattr(obj, key)
+          except AttributeError:
+            pass
+
+      # Create new class with metaclass
+      new_cls = metaclass(
+        obj.__name__,
+        obj.__bases__,
+        namespace
+      )
+
+      # Store proto metadata on the class
+      type.__setattr__(new_cls, "__proto_overrides__", {})
+      type.__setattr__(new_cls, "__proto_defaults__", defaults)
+      type.__setattr__(new_cls, "__proto_annotations__", annotations)
+      type.__setattr__(new_cls, "__proto_field_docs__", field_docs)
+      type.__setattr__(new_cls, "__proto_sweep_hooks__", [])
+      type.__setattr__(new_cls, "__proto_is_cli__", cli)
+      type.__setattr__(new_cls, "__proto_is_prefix__", prefix)
+      type.__setattr__(new_cls, "__proto_original_class__", obj)
+
+      # Store prefix name (lowercase class name for prefixed configs)
       if prefix:
-        _SINGLETONS[obj.__name__] = wrapper
-      return wrapper
+        prefix_name = obj.__name__.lower()
+        type.__setattr__(new_cls, "__proto_prefix__", prefix_name)
+        _SINGLETONS[prefix_name] = new_cls
+      else:
+        type.__setattr__(new_cls, "__proto_prefix__", None)
+
+      # Generate help if CLI
+      if cli:
+        # Create a temporary ProtoClass-like object for help generation
+        temp_wrapper = type('temp', (), {
+          '_annotations': annotations,
+          '_defaults': defaults,
+          '_field_docs': field_docs,
+          '__name__': obj.__name__,
+        })()
+        help_str = _generate_help_for_class(temp_wrapper)
+        type.__setattr__(new_cls, "__proto_help_str__", help_str)
+
+      return new_cls
     else:
       # Handle Union types
       return obj
