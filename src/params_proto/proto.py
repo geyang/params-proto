@@ -513,6 +513,101 @@ def cli(obj: Any = None, *, prog: str = None):
 proto.cli = cli
 
 
+def partial(config_class: Type, method: bool = False):
+  """
+  Decorator that injects parameter defaults from a config class into a function.
+
+  This allows you to define a plain class with type-annotated attributes and their
+  defaults, then use those defaults to populate function parameters automatically.
+
+  Args:
+      config_class: A class with type-annotated attributes serving as parameter defaults
+      method: If True, wraps as a method (for class methods)
+
+  Example:
+      class Config:
+        lr: float = 0.01
+        batch_size: int = 32
+
+      @proto.partial(Config)
+      def train() -> None:
+        print(f"Learning Rate: {Config.lr}")
+        print(f"Batch Size: {Config.batch_size}")
+
+      # Supports direct attribute modification:
+      Config.lr = 0.001
+      train()  # Uses updated lr value
+
+      # Supports hyperparameter sweeps:
+      for Config.lr in [0.01, 0.001, 0.0001]:
+        train()
+
+  Returns:
+      Decorated function with config values injected as defaults
+  """
+  from functools import wraps, partialmethod
+
+  def decorator(func: Callable) -> Callable:
+    sig = inspect.signature(func)
+    params = sig.parameters
+
+    # Check for keyword-only parameters without defaults
+    has_keyword_only = any(
+      p.kind == inspect.Parameter.KEYWORD_ONLY and p.default == inspect.Parameter.empty
+      for p in params.values()
+    )
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+      # Build overrides from config class
+      overrides = {}
+
+      # Determine which parameters are already bound by positional args
+      param_names = list(params.keys())
+      positional_bound = set(param_names[:len(args)])
+
+      for param_name, param in params.items():
+        # Skip if already bound by positional argument
+        if param_name in positional_bound:
+          continue
+
+        # Skip if config class doesn't have this attribute
+        if not hasattr(config_class, param_name):
+          continue
+
+        # Skip if function already has a default for this parameter
+        if param.default != inspect.Parameter.empty:
+          continue
+
+        # Skip positional-or-keyword params if there are keyword-only params without defaults
+        if has_keyword_only and param.kind == inspect.Parameter.POSITIONAL_OR_KEYWORD:
+          continue
+
+        # Get value from config class
+        value = getattr(config_class, param_name)
+
+        # Handle Proto objects from v2 API (for backwards compatibility)
+        if hasattr(value, "default"):
+          overrides[param_name] = value.default
+        else:
+          overrides[param_name] = value
+
+      # Merge with explicit kwargs (kwargs take precedence)
+      overrides.update(kwargs)
+
+      # Call function with merged parameters
+      return func(*args, **overrides)
+
+    if method:
+      return partialmethod(wrapper)
+    return wrapper
+
+  return decorator
+
+
+proto.partial = partial
+
+
 class _EnvVar:
   """
   Environment variable reader that supports three syntaxes:

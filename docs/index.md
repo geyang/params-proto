@@ -290,12 +290,13 @@ Release Notes <release_notes>
 :maxdepth: 2
 :caption: Key Concepts
 
-key_concepts/configuration_basics
-key_concepts/types
-key_concepts/cli_generation
-key_concepts/overrides
-key_concepts/advanced_patterns
-key_concepts/ansi_formatting
+Building Your CLI <key_concepts/cli_guide>
+Function Best Practices <key_concepts/function_best_practices>
+Configuration Basics <key_concepts/configuration_basics>
+Type Annotations <key_concepts/types>
+Parameter Overrides <key_concepts/overrides>
+Advanced Patterns <key_concepts/advanced_patterns>
+ANSI Formatting <key_concepts/ansi_formatting>
 ```
 
 ```{toctree}
