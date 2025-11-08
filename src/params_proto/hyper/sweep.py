@@ -560,8 +560,9 @@ class Sweep:
     self.file = file
 
     if isinstance(file, str):
-      file = self.read(file)
-    if isinstance(file, list):
+      deps = self.read(file)
+      df = pd.DataFrame(deps)
+    elif isinstance(file, list):
       df = pd.DataFrame(file)
     elif isinstance(file, pd.DataFrame):
       df = file
