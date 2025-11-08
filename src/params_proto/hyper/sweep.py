@@ -4,7 +4,16 @@ import itertools
 from collections import defaultdict, namedtuple
 from contextlib import contextmanager
 from copy import deepcopy
-from typing import TYPE_CHECKING, Any, ContextManager, Dict, Iterable, List, Union, overload
+from typing import (
+  TYPE_CHECKING,
+  Any,
+  ContextManager,
+  Dict,
+  Iterable,
+  List,
+  Union,
+  overload,
+)
 
 if TYPE_CHECKING:
   import pandas as pd
@@ -534,16 +543,20 @@ class Sweep:
     ...
 
   @overload
-  def load(self, deps: List[Dict[str, Any]], strict: bool = True, silent: bool = False) -> "Sweep":
+  def load(
+    self, deps: List[Dict[str, Any]], strict: bool = True, silent: bool = False
+  ) -> "Sweep":
     """Load sweep configurations from list of dicts."""
     ...
 
   @overload
-  def load(self, df: "pd.DataFrame", strict: bool = True, silent: bool = False) -> "Sweep":
+  def load(
+    self, df: "pd.DataFrame", strict: bool = True, silent: bool = False
+  ) -> "Sweep":
     """Load sweep configurations from pandas DataFrame."""
     ...
 
-  def load(self, file="sweep.jsonl", strict=True, silent=False):
+  def load(self, file: str = "sweep.jsonl", strict: bool = True, silent: bool = False):
     """
     Load sweep configurations from JSONL file or list.
 
@@ -559,15 +572,17 @@ class Sweep:
 
     self.file = file
 
+    # Convert to DataFrame
     if isinstance(file, str):
       deps = self.read(file)
-      df = pd.DataFrame(deps)
     elif isinstance(file, list):
       deps = file
-      df = pd.DataFrame(deps)
-    elif isinstance(file, pd.DataFrame):
-      df = file
     else:
+      deps = None
+
+    df = pd.DataFrame(deps) if deps is not None else file
+
+    if not isinstance(df, pd.DataFrame):
       raise TypeError(f"{type(file)} is not supported")
 
     with self.zip:
