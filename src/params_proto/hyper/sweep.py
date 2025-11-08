@@ -563,7 +563,8 @@ class Sweep:
       deps = self.read(file)
       df = pd.DataFrame(deps)
     elif isinstance(file, list):
-      df = pd.DataFrame(file)
+      deps = file
+      df = pd.DataFrame(deps)
     elif isinstance(file, pd.DataFrame):
       df = file
     else:
