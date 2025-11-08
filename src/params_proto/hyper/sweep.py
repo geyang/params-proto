@@ -534,14 +534,12 @@ class Sweep:
     ...
 
   @overload
-  def load(
-    self, file: List[Dict[str, Any]], strict: bool = True, silent: bool = False
-  ) -> "Sweep":
+  def load(self, deps: List[Dict[str, Any]], strict: bool = True, silent: bool = False) -> "Sweep":
     """Load sweep configurations from list of dicts."""
     ...
 
   @overload
-  def load(self, file: "pd.DataFrame", strict: bool = True, silent: bool = False) -> "Sweep":
+  def load(self, df: "pd.DataFrame", strict: bool = True, silent: bool = False) -> "Sweep":
     """Load sweep configurations from pandas DataFrame."""
     ...
 
