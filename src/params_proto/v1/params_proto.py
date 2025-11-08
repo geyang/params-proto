@@ -92,7 +92,7 @@ def props_to_dict(obj):
 
 
 class ParamsProto(DefaultBear):
-  """Parameter Prototype Class, has toDict method and __proto__ attribute for the original namespace object."""
+  """Parameter ptype Class, has toDict method and __proto__ attribute for the original namespace object."""
 
   def __init__(self, proto, **d):
     super().__init__(None, **d)
