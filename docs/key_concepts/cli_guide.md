@@ -1,6 +1,9 @@
-# CLI Generation
+# Building You CLI
 
-params-proto automatically generates command-line interfaces from your Python code. This page explains how Python names convert to CLI arguments and how the help system works.
+`params-proto` automatically generates command-line interfaces from your Python code. There are two main ways to
+do so: via a python class namespace, or via a function. Function interface is simple and useful for scripts,
+but it lack the ability to directly reference and expose configuration objects. For more detailed discussion, refer to 
+[Best Practice for Function Parameters](function_best_practices.md).
 
 ## How It Works
 
@@ -15,13 +18,14 @@ When you use `@proto.cli`, params-proto:
 ```python
 from params_proto import proto
 
+
 @proto.cli
 def train(
-    learning_rate: float = 0.001,  # Learning rate
-    batch_size: int = 32,  # Batch size
+  learning_rate: float = 0.001,  # Learning rate
+  batch_size: int = 32,  # Batch size
 ):
-    """Train a model."""
-    pass
+  """Train a model."""
+  pass
 ```
 
 ↓ **Automatically becomes** ↓
@@ -52,14 +56,15 @@ Python parameters convert to CLI arguments:
 ```python
 @proto.cli
 def train(
-    learning_rate: float = 0.001,  # Python: snake_case
-    batch_size: int = 32,
-    max_epochs: int = 100,
+  learning_rate: float = 0.001,  # Python: snake_case
+  batch_size: int = 32,
+  max_epochs: int = 100,
 ):
-    pass
+  pass
 ```
 
 **CLI arguments:**
+
 ```bash
 --learning-rate  # Converted to kebab-case
 --batch-size
@@ -75,21 +80,25 @@ When using Union types for subcommands, class names convert to CLI commands:
 ```python
 from dataclasses import dataclass
 
+
 @dataclass
 class Train:  # PascalCase in Python
-    lr: float = 0.001
+  lr: float = 0.001
+
 
 @dataclass
 class Evaluate:
-    model: str
+  model: str
+
 
 @proto.cli
 def tool(command: Train | Evaluate):
-    """Tool with subcommands."""
-    pass
+  """Tool with subcommands."""
+  pass
 ```
 
 **CLI commands:**
+
 ```bash
 python tool.py train --lr 0.01     # Class: Train → command: train
 python tool.py evaluate --model pt  # Class: Evaluate → command: evaluate
@@ -104,15 +113,17 @@ When using `@proto.prefix`, class names stay as-is:
 ```python
 @proto.prefix
 class Model:  # PascalCase preserved
-    name: str = "resnet50"
-    hidden_size: int = 256
+  name: str = "resnet50"
+  hidden_size: int = 256
+
 
 @proto.prefix
 class Training:  # PascalCase preserved
-    lr: float = 0.001
+  lr: float = 0.001
 ```
 
 **CLI arguments:**
+
 ```bash
 --Model.name resnet50        # Prefix keeps PascalCase
 --Model.hidden-size 512      # Parameter converts to kebab-case
@@ -120,12 +131,14 @@ class Training:  # PascalCase preserved
 ```
 
 **Why?** Prefixes match Python code exactly for clarity:
+
 ```python
 # In code
-print(Model.name)      # PascalCase
+print(Model.name)  # PascalCase
 
 # On CLI
---Model.name resnet50  # PascalCase (matches code)
+--Model.name
+resnet50  # PascalCase (matches code)
 ```
 
 ## Naming Best Practices
@@ -134,17 +147,23 @@ print(Model.name)      # PascalCase
 
 ```python
 # ✓ Good: Simple single-word names
-class Train:      # → train
-class Evaluate:   # → evaluate
-class Export:     # → export
+class Train:  # → train
+
+  class Evaluate:  # → evaluate
+
+  class Export:  # → export
+
 
 # ⚠️ Problematic: Acronyms don't split
-class HTTPServer:    # → httpserver (not http-server)
-class MLModel:       # → mlmodel (not ml-model)
+class HTTPServer:  # → httpserver (not http-server)
+
+  class MLModel:  # → mlmodel (not ml-model)
+
 
 # ✓ Better alternatives
-class Server:     # → server (simple and clear)
-class Model:      # → model
+class Server:  # → server (simple and clear)
+
+  class Model:  # → model
 ```
 
 ### 2. Use snake_case for Parameters
@@ -153,17 +172,18 @@ class Model:      # → model
 # ✓ Good: snake_case converts perfectly
 @proto.cli
 def train(
-    learning_rate: float = 0.001,  # → --learning-rate
-    batch_size: int = 32,          # → --batch-size
+  learning_rate: float = 0.001,  # → --learning-rate
+  batch_size: int = 32,  # → --batch-size
 ):
-    pass
+  pass
+
 
 # ✗ Avoid: camelCase doesn't split
 @proto.cli
 def train(
-    learningRate: float = 0.001,   # → --learningrate (no hyphen!)
+  learningRate: float = 0.001,  # → --learningrate (no hyphen!)
 ):
-    pass
+  pass
 ```
 
 ### 3. Keep Prefix Names Simple
@@ -171,16 +191,19 @@ def train(
 ```python
 # ✓ Good: Simple and clear
 @proto.prefix
-class Model:        # --Model.param
-class Training:     # --Training.param
+class Model:  # --Model.param
+
+  class Training:  # --Training.param
+
 
 # ⚠️ Works but verbose
 @proto.prefix
-class DataLoader:   # --DataLoader.param (long)
+class DataLoader:  # --DataLoader.param (long)
+
 
 # ✓ Better
 @proto.prefix
-class Data:         # --Data.param (shorter)
+class Data:  # --Data.param (shorter)
 ```
 
 ## Comparison with Other Tools
@@ -188,9 +211,11 @@ class Data:         # --Data.param (shorter)
 ### params-proto: Simple Lowercase
 
 ```python
-class HTTPServer:       # → httpserver
-class MLModel:          # → mlmodel
-class DeepQNetwork:     # → deepqnetwork
+class HTTPServer:  # → httpserver
+
+  class MLModel:  # → mlmodel
+
+  class DeepQNetwork:  # → deepqnetwork
 ```
 
 Simple `.lower()` conversion - no splitting.
@@ -201,9 +226,11 @@ For comparison, [tyro](https://github.com/brentyi/tyro) splits every capital let
 
 ```python
 # tyro's behavior (reference only)
-class HTTPServer:       # → h-t-t-p-server (every capital split)
-class MLModel:          # → m-l-model
-class getAPIKey:        # → get-a-p-i-key
+class HTTPServer:  # → h-t-t-p-server (every capital split)
+
+  class MLModel:  # → m-l-model
+
+  class getAPIKey:  # → get-a-p-i-key
 ```
 
 **params-proto uses simple conversion** to avoid surprises. Choose simple names that work well with lowercase.
@@ -215,13 +242,14 @@ class getAPIKey:        # → get-a-p-i-key
 ```python
 @proto.cli
 def train(
-    lr: float = 0.001,  # This becomes the CLI help text
-    batch_size: int = 32,  # Keep it short and descriptive
+  lr: float = 0.001,  # This becomes the CLI help text
+  batch_size: int = 32,  # Keep it short and descriptive
 ):
-    pass
+  pass
 ```
 
 **Generated help:**
+
 ```{ansi-block}
 :string_escape:
 
@@ -234,18 +262,19 @@ def train(
 ```python
 @proto.cli
 def train(
-    lr: float = 0.001,  # Learning rate
+  lr: float = 0.001,  # Learning rate
 ):
-    """Train a model.
+  """Train a model.
 
-    Args:
-        lr: Learning rate for the optimizer. Typical values are 0.001 for
-            Adam and 0.01-0.1 for SGD. Reduce if training is unstable.
-    """
-    pass
+  Args:
+      lr: Learning rate for the optimizer. Typical values are 0.001 for
+          Adam and 0.01-0.1 for SGD. Reduce if training is unstable.
+  """
+  pass
 ```
 
 **Generated help combines both:**
+
 ```{ansi-block}
 :string_escape:
 
@@ -262,15 +291,16 @@ The function's main docstring becomes the CLI description:
 ```python
 @proto.cli
 def train(lr: float = 0.001):
-    """Train a neural network on CIFAR-10.
+  """Train a neural network on CIFAR-10.
 
-    This function implements the full training loop including
-    data loading, forward/backward passes, and checkpointing.
-    """
-    pass
+  This function implements the full training loop including
+  data loading, forward/backward passes, and checkpointing.
+  """
+  pass
 ```
 
 **Generated help:**
+
 ```{ansi-block}
 :string_escape:
 
@@ -291,14 +321,15 @@ If no documentation provided, params-proto generates basic descriptions from par
 ```python
 @proto.cli
 def train(
-    learning_rate: float = 0.001,  # No comment
-    batch_size: int = 32,          # No comment
+  learning_rate: float = 0.001,  # No comment
+  batch_size: int = 32,  # No comment
 ):
-    """Train a model."""
-    pass
+  """Train a model."""
+  pass
 ```
 
 **Generated help:**
+
 ```{ansi-block}
 :string_escape:
 
@@ -310,18 +341,18 @@ def train(
 
 Parameter types appear in help text:
 
-| Python Type | CLI Display | Example |
-|-------------|-------------|---------|
-| `int` | `INT` | `--count INT` |
-| `float` | `FLOAT` | `--lr FLOAT` |
-| `str` | `STR` | `--name STR` |
-| `bool` | (flag) | `--verbose` |
-| `int \| float` | `VALUE` | `--threshold VALUE` |
-| `str \| None` | `VALUE` | `--config VALUE` |
-| `Literal["a", "b"]` | `VALUE` | `--mode VALUE` |
-| `Enum` | `{A,B,C}` | `--opt {ADAM,SGD}` |
-| `List[int]` | `VALUE` | `--ids VALUE` |
-| `Path` | `VALUE` | `--dir VALUE` |
+| Python Type         | CLI Display | Example             |
+|---------------------|-------------|---------------------|
+| `int`               | `INT`       | `--count INT`       |
+| `float`             | `FLOAT`     | `--lr FLOAT`        |
+| `str`               | `STR`       | `--name STR`        |
+| `bool`              | (flag)      | `--verbose`         |
+| `int \| float`      | `VALUE`     | `--threshold VALUE` |
+| `str \| None`       | `VALUE`     | `--config VALUE`    |
+| `Literal["a", "b"]` | `VALUE`     | `--mode VALUE`      |
+| `Enum`              | `{A,B,C}`   | `--opt {ADAM,SGD}`  |
+| `List[int]`         | `VALUE`     | `--ids VALUE`       |
+| `Path`              | `VALUE`     | `--dir VALUE`       |
 
 ## Boolean Flags
 
@@ -330,13 +361,14 @@ Boolean parameters become flags:
 ```python
 @proto.cli
 def train(
-    verbose: bool = False,  # Flag (no argument)
-    cuda: bool = True,      # Flag (no argument)
+  verbose: bool = False,  # Flag (no argument)
+  cuda: bool = True,  # Flag (no argument)
 ):
-    pass
+  pass
 ```
 
 **CLI usage:**
+
 ```bash
 # Set to True
 python train.py --verbose
@@ -352,16 +384,18 @@ python train.py --no-cuda   # Now False
 ## Required vs Optional
 
 **Optional parameters** (with defaults):
+
 ```python
 @proto.cli
 def train(
-    lr: float = 0.001,  # Optional
-    epochs: int = 100,  # Optional
+  lr: float = 0.001,  # Optional
+  epochs: int = 100,  # Optional
 ):
-    pass
+  pass
 ```
 
 **Help text:**
+
 ```{ansi-block}
 :string_escape:
 
@@ -370,16 +404,18 @@ def train(
 ```
 
 **Required parameters** (no defaults):
+
 ```python
 @proto.cli
 def train(
-    data_path: str,  # Required!
-    lr: float = 0.001,
+  data_path: str,  # Required!
+  lr: float = 0.001,
 ):
-    pass
+  pass
 ```
 
 **Help text:**
+
 ```{ansi-block}
 :string_escape:
 
@@ -394,23 +430,26 @@ def train(
 ```python
 @proto.prefix
 class Model:
-    """Model architecture."""
-    name: str = "resnet50"
-    hidden_size: int = 256
+  """Model architecture."""
+  name: str = "resnet50"
+  hidden_size: int = 256
+
 
 @proto.prefix
 class Training:
-    """Training hyperparameters."""
-    lr: float = 0.001
-    batch_size: int = 32
+  """Training hyperparameters."""
+  lr: float = 0.001
+  batch_size: int = 32
+
 
 @proto.cli
 def main(seed: int = 42):
-    """Train model."""
-    pass
+  """Train model."""
+  pass
 ```
 
 **Generated help:**
+
 ```{ansi-block}
 :string_escape:
 
@@ -442,11 +481,12 @@ Override the program name in help text:
 ```python
 @proto.cli(prog="train_model")
 def train(lr: float = 0.001):
-    """Train a model."""
-    pass
+  """Train a model."""
+  pass
 ```
 
 **Generated help:**
+
 ```{ansi-block}
 :string_escape:
 
@@ -462,8 +502,9 @@ Access help text programmatically:
 ```python
 @proto.cli
 def train(lr: float = 0.001):
-    """Train a model."""
-    pass
+  """Train a model."""
+  pass
+
 
 # Access generated help string
 print(train.__help_str__)
@@ -478,13 +519,14 @@ Useful for testing and documentation generation.
 ```python
 @proto.cli
 def train(
-    this_is_a_very_long_parameter_name: int = 1000,
+  this_is_a_very_long_parameter_name: int = 1000,
 ):
-    """Train with long names."""
-    pass
+  """Train with long names."""
+  pass
 ```
 
 **Generated help (wraps nicely):**
+
 ```{ansi-block}
 :string_escape:
 
@@ -497,10 +539,10 @@ def train(
 ```python
 @proto.cli
 def train(
-    model_2d: bool = False,  # → --model-2d
-    resnet50_pretrained: bool = True,  # → --resnet50-pretrained
+  model_2d: bool = False,  # → --model-2d
+  resnet50_pretrained: bool = True,  # → --resnet50-pretrained
 ):
-    pass
+  pass
 ```
 
 Numbers are preserved in CLI arguments.
@@ -508,12 +550,14 @@ Numbers are preserved in CLI arguments.
 ## Summary
 
 **Key conversions:**
+
 - Parameters: `snake_case` → `--kebab-case`
 - Union classes: `PascalCase` → `lowercase`
 - Prefixes: `PascalCase` → `--PascalCase.kebab-case`
 - Booleans: `bool` → `--flag` / `--no-flag`
 
 **Best practices:**
+
 - Use simple class names for Union types
 - Use snake_case for all parameters
 - Document with inline comments + docstrings
