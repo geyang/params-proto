@@ -145,7 +145,7 @@ print(f"Batch size: {config.batch_size}")
 
 ## Composing Configurations from Multiple Locations
 
-For larger projects, split configuration into logical groups using `@proto.prefix`. This creates namespaced parameters like `--Model.name` and `--Training.lr`.
+For larger projects, split configuration into logical groups using `@proto.prefix`. This creates namespaced parameters like `--model.name` and `--training.lr`.
 
 Create `train_rl.py`:
 
@@ -204,23 +204,23 @@ options:
 Model options:
   Model configuration.
 
-  --Model.name \x1b[1m\x1b[94mSTR\x1b[0m             Architecture name \x1b[36m(default:\x1b[0m \x1b[1m\x1b[36mresnet50\x1b[0m\x1b[36m)\x1b[0m
-  --Model.pretrained           Use pretrained weights \x1b[36m(default:\x1b[0m \x1b[1m\x1b[36mTrue\x1b[0m\x1b[36m)\x1b[0m
-  --Model.dropout \x1b[1m\x1b[94mFLOAT\x1b[0m        Dropout rate \x1b[36m(default:\x1b[0m \x1b[1m\x1b[36m0.5\x1b[0m\x1b[36m)\x1b[0m
+  --model.name \x1b[1m\x1b[94mSTR\x1b[0m             Architecture name \x1b[36m(default:\x1b[0m \x1b[1m\x1b[36mresnet50\x1b[0m\x1b[36m)\x1b[0m
+  --model.pretrained           Use pretrained weights \x1b[36m(default:\x1b[0m \x1b[1m\x1b[36mTrue\x1b[0m\x1b[36m)\x1b[0m
+  --model.dropout \x1b[1m\x1b[94mFLOAT\x1b[0m        Dropout rate \x1b[36m(default:\x1b[0m \x1b[1m\x1b[36m0.5\x1b[0m\x1b[36m)\x1b[0m
 
 Data options:
   Data configuration.
 
-  --Data.dataset \x1b[1m\x1b[94mSTR\x1b[0m           Dataset name \x1b[36m(default:\x1b[0m \x1b[1m\x1b[36mcifar10\x1b[0m\x1b[36m)\x1b[0m
-  --Data.data-dir \x1b[1m\x1b[94mSTR\x1b[0m          Data directory \x1b[36m(default:\x1b[0m \x1b[1m\x1b[36m./data\x1b[0m\x1b[36m)\x1b[0m
-  --Data.num-workers \x1b[1m\x1b[94mINT\x1b[0m       Data loading workers \x1b[36m(default:\x1b[0m \x1b[1m\x1b[36m4\x1b[0m\x1b[36m)\x1b[0m
+  --data.dataset \x1b[1m\x1b[94mSTR\x1b[0m           Dataset name \x1b[36m(default:\x1b[0m \x1b[1m\x1b[36mcifar10\x1b[0m\x1b[36m)\x1b[0m
+  --data.data-dir \x1b[1m\x1b[94mSTR\x1b[0m          Data directory \x1b[36m(default:\x1b[0m \x1b[1m\x1b[36m./data\x1b[0m\x1b[36m)\x1b[0m
+  --data.num-workers \x1b[1m\x1b[94mINT\x1b[0m       Data loading workers \x1b[36m(default:\x1b[0m \x1b[1m\x1b[36m4\x1b[0m\x1b[36m)\x1b[0m
 
 Training options:
   Training hyperparameters.
 
-  --Training.lr \x1b[1m\x1b[94mFLOAT\x1b[0m          Learning rate \x1b[36m(default:\x1b[0m \x1b[1m\x1b[36m0.001\x1b[0m\x1b[36m)\x1b[0m
-  --Training.batch-size \x1b[1m\x1b[94mINT\x1b[0m    Batch size \x1b[36m(default:\x1b[0m \x1b[1m\x1b[36m32\x1b[0m\x1b[36m)\x1b[0m
-  --Training.epochs \x1b[1m\x1b[94mINT\x1b[0m        Number of epochs \x1b[36m(default:\x1b[0m \x1b[1m\x1b[36m100\x1b[0m\x1b[36m)\x1b[0m
+  --training.lr \x1b[1m\x1b[94mFLOAT\x1b[0m          Learning rate \x1b[36m(default:\x1b[0m \x1b[1m\x1b[36m0.001\x1b[0m\x1b[36m)\x1b[0m
+  --training.batch-size \x1b[1m\x1b[94mINT\x1b[0m    Batch size \x1b[36m(default:\x1b[0m \x1b[1m\x1b[36m32\x1b[0m\x1b[36m)\x1b[0m
+  --training.epochs \x1b[1m\x1b[94mINT\x1b[0m        Number of epochs \x1b[36m(default:\x1b[0m \x1b[1m\x1b[36m100\x1b[0m\x1b[36m)\x1b[0m
 ```
 
 Run it:

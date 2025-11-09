@@ -36,7 +36,7 @@ if __name__ == "__main__":
 
 **CLI usage:**
 ```bash
-$ python main.py --Model.name vit --Training.lr 0.01
+$ python main.py --model.name vit --training.lr 0.01
 Training vit with lr=0.01
 ```
 
@@ -101,7 +101,7 @@ def train(seed: int = 42, epochs: int = 100):
 
 **CLI:**
 ```bash
-$ python train.py --Model.name vit --Optimizer.lr 0.01 --Data.batch-size 64
+$ python train.py --model.name vit --optimizer.lr 0.01 --data.batch-size 64
 Model: vit (256 hidden)
 Optimizer: adam (lr=0.01)
 Data: batch_size=64
@@ -150,14 +150,14 @@ def train(seed: int = 42, resume: str | None = None):
 **Usage:**
 ```bash
 # Quick experiment
-python train.py --Model.name resnet18 --Training.epochs 50
+python train.py --model.name resnet18 --training.epochs 50
 
 # Production run
 python train.py \
-  --Model.name resnet50 --Model.pretrained \
-  --Dataset.data-dir /mnt/data/imagenet \
-  --Training.batch-size 256 --Training.lr 0.1 --Training.epochs 300 \
-  --Logging.log-dir /mnt/logs/exp001
+  --model.name resnet50 --model.pretrained \
+  --dataset.data-dir /mnt/data/imagenet \
+  --training.batch-size 256 --training.lr 0.1 --training.epochs 300 \
+  --logging.log-dir /mnt/logs/exp001
 ```
 
 ### When to Use Prefixes
@@ -182,7 +182,7 @@ Training.lr = 0.01
 
 **CLI override:**
 ```bash
-python main.py --Model.name vit --Training.lr 0.01
+python main.py --model.name vit --training.lr 0.01
 ```
 
 **proto.bind():**

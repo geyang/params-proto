@@ -141,17 +141,17 @@ def test_proto_cli_hierarchy():
   Environment options:
     dm_control environment configuration.
 
-    --Environment.domain STR     Domain name (e.g., cartpole, walker) (default: cartpole)
-    --Environment.task STR       Task name within the domain (default: swingup)
-    --Environment.time-limit FLOAT  Episode time limit in seconds (default: 10.0)
+    --environment.domain STR     Domain name (e.g., cartpole, walker) (default: cartpole)
+    --environment.task STR       Task name within the domain (default: swingup)
+    --environment.time-limit FLOAT  Episode time limit in seconds (default: 10.0)
 
   Agent options:
     SAC agent hyperparameters.
 
-    --Agent.algorithm STR        RL algorithm (SAC or PPO) (default: SAC)
-    --Agent.buffer-size INT      Replay buffer capacity (default: 1000000)
-    --Agent.gamma FLOAT          Discount factor (default: 0.99)
-    --Agent.tau FLOAT            Target network update rate (default: 0.005)
+    --agent.algorithm STR        RL algorithm (SAC or PPO) (default: SAC)
+    --agent.buffer-size INT      Replay buffer capacity (default: 1000000)
+    --agent.gamma FLOAT          Discount factor (default: 0.99)
+    --agent.tau FLOAT            Target network update rate (default: 0.005)
   """)
 
   assert train_rl.__help_str__ == expected, "help string is not correct"
