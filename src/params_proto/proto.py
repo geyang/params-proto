@@ -490,6 +490,7 @@ def proto(
   *,
   cli: bool = False,
   prefix: bool = False,
+  prefix_name: str = None,
   prog: str = None,
 ):
   """
@@ -499,6 +500,7 @@ def proto(
       cls_or_func: The class or function to decorate
       cli: If True, this is a CLI entry point (generates help)
       prefix: If True, creates a singleton instance with prefix in CLI
+      prefix_name: Custom prefix name (defaults to lowercase class/function name)
       prog: Optional program name override for help generation (useful for testing)
 
   Returns:
@@ -509,7 +511,9 @@ def proto(
     if inspect.isfunction(obj):
       wrapper = ProtoWrapper(obj, is_cli=cli, is_prefix=prefix, prog=prog)
       if prefix:
-        _SINGLETONS[obj.__name__] = wrapper
+        # Use custom prefix name if provided, otherwise use function name
+        singleton_key = prefix_name if prefix_name else obj.__name__
+        _SINGLETONS[singleton_key] = wrapper
       return wrapper
     elif inspect.isclass(obj):
       # New metaclass-based approach for classes
@@ -562,11 +566,12 @@ def proto(
       type.__setattr__(new_cls, "__proto_is_prefix__", prefix)
       type.__setattr__(new_cls, "__proto_original_class__", obj)
 
-      # Store prefix name (lowercase class name for prefixed configs)
+      # Store prefix name (custom or lowercase class name for prefixed configs)
       if prefix:
-        prefix_name = obj.__name__.lower()
-        type.__setattr__(new_cls, "__proto_prefix__", prefix_name)
-        _SINGLETONS[prefix_name] = new_cls
+        # Use custom prefix name if provided, otherwise use lowercase class name
+        singleton_key = prefix_name if prefix_name else obj.__name__.lower()
+        type.__setattr__(new_cls, "__proto_prefix__", singleton_key)
+        _SINGLETONS[singleton_key] = new_cls
       else:
         type.__setattr__(new_cls, "__proto_prefix__", None)
 
@@ -601,9 +606,32 @@ def cli_decorator(cls_or_func):
   return proto(cls_or_func, cli=True)
 
 
-def prefix_decorator(cls_or_func):
-  """Decorator for prefixed singleton configs."""
-  return proto(cls_or_func, prefix=True)
+def prefix_decorator(cls_or_func=None, name: str = None):
+  """Decorator for prefixed singleton configs.
+
+  Args:
+      cls_or_func: The class or function to decorate (or prefix name if called with string)
+      name: Optional custom prefix name (defaults to lowercase class/function name)
+
+  Examples:
+      @proto.prefix
+      class Config: ...
+
+      @proto.prefix("custom")
+      class Config: ...
+  """
+  # Handle @proto.prefix("custom") - cls_or_func is actually the prefix name
+  if isinstance(cls_or_func, str):
+    prefix_name = cls_or_func
+    return lambda obj: proto(obj, prefix=True, prefix_name=prefix_name)
+
+  # Handle @proto.prefix or @proto.prefix(name="custom")
+  if cls_or_func is None:
+    # Called with keyword arguments: @proto.prefix(name="custom")
+    return lambda obj: proto(obj, prefix=True, prefix_name=name)
+  else:
+    # Called without arguments: @proto.prefix
+    return proto(cls_or_func, prefix=True, prefix_name=name)
 
 
 proto.cli = cli_decorator
