@@ -444,6 +444,187 @@ Training options:
   --Training.batch-size \x1b[1m\x1b[94mINT\x1b[0m    Batch size \x1b[36m(default:\x1b[0m \x1b[1m\x1b[36m32\x1b[0m\x1b[36m)\x1b[0m
 ```
 
+## Union and Class Subcommands
+
+Union types and dataclasses can be used to create subcommand-like CLIs, where each class represents a different configuration option.
+
+### Basic Union Subcommands
+
+```python
+from dataclasses import dataclass
+
+@dataclass
+class PerspectiveCamera:
+    """Perspective camera with field of view."""
+    fov: float = 60.0
+    aspect: float = 1.33
+
+@dataclass
+class OrthographicCamera:
+    """Orthographic camera with uniform scale."""
+    scale: float = 1.0
+
+@proto.cli
+def render(
+    camera: PerspectiveCamera | OrthographicCamera,
+    output: str = "render.png",
+):
+    """Render a scene with a camera."""
+    pass
+```
+
+**CLI usage - Multiple syntaxes supported:**
+
+```bash
+# PascalCase (exact match)
+python render.py --camera:PerspectiveCamera --output scene.png
+
+# kebab-case (normalized)
+python render.py --camera:perspective-camera --output scene.png
+
+# lowercase (normalized)
+python render.py --camera:perspectivecamera --output scene.png
+
+# Positional (for required Union parameters)
+python render.py perspective-camera --output scene.png
+```
+
+### Single Class Parameters
+
+The same syntax works for single class types (not just Unions):
+
+```python
+@dataclass
+class CameraConfig:
+    fov: float = 60.0
+    near: float = 0.1
+    far: float = 100.0
+
+@proto.cli
+def render(camera: CameraConfig):
+    """Render with a camera."""
+    pass
+```
+
+**CLI usage:**
+
+```bash
+# Any of these work
+python render.py --camera:CameraConfig
+python render.py --camera:camera-config
+python render.py camera-config
+```
+
+### Setting Class Attributes
+
+You can override class attributes from the command line:
+
+```python
+@dataclass
+class PerspectiveCamera:
+    fov: float = 60.0
+    aspect: float = 1.33
+    near: float = 0.1
+
+@proto.cli
+def render(camera: PerspectiveCamera):
+    """Render with a camera."""
+    pass
+```
+
+**CLI usage:**
+
+```bash
+# Select class and override attributes
+python render.py --camera:PerspectiveCamera --camera.fov 45 --camera.aspect 1.77
+
+# Works with normalized names too
+python render.py --camera:perspective-camera --camera.fov 45
+
+# Positional class selection with attributes
+python render.py perspective-camera --camera.fov 45
+```
+
+### Syntax Variations
+
+All class names support multiple naming conventions:
+
+| Python Class       | CLI Syntax Options                                              |
+|--------------------|----------------------------------------------------------------|
+| `PerspectiveCamera` | `perspective-camera`, `perspectivecamera`, `PerspectiveCamera` |
+| `HTTPServer`       | `httpserver`, `http-server`, `HTTPServer`                       |
+| `MLModel`          | `mlmodel`, `ml-model`, `MLModel`                                |
+
+**Attribute names** always convert to kebab-case:
+
+```python
+@dataclass
+class Config:
+    batch_size: int = 32      # → --config.batch-size
+    learning_rate: float = 0.001  # → --config.learning-rate
+```
+
+### Union with Regular Parameters
+
+Mix Union/class parameters with regular parameters:
+
+```python
+@dataclass
+class PerspectiveCamera:
+    fov: float = 60.0
+
+@dataclass
+class OrthographicCamera:
+    scale: float = 1.0
+
+@proto.cli
+def render(
+    camera: PerspectiveCamera | OrthographicCamera,  # Union parameter
+    output: str = "render.png",                      # Regular parameter
+    verbose: bool = False,                           # Boolean flag
+):
+    """Render a scene."""
+    pass
+```
+
+**CLI usage:**
+
+```bash
+python render.py --camera:PerspectiveCamera --output scene.png --verbose
+python render.py perspective-camera --verbose --output scene.png
+```
+
+### Best Practices
+
+**✓ Good: Simple class names**
+
+```python
+@dataclass
+class Perspective:  # → perspective
+    fov: float = 60.0
+
+@dataclass
+class Orthographic:  # → orthographic
+    scale: float = 1.0
+```
+
+**✓ Good: Descriptive attributes**
+
+```python
+@dataclass
+class Camera:
+    field_of_view: float = 60.0     # → --camera.field-of-view
+    aspect_ratio: float = 1.33      # → --camera.aspect-ratio
+```
+
+**⚠️ Works but less clear**
+
+```python
+@dataclass
+class PerspectiveCameraConfig:  # → perspective-camera-config (long!)
+    fov: float = 60.0
+```
+
 ## Custom Program Name
 
 Override the program name in help text:
