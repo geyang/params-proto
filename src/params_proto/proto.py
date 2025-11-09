@@ -18,7 +18,7 @@ from typing import (
 # Import utilities from separate modules
 from params_proto.type_utils import _convert_type
 from params_proto.documentation import _extract_docs_from_source
-from params_proto.help_gen import _generate_help_for_function, _generate_help_for_class
+from params_proto.cli.help_gen import _generate_help_for_function, _generate_help_for_class
 
 T = TypeVar("T")
 F = TypeVar("F", bound=Callable)
@@ -27,7 +27,7 @@ F = TypeVar("F", bound=Callable)
 _SINGLETONS: Dict[str, Any] = {}
 
 # Share _SINGLETONS with help_gen module
-import params_proto.help_gen as help_gen
+import params_proto.cli.help_gen as help_gen
 help_gen._SINGLETONS = _SINGLETONS
 
 # Global binding context for proto.bind()
@@ -167,12 +167,12 @@ class ProtoWrapper:
         # Check for help flag first - block execution if present
         if '--help' in sys.argv or '-h' in sys.argv:
           # Import ANSI colorization
-          from params_proto.ansi_help import colorize_help
+          from params_proto.cli.ansi_help import colorize_help
           print(colorize_help(self.__help_str__))
           sys.exit(0)
 
         # Parse CLI arguments from sys.argv into kwargs
-        from params_proto.cli_parse import parse_cli_args
+        from params_proto.cli.cli_parse import parse_cli_args
         kwargs = parse_cli_args(self)
 
     # Build final kwargs by merging:

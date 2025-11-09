@@ -3,6 +3,30 @@ ANSI-formatted help text generation for terminal display.
 
 Provides colorized, terminal-width-aware formatting of help text.
 Keeps __help_str__ as plain text for testing, adds __ansi_str__ for display.
+
+Terminal Detection Notes:
+------------------------
+
+Width Detection:
+  - Uses shutil.get_terminal_size() which queries terminal dimensions
+  - Checks COLUMNS env var first, then terminal ioctl
+  - Width can change during a session (user resizes window)
+  - For params-proto: No caching needed since help is printed once and exits
+  - For long-running CLIs: Would need SIGWINCH handler or query-per-print
+  - Current approach (query on each colorize_help() call) is correct and cheap
+
+Color Detection:
+  - Currently NOT implemented - colors always applied
+  - Should check:
+    * sys.stdout.isatty() - False for pipes/redirects
+    * NO_COLOR env var - https://no-color.org/
+    * TERM env var - 'dumb' or missing means no color support
+  - TODO: Add should_use_color() function
+
+Performance:
+  - shutil.get_terminal_size() is fast (just reads terminal attributes)
+  - No need to cache width since help is only printed once per execution
+  - For high-frequency printing, would consider caching with SIGWINCH handler
 """
 
 import re

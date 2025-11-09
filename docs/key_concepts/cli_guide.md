@@ -47,7 +47,7 @@ options:
   --batch-size \x1b[1m\x1b[94mINT\x1b[0m      Batch size \x1b[36m(default:\x1b[0m \x1b[1m\x1b[36m32\x1b[0m\x1b[36m)\x1b[0m
 ```
 
-##naming Conventions
+## Naming Conventions
 
 ### Parameter Names: snake_case → kebab-case
 
@@ -125,20 +125,19 @@ class Training:  # PascalCase preserved
 **CLI arguments:**
 
 ```bash
---Model.name resnet50        # Prefix keeps PascalCase
---Model.hidden-size 512      # Parameter converts to kebab-case
---Training.lr 0.01           # Prefix keeps PascalCase
+--model.name resnet50        # Prefix converts to lowercase
+--model.hidden-size 512      # Parameter converts to kebab-case
+--training.lr 0.01           # Prefix converts to lowercase
 ```
 
-**Why?** Prefixes match Python code exactly for clarity:
+**Conversion rule:** Class name converts to lowercase (like Union subcommands), parameters convert to kebab-case.
 
 ```python
 # In code
-print(Model.name)  # PascalCase
+print(Model.name)  # PascalCase class
 
 # On CLI
---Model.name
-resnet50  # PascalCase (matches code)
+--model.name resnet50  # lowercase prefix
 ```
 
 ## Naming Best Practices
@@ -205,35 +204,6 @@ class DataLoader:  # --DataLoader.param (long)
 @proto.prefix
 class Data:  # --Data.param (shorter)
 ```
-
-## Comparison with Other Tools
-
-### params-proto: Simple Lowercase
-
-```python
-class HTTPServer:  # → httpserver
-
-  class MLModel:  # → mlmodel
-
-  class DeepQNetwork:  # → deepqnetwork
-```
-
-Simple `.lower()` conversion - no splitting.
-
-### tyro: Aggressive Splitting
-
-For comparison, [tyro](https://github.com/brentyi/tyro) splits every capital letter:
-
-```python
-# tyro's behavior (reference only)
-class HTTPServer:  # → h-t-t-p-server (every capital split)
-
-  class MLModel:  # → m-l-model
-
-  class getAPIKey:  # → get-a-p-i-key
-```
-
-**params-proto uses simple conversion** to avoid surprises. Choose simple names that work well with lowercase.
 
 ## Help Text Generation
 
@@ -312,7 +282,7 @@ options:
   ...
 ```
 
-Only the first paragraph (before `Args:`) appears in help text.
+All text before the first section header (`Args:`, `Returns:`, `Raises:`, etc.) appears in the help text. This allows multi-paragraph descriptions as long as they come before any structured documentation sections.
 
 ### Auto-Generated Descriptions
 
@@ -553,7 +523,7 @@ Numbers are preserved in CLI arguments.
 
 - Parameters: `snake_case` → `--kebab-case`
 - Union classes: `PascalCase` → `lowercase`
-- Prefixes: `PascalCase` → `--PascalCase.kebab-case`
+- Prefixes: `PascalCase` → `--lowercase.kebab-case`
 - Booleans: `bool` → `--flag` / `--no-flag`
 
 **Best practices:**

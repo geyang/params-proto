@@ -192,7 +192,7 @@ def _generate_help_for_function(wrapper: "ProtoWrapper") -> str:
       field_docs = type.__getattribute__(singleton, "__proto_field_docs__")
 
       for param_name, annotation in annotations.items():
-        arg_name = f"--{singleton_name.capitalize()}.{param_name.replace('_', '-')}"
+        arg_name = f"--{singleton_name}.{param_name.replace('_', '-')}"
         type_name = _get_type_name(annotation)
         default = defaults.get(param_name)
         help_text = field_docs.get(param_name, "")
