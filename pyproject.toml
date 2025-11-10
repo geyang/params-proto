@@ -60,7 +60,8 @@ docs = [
     "sphinx-copybutton",
     "sphinx-autobuild",
     "tomli>=1.1.0; python_version < '3.11'",  # For reading pyproject.toml in conf.py
-    "sphinxcontrib-ansi @ git+https://github.com/geyang/ansi.git@c0d28fe",
+    # Note: sphinxcontrib-ansi must be installed separately from git
+    # pip install git+https://github.com/geyang/ansi.git@c0d28fe
 ]
 
 [build-system]
