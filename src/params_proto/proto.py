@@ -23,6 +23,34 @@ from params_proto.cli.help_gen import _generate_help_for_function
 T = TypeVar("T")
 F = TypeVar("F", bound=Callable)
 
+
+def _pascal_to_kebab(name: str) -> str:
+  """Convert PascalCase/camelCase to kebab-case with acronym handling.
+
+  Examples:
+      Train → train
+      TrainModel → train-model
+      HTTPServer → http-server
+      MLModel → ml-model
+      DataLoader → data-loader
+      parseHTMLDocument → parse-html-document
+  """
+  import re
+
+  # Insert hyphens before capitals that mark word boundaries
+  # Pattern 1: lowercase/digit followed by uppercase (e.g., myHTTP, model2D)
+  result = re.sub(r"([a-z0-9])([A-Z])", r"\1-\2", name)
+
+  # Pattern 2: uppercase followed by lowercase, but not at start (e.g., HTTPServer → HTTP-Server)
+  result = re.sub(r"([A-Z]+)([A-Z][a-z])", r"\1-\2", result)
+
+  # Replace underscores with hyphens
+  result = result.replace("_", "-")
+
+  # Convert to lowercase
+  return result.lower()
+
+
 # Global registry for singleton instances
 _SINGLETONS: Dict[str, Any] = {}
 
@@ -145,7 +173,7 @@ class ProtoWrapper:
   @property
   def _prefix(self):
     """Return the prefix for this wrapper (function name for CLI wrappers)."""
-    return self._name.lower() if self._is_prefix else None
+    return _pascal_to_kebab(self._name) if self._is_prefix else None
 
   def _update(self, __d: dict = None, **kwargs):
     """Update overrides from dict or kwargs."""
@@ -562,8 +590,8 @@ def proto(
     if inspect.isfunction(obj):
       wrapper = ProtoWrapper(obj, is_cli=cli, is_prefix=prefix, prog=prog)
       if prefix:
-        # Use custom prefix name if provided, otherwise use function name
-        singleton_key = prefix_name if prefix_name else obj.__name__
+        # Use custom prefix name if provided, otherwise convert to kebab-case
+        singleton_key = prefix_name if prefix_name else _pascal_to_kebab(obj.__name__)
         _SINGLETONS[singleton_key] = wrapper
       return wrapper
     elif inspect.isclass(obj):
@@ -616,10 +644,10 @@ def proto(
       type.__setattr__(new_cls, "__proto_is_prefix__", prefix)
       type.__setattr__(new_cls, "__proto_original_class__", obj)
 
-      # Store prefix name (custom or lowercase class name for prefixed configs)
+      # Store prefix name (custom or kebab-case class name for prefixed configs)
       if prefix:
-        # Use custom prefix name if provided, otherwise use lowercase class name
-        singleton_key = prefix_name if prefix_name else obj.__name__.lower()
+        # Use custom prefix name if provided, otherwise convert to kebab-case
+        singleton_key = prefix_name if prefix_name else _pascal_to_kebab(obj.__name__)
         type.__setattr__(new_cls, "__proto_prefix__", singleton_key)
         _SINGLETONS[singleton_key] = new_cls
       else:

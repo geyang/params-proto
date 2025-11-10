@@ -261,14 +261,14 @@ class SweepProxy:
 
   @property
   def _prefix(self):
-    """Return prefix for the proto object (lowercase for v3)."""
+    """Return prefix for the proto object (kebab-case for v3)."""
     target = object.__getattribute__(self, "_target")
 
     # Check if it's a metaclass-based proto class
     if isinstance(target, type) and isinstance(target, ptype):
       return type.__getattribute__(target, "__proto_prefix__")
     elif isinstance(target, ProtoWrapper):
-      return target._name.lower() if target._is_prefix else None
+      return target._prefix  # Delegate to ProtoWrapper's _prefix property
     return None
 
   def _update(self, __d: Dict[str, Any] = None, **kwargs):

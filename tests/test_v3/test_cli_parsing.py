@@ -707,6 +707,43 @@ def test_single_class_positional(run_cli):
   assert result["stdout"].strip() == "PerspectiveCamera"
 
 
+def test_single_class_dot_syntax(run_cli):
+  """Test that single class parameters support dot syntax for attribute overrides."""
+  script = dedent("""
+    from dataclasses import dataclass
+    from params_proto import proto
+
+    @dataclass
+    class PerspectiveCamera:
+        fov: float = 60.0
+        aspect: float = 1.33
+        near: float = 0.1
+
+    @proto.cli
+    def main(camera: PerspectiveCamera):
+        print(f"{camera.__class__.__name__}:{camera.fov},{camera.aspect},{camera.near}")
+
+    if __name__ == "__main__":
+        main()
+    """)
+
+  # Test 1: Class selection with default values
+  result = run_cli(script, ["perspective-camera"])
+  assert result["stdout"].strip() == "PerspectiveCamera:60.0,1.33,0.1"
+
+  # Test 2: Override single attribute using dot syntax
+  result = run_cli(script, ["perspective-camera", "--camera.fov", "45"])
+  assert result["stdout"].strip() == "PerspectiveCamera:45.0,1.33,0.1"
+
+  # Test 3: Override multiple attributes using dot syntax
+  result = run_cli(script, ["perspective-camera", "--camera.fov", "45", "--camera.aspect", "1.77", "--camera.near", "0.5"])
+  assert result["stdout"].strip() == "PerspectiveCamera:45.0,1.77,0.5"
+
+  # Test 4: Named class selection with dot syntax overrides
+  result = run_cli(script, ["--camera:perspective-camera", "--camera.fov", "90"])
+  assert result["stdout"].strip() == "PerspectiveCamera:90.0,1.33,0.1"
+
+
 def test_prefix_override(run_cli):
   """Test custom prefix name for singleton registration and field overrides."""
   script = dedent("""

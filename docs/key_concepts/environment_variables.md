@@ -1,6 +1,11 @@
 # Environment Variables
 
-params-proto provides `EnvVar` for reading configuration from environment variables with automatic type conversion and template expansion. This is useful for containerized applications, CI/CD pipelines, and production deployments where configuration is managed through environment variables.
+Commandline arguments are great and that, but remember the last time
+when you wanted to use environment variables? Here we provide the `EnvVar` 
+class to help you define default values via environment flags.
+
+params-proto' `EnvVar` automatically handles type conversion and template expansion. 
+Enjoy!
 
 ## Quick Start
 
@@ -19,8 +24,7 @@ def train(
     data_dir: str = EnvVar @ "$HOME/data/$PROJECT",
 ):
     """Train model with environment configuration."""
-    print(f"Batch size: {batch_size}")
-    print(f"Data dir: {data_dir}")
+    print(batch_size, api_key, data_dir)
 ```
 
 **Usage:**
@@ -38,7 +42,7 @@ python train.py
 python train.py --batch-size 512
 ```
 
-## Three Syntaxes
+## Usage Patterns
 
 ### 1. Matmul Operator (`@`)
 
@@ -535,42 +539,6 @@ def test_config(test_env):
         return port, host
 
     assert config() == (9000, "testhost")
-```
-
-## API Reference
-
-### `EnvVar @ "VAR_NAME"`
-
-Read environment variable with matmul operator syntax.
-
-**Returns:** Value from environment or `None`
-
-```python
-port: int = EnvVar @ "PORT"
-```
-
-### `EnvVar @ "VAR_NAME" | default`
-
-Read environment variable with fallback using pipe operator.
-
-**Returns:** Value from environment or `default`
-
-```python
-port: int = EnvVar @ "PORT" | 8000
-```
-
-### `EnvVar("VAR_NAME", default=...)`
-
-Read environment variable with function call syntax.
-
-**Parameters:**
-- `template` (str): Environment variable name or template with `$VAR`/`${VAR}` syntax
-- `default` (Any): Default value if environment variable not set
-
-**Returns:** Value from environment or `default`
-
-```python
-db_url: str = EnvVar("DATABASE_URL", default="sqlite:///local.db")
 ```
 
 ## Related
