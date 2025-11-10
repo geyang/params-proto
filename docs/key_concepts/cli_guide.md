@@ -547,13 +547,17 @@ python render.py perspective-camera --camera.fov 45
 
 ### Syntax Variations
 
-All class names support multiple naming conventions:
+**For Union type selection** (like `--camera:ClassName`), all naming conventions work:
 
 | Python Class       | CLI Syntax Options                                              |
 |--------------------|----------------------------------------------------------------|
 | `PerspectiveCamera` | `perspective-camera`, `perspectivecamera`, `PerspectiveCamera` |
 | `HTTPServer`       | `httpserver`, `http-server`, `HTTPServer`                       |
 | `MLModel`          | `mlmodel`, `ml-model`, `MLModel`                                |
+
+```{note}
+For **prefix parameter access** (like `--httpserver.port`), you must use the exact registered prefix name, which is the lowercase version of the class name (e.g., `httpserver`, not `http-server`).
+```
 
 **Attribute names** always convert to kebab-case:
 

@@ -189,6 +189,69 @@ options:
   --batch-size \x1b[1m\x1b[94mINT\x1b[0m     Batch size \x1b[36m(default:\x1b[0m \x1b[1m\x1b[36m32\x1b[0m\x1b[36m)\x1b[0m
 ```
 
+## Environment Variables
+
+### `EnvVar`
+
+Read configuration from environment variables with automatic type conversion.
+
+**Three syntaxes:**
+
+```python
+from params_proto import proto, EnvVar
+
+@proto.cli
+def config(
+    # 1. Matmul operator - simple env var
+    port: int = EnvVar @ "PORT",
+
+    # 2. Matmul + pipe - env var with fallback
+    host: str = EnvVar @ "HOST" | "localhost",
+
+    # 3. Function call - explicit syntax
+    db_url: str = EnvVar("DATABASE_URL", default="sqlite:///local.db"),
+
+    # Template expansion with $VAR or ${VAR}
+    data_dir: str = EnvVar @ "$HOME/data/${PROJECT}",
+):
+    """Configuration from environment."""
+    pass
+```
+
+**Features:**
+- Automatic type conversion (str, int, float, bool)
+- Template expansion with `$VAR` or `${VAR}` syntax
+- Multiple variables in templates
+- Fallback values with `|` operator
+- Resolved at decoration time
+
+**Type conversion:**
+```python
+# Environment: PORT=8080, THRESHOLD=0.75, DEBUG=true
+
+@proto.cli
+def config(
+    port: int = EnvVar @ "PORT",          # → 8080 (int)
+    threshold: float = EnvVar @ "THRESHOLD",  # → 0.75 (float)
+    debug: bool = EnvVar @ "DEBUG",       # → True (bool)
+):
+    pass
+```
+
+**Template expansion:**
+```python
+# Environment: HOME=/home/alice, PROJECT=ml-research
+
+@proto.cli
+def paths(
+    workspace: str = EnvVar @ "$HOME/projects/${PROJECT}",
+    # → "/home/alice/projects/ml-research"
+):
+    pass
+```
+
+See **[Environment Variables Guide](../key_concepts/environment_variables.md)** for comprehensive documentation.
+
 ## Special Attributes
 
 Decorated objects get special attributes:
@@ -220,10 +283,14 @@ from params_proto import proto
 # Functions
 proto.bind(**kwargs)  # Parameter binding
 proto.parse(func, **kwargs)  # Parse and call
+
+# Environment variables
+from params_proto import EnvVar
 ```
 
 ## See Also
 
 - [Configuration Basics](../key_concepts/configuration_basics.md) - Functions and classes
 - [Types Guide](../key_concepts/types.md) - Supported type annotations
+- [Environment Variables](../key_concepts/environment_variables.md) - EnvVar comprehensive guide
 - [Quick Start](../quick_start.md) - Getting started tutorial

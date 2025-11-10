@@ -261,8 +261,9 @@ The pipe operator (`|`) provides clean syntax for fallback values:
 learning_rate: float = EnvVar @ "LR" | 0.001
 ```
 
-Environment variables are resolved at decoration time and automatically converted to the annotated type (int, float,
-bool, str).
+Environment variables are resolved at decoration time and automatically converted to the annotated type (int, float, bool, str).
+
+See **[Environment Variables Guide](key_concepts/environment_variables.md)** for comprehensive documentation including template expansion, security considerations, and common patterns.
 
 ## Learn More
 
@@ -272,6 +273,7 @@ The Quick Start covers the basics. For deeper understanding, see:
 - **[Types](key_concepts/types.md)** - Type hints, Union types, and type validation
 - **[Building Your CLI](key_concepts/cli_guide.md)** - How Python names become CLI arguments
 - **[Function Best Practices](key_concepts/function_best_practices.md)** - Solving the parameter referencing problem
+- **[Environment Variables](key_concepts/environment_variables.md)** - Configuration from environment with EnvVar
 - **[Overrides](key_concepts/overrides.md)** - CLI, context managers, YAML configs
 - **[Advanced Patterns](key_concepts/advanced_patterns.md)** - Prefixes and Union-based subcommands
 - **[Hyperparameter Sweeps](key_concepts/hyperparameter_sweeps.md)** - Declarative parameter sweeps with Sweep
@@ -297,6 +299,7 @@ Configuration Basics <key_concepts/configuration_basics>
 Type Annotations <key_concepts/types>
 Building Your CLI <key_concepts/cli_guide>
 Function Best Practices <key_concepts/function_best_practices>
+Environment Variables <key_concepts/environment_variables>
 Parameter Overrides <key_concepts/overrides>
 Advanced Patterns <key_concepts/advanced_patterns>
 Hyperparameter Sweeps <key_concepts/hyperparameter_sweeps>
