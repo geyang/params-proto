@@ -125,6 +125,58 @@ class ProtoWrapper:
     if is_cli:
       self.__help_str__ = _generate_help_for_function(self)
 
+    # Initialize sweep mode state
+    self._sweep_mode = False
+    self._sweep_callback = None
+    self._sweep_data = {}
+
+  def _enable_sweep_mode(self, callback):
+    """Enter sweep mode with a callback for recording values."""
+    self._sweep_mode = True
+    self._sweep_callback = callback
+    self._sweep_data = {}
+
+  def _disable_sweep_mode(self):
+    """Exit sweep mode and return to normal operation."""
+    self._sweep_mode = False
+    self._sweep_callback = None
+    self._sweep_data = {}
+
+  @property
+  def _prefix(self):
+    """Return the prefix for this wrapper (function name for CLI wrappers)."""
+    return self._name.lower() if self._is_prefix else None
+
+  def _update(self, __d: dict = None, **kwargs):
+    """Update overrides from dict or kwargs."""
+    # Ensure _overrides exists
+    if not hasattr(self, "_overrides"):
+      object.__setattr__(self, "_overrides", {})
+
+    # Process dict argument
+    if __d:
+      prefix = self._prefix
+      if prefix:
+        prefix_key = f"{prefix}."
+        for k, v in __d.items():
+          if k.startswith(prefix_key):
+            param_name = k[len(prefix_key):]
+            if param_name in self._params:
+              self._overrides[param_name] = v
+          elif "." not in k:
+            if k in self._params:
+              self._overrides[k] = v
+      else:
+        for k, v in __d.items():
+          if "." not in k:
+            if k in self._params:
+              self._overrides[k] = v
+
+    # Process kwargs
+    for k, v in kwargs.items():
+      if k in self._params:
+        self._overrides[k] = v
+
   def __setattr__(self, name, value):
     if name.startswith("_") or name in (
       "__name__",
@@ -134,18 +186,54 @@ class ProtoWrapper:
     ):
       object.__setattr__(self, name, value)
     else:
-      # Store override
-      if not hasattr(self, "_overrides"):
-        object.__setattr__(self, "_overrides", {})
-      self._overrides[name] = value
+      # Check if we're in sweep mode
+      if hasattr(self, "_sweep_mode") and self._sweep_mode:
+        # In sweep mode: validate attribute exists in params
+        if name not in self._params:
+          raise AttributeError(
+            f"Cannot set non-existent parameter '{name}' on {self._name} during sweep. "
+            f"Available parameters: {', '.join(self._params.keys())}"
+          )
+
+        # Record the value and call callback
+        self._sweep_data[name] = {"_value": value}
+
+        if self._sweep_callback:
+          prefix = self._prefix
+          self._sweep_callback(name, value, prefix)
+      else:
+        # Normal mode: store override
+        if not hasattr(self, "_overrides"):
+          object.__setattr__(self, "_overrides", {})
+        self._overrides[name] = value
 
   def __getattr__(self, name):
-    if name in self._overrides:
-      return self._overrides[name]
+    # Use object.__getattribute__ to avoid recursion when accessing internal attrs
+
+    # Check if we're in sweep mode and have recorded data
+    try:
+      sweep_mode = object.__getattribute__(self, "_sweep_mode")
+      if sweep_mode:
+        sweep_data = object.__getattribute__(self, "_sweep_data")
+        if name in sweep_data:
+          return sweep_data[name]["_value"]
+    except AttributeError:
+      pass
+
+    try:
+      overrides = object.__getattribute__(self, "_overrides")
+      if name in overrides:
+        return overrides[name]
+    except AttributeError:
+      pass
 
     # Try to get default value
-    if hasattr(self, "_defaults") and name in self._defaults:
-      return self._defaults[name]
+    try:
+      defaults = object.__getattribute__(self, "_defaults")
+      if name in defaults:
+        return defaults[name]
+    except AttributeError:
+      pass
 
     raise AttributeError(
       f"'{self.__class__.__name__}' object has no attribute '{name}'"
@@ -253,6 +341,50 @@ class ProtoWrapper:
 class ptype(type):
   """Metaclass for proto-decorated classes that intercepts attribute access."""
 
+  @property
+  def _prefix(cls):
+    """Return the proto prefix for this class."""
+    return type.__getattribute__(cls, "__proto_prefix__")
+
+  def _enable_sweep_mode(cls, callback):
+    """Enter sweep mode with a callback for recording values."""
+    type.__setattr__(cls, "__proto_sweep_mode__", True)
+    type.__setattr__(cls, "__proto_sweep_callback__", callback)
+    type.__setattr__(cls, "__proto_sweep_data__", {})
+
+  def _disable_sweep_mode(cls):
+    """Exit sweep mode and return to normal operation."""
+    type.__setattr__(cls, "__proto_sweep_mode__", False)
+    type.__setattr__(cls, "__proto_sweep_callback__", None)
+    type.__setattr__(cls, "__proto_sweep_data__", {})
+
+  def _update(cls, __d=None, **kwargs):
+    """Update overrides from dict or kwargs."""
+    annotations = type.__getattribute__(cls, "__proto_annotations__")
+    overrides = type.__getattribute__(cls, "__proto_overrides__")
+
+    if __d:
+      prefix = type.__getattribute__(cls, "__proto_prefix__")
+      if prefix:
+        prefix_key = f"{prefix}."
+        for k, v in __d.items():
+          if k.startswith(prefix_key):
+            param_name = k[len(prefix_key):]
+            if param_name in annotations:
+              overrides[param_name] = v
+          elif "." not in k:
+            if k in annotations:
+              overrides[k] = v
+      else:
+        for k, v in __d.items():
+          if "." not in k:
+            if k in annotations:
+              overrides[k] = v
+
+    for k, v in kwargs.items():
+      if k in annotations:
+        overrides[k] = v
+
   def __setattr__(cls, name, value):
     # Allow setting internal proto attributes
     if name.startswith("__proto_"):
@@ -261,21 +393,46 @@ class ptype(type):
       # Allow private attributes
       type.__setattr__(cls, name, value)
     else:
-      # Store in overrides
-      if not hasattr(cls, "__proto_overrides__"):
-        type.__setattr__(cls, "__proto_overrides__", {})
-      cls.__proto_overrides__[name] = value
+      # Check if we're in sweep mode
+      sweep_mode = getattr(cls, "__proto_sweep_mode__", False)
 
-      # Call sweep hooks if any
-      if hasattr(cls, "__proto_sweep_hooks__"):
-        for hook in cls.__proto_sweep_hooks__:
-          # Hooks expect (proxy, name, value) signature
-          hook(cls, name, value)
+      if sweep_mode:
+        # In sweep mode: validate attribute exists in annotations
+        annotations = type.__getattribute__(cls, "__proto_annotations__")
+        if name not in annotations:
+          raise AttributeError(
+            f"Cannot set non-existent attribute '{name}' on {cls.__name__} during sweep. "
+            f"Available attributes: {', '.join(annotations.keys())}"
+          )
+
+        # Record the value and call callback
+        sweep_data = type.__getattribute__(cls, "__proto_sweep_data__")
+        sweep_data[name] = {"_value": value}
+
+        callback = type.__getattribute__(cls, "__proto_sweep_callback__")
+        if callback:
+          prefix = type.__getattribute__(cls, "__proto_prefix__")
+          callback(name, value, prefix)
+      else:
+        # Normal mode: store in overrides
+        if not hasattr(cls, "__proto_overrides__"):
+          type.__setattr__(cls, "__proto_overrides__", {})
+        cls.__proto_overrides__[name] = value
 
   def __getattribute__(cls, name):
     # Allow access to internal proto attributes
     if name.startswith("__proto_") or name.startswith("_"):
       return type.__getattribute__(cls, name)
+
+    # Check if we're in sweep mode and have recorded data
+    try:
+      sweep_mode = type.__getattribute__(cls, "__proto_sweep_mode__")
+      if sweep_mode:
+        sweep_data = type.__getattribute__(cls, "__proto_sweep_data__")
+        if name in sweep_data:
+          return sweep_data[name]["_value"]
+    except AttributeError:
+      pass
 
     # Check overrides first
     try:
@@ -561,7 +718,6 @@ def proto(
       type.__setattr__(new_cls, "__proto_defaults__", defaults)
       type.__setattr__(new_cls, "__proto_annotations__", annotations)
       type.__setattr__(new_cls, "__proto_field_docs__", field_docs)
-      type.__setattr__(new_cls, "__proto_sweep_hooks__", [])
       type.__setattr__(new_cls, "__proto_is_cli__", cli)
       type.__setattr__(new_cls, "__proto_is_prefix__", prefix)
       type.__setattr__(new_cls, "__proto_original_class__", obj)

@@ -1,4 +1,4 @@
 """Hyperparameter sweep module for params-proto v3."""
-from .sweep import Sweep
+from .sweep import ParameterIterator, Sweep, piter
 
-__all__ = ["Sweep"]
+__all__ = ["Sweep", "piter", "ParameterIterator"]
