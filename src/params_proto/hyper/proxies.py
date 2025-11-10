@@ -100,10 +100,10 @@ class PrefixProxy(BaseProxy):
 
     @property
     def _prefix(self):
-        """Return lowercase prefix."""
+        """Return kebab-case prefix."""
         proto = object.__getattribute__(self, "_proto")
         if isinstance(proto, ProtoWrapper):
-            return proto._name.lower()
+            return proto._prefix  # Delegate to ProtoWrapper's _prefix property
         return None
 
     def _update(self, __d: Dict[str, Any] = None, **kwargs):

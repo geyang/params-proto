@@ -132,12 +132,12 @@ def render(camera: Perspect | Orthographic):
 
 **CLI usage:**
 ```bash
-# Class names become lowercase commands
+# Class names become kebab-case commands
 python render.py perspect --fov 45.0       # Not Perspect or PERSPECT
 python render.py orthographic --zoom 2.0   # Not Orthographic
 ```
 
-**Conversion rule:** Simple `.lower()` conversion
+**Conversion rule:** PascalCase → kebab-case (e.g., `HTTPServer` → `http-server`, `MLModel` → `ml-model`)
 
 #### Best Practices for Union Type Names
 
@@ -150,15 +150,15 @@ class Evaluate:   # → evaluate
 class Export:     # → export
 ```
 
-**Avoid acronyms and multi-word names:**
+**Acronyms and multi-word names now convert properly:**
 
 ```python
-# ⚠️ Problematic: acronyms don't split
-class HTTPServer:    # → httpserver (not http-server)
-class MLModel:       # → mlmodel (not ml-model)
-class DeepQNetwork:  # → deepqnetwork (not deep-q-network)
+# ✓ Good: acronyms now convert to kebab-case
+class HTTPServer:    # → http-server
+class MLModel:       # → ml-model
+class DeepQNetwork:  # → deep-q-network
 
-# ✓ Better: simple alternatives
+# ✓ Also good: simple alternatives remain clear
 class Server:     # → server
 class Model:      # → model
 class Network:    # → network

@@ -269,14 +269,14 @@ python tool.py train --help
 
 ### Class Name Conversion
 
-**Class names convert to lowercase CLI commands:**
+**Class names convert to kebab-case CLI commands:**
 
 ```python
 @dataclass
 class Train:      # Python: PascalCase
     pass
 
-# CLI command: train (lowercase)
+# CLI command: train (kebab-case)
 $ python tool.py train --lr 0.01
 ```
 
@@ -288,11 +288,12 @@ class Train:      # → train
 class Evaluate:   # → evaluate
 class Export:     # → export
 
-# ⚠️ Problematic: Acronyms don't split
-class HTTPServer:    # → httpserver (not http-server)
-class MLModel:       # → mlmodel (not ml-model)
+# ✓ Good: Acronyms now convert properly
+class HTTPServer:    # → http-server
+class MLModel:       # → ml-model
+class DataLoader:    # → data-loader
 
-# ✓ Better alternatives
+# ✓ Also good: Simple alternatives
 class Server:     # → server
 class Model:      # → model
 ```

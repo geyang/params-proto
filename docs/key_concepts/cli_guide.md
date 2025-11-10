@@ -73,7 +73,7 @@ def train(
 
 **Conversion rule:** Replace `_` with `-`, then lowercase
 
-### Class Names: PascalCase → lowercase
+### Class Names: PascalCase → kebab-case
 
 When using Union types for subcommands, class names convert to CLI commands:
 
@@ -104,40 +104,40 @@ python tool.py train --lr 0.01     # Class: Train → command: train
 python tool.py evaluate --model pt  # Class: Evaluate → command: evaluate
 ```
 
-**Conversion rule:** Simple `.lower()` - no hyphen insertion
+**Conversion rule:** PascalCase → kebab-case (e.g., `HTTPServer` → `http-server`, `MLModel` → `ml-model`)
 
-### Prefix Names: PascalCase Preserved
+### Prefix Names: PascalCase → kebab-case
 
-When using `@proto.prefix`, class names stay as-is:
+When using `@proto.prefix`, class names convert to kebab-case prefixes:
 
 ```python
 @proto.prefix
-class Model:  # PascalCase preserved
+class Model:  # PascalCase in Python
   name: str = "resnet50"
   hidden_size: int = 256
 
 
 @proto.prefix
-class Training:  # PascalCase preserved
+class Training:  # PascalCase in Python
   lr: float = 0.001
 ```
 
 **CLI arguments:**
 
 ```bash
---model.name resnet50        # Prefix converts to lowercase
+--model.name resnet50        # Prefix converts to kebab-case
 --model.hidden-size 512      # Parameter converts to kebab-case
---training.lr 0.01           # Prefix converts to lowercase
+--training.lr 0.01           # Prefix converts to kebab-case
 ```
 
-**Conversion rule:** Class name converts to lowercase (like Union subcommands), parameters convert to kebab-case.
+**Conversion rule:** Class name converts to kebab-case (e.g., `DataLoader` → `data-loader`), parameters convert to kebab-case.
 
 ```python
 # In code
 print(Model.name)  # PascalCase class
 
 # On CLI
---model.name resnet50  # lowercase prefix
+--model.name resnet50  # kebab-case prefix
 ```
 
 ## Naming Best Practices
@@ -153,16 +153,15 @@ class Train:  # → train
   class Export:  # → export
 
 
-# ⚠️ Problematic: Acronyms don't split
-class HTTPServer:  # → httpserver (not http-server)
+# ✓ Good: Acronyms now convert properly
+class HTTPServer:  # → http-server
+class MLModel:  # → ml-model
+class DataLoader:  # → data-loader
 
-  class MLModel:  # → mlmodel (not ml-model)
 
-
-# ✓ Better alternatives
+# ✓ Also good: Simple single-word names
 class Server:  # → server (simple and clear)
-
-  class Model:  # → model
+class Model:  # → model
 ```
 
 ### 2. Use snake_case for Parameters
@@ -556,7 +555,7 @@ python render.py perspective-camera --camera.fov 45
 | `MLModel`          | `mlmodel`, `ml-model`, `MLModel`                                |
 
 ```{note}
-For **prefix parameter access** (like `--httpserver.port`), you must use the exact registered prefix name, which is the lowercase version of the class name (e.g., `httpserver`, not `http-server`).
+For **prefix parameter access** (like `--http-server.port`), you must use the exact registered prefix name, which is the kebab-case version of the class name (e.g., `http-server` for `HTTPServer`).
 ```
 
 **Attribute names** always convert to kebab-case:
@@ -707,8 +706,8 @@ Numbers are preserved in CLI arguments.
 **Key conversions:**
 
 - Parameters: `snake_case` → `--kebab-case`
-- Union classes: `PascalCase` → `lowercase`
-- Prefixes: `PascalCase` → `--lowercase.kebab-case`
+- Union classes: `PascalCase` → `kebab-case`
+- Prefixes: `PascalCase` → `--kebab-case.kebab-case`
 - Booleans: `bool` → `--flag` / `--no-flag`
 
 **Best practices:**
