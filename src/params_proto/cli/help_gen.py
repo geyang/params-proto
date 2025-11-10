@@ -15,7 +15,7 @@ from params_proto.documentation import (
 from params_proto.type_utils import _get_type_name
 
 if TYPE_CHECKING:
-  from params_proto.proto import ProtoWrapper, ProtoClass
+  from params_proto.proto import ProtoWrapper
 
 
 # Global singleton registry - imported from proto.py at runtime
@@ -176,8 +176,8 @@ def _generate_help_for_function(wrapper: "ProtoWrapper") -> str:
 
   # Add sections for any @proto.prefix singletons
   for singleton_name, singleton in _SINGLETONS.items():
-    # Import ProtoClass, ProtoWrapper, and ptype here to avoid circular import
-    from params_proto.proto import ProtoClass, ProtoWrapper, ptype
+    # Import ProtoWrapper and ptype here to avoid circular import
+    from params_proto.proto import ProtoWrapper, ptype
 
     # Handle metaclass-based proto classes
     if isinstance(singleton, type) and isinstance(singleton, ptype):
@@ -196,44 +196,6 @@ def _generate_help_for_function(wrapper: "ProtoWrapper") -> str:
         type_name = _get_type_name(annotation)
         default = defaults.get(param_name)
         help_text = field_docs.get(param_name, "")
-
-        # Auto-generate description if missing
-        if not help_text:
-          help_text = _generate_param_description(param_name, singleton_name.lower())
-
-        # Build the option line with 2-space indentation
-        if type_name:
-          option_str = f"  {arg_name} {type_name}"
-        else:
-          option_str = f"  {arg_name}"
-
-        # Pad to align descriptions - target column 31, but minimum 2 spaces
-        if len(option_str) < 31:
-          option_str = option_str.ljust(31)
-        else:
-          option_str = option_str + "  "  # At least 2 spaces
-
-        # Build description with default
-        desc_parts = []
-        if help_text:
-          desc_parts.append(help_text)
-        if default is not None:
-          desc_parts.append(f"(default: {default})")
-
-        lines.append(option_str + " ".join(desc_parts))
-
-    # Handle old ProtoClass wrapper style
-    elif isinstance(singleton, ProtoClass):
-      lines.append(f"\n{singleton_name} options:")
-      if singleton._cls.__doc__:
-        lines.append(f"  {singleton._cls.__doc__.strip()}")
-        lines.append("")
-
-      for param_name, annotation in singleton._annotations.items():
-        arg_name = f"--{singleton_name}.{param_name.replace('_', '-')}"
-        type_name = _get_type_name(annotation)
-        default = singleton._defaults.get(param_name)
-        help_text = singleton._field_docs.get(param_name, "")
 
         # Auto-generate description if missing
         if not help_text:
@@ -299,9 +261,3 @@ def _generate_help_for_function(wrapper: "ProtoWrapper") -> str:
 
   lines.append("")
   return "\n".join(lines)
-
-
-def _generate_help_for_class(wrapper: "ProtoClass") -> str:
-  """Generate help text for a proto class."""
-  # TODO: Implement class help generation
-  return ""

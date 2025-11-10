@@ -12,7 +12,8 @@ Base decorator for classes and functions.
 from params_proto import proto
 
 @proto
-class Params:    lr: float = 0.001
+class Params:
+    lr: float = 0.001
     batch_size: int = 32
 ```
 
@@ -136,7 +137,8 @@ class Optimizer(Enum):
     SGD = auto()
 
 @proto
-class Params:    # Basic types
+class Params:
+    # Basic types
     lr: float = 0.001
     batch_size: int = 32
 

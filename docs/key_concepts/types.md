@@ -17,12 +17,13 @@ from dataclasses import dataclass
 from params_proto import proto
 
 @dataclass
-class Params:    lr: float = 0.001
+class Params:
+    lr: float = 0.001
     batch_size: int = 32
 
 @proto.cli
 def train(
-    config: Config,  # Required parameter - Config will be called as Config()
+    config: Params,  # Required parameter - Params will be called as Params()
     epochs: int = 100,  # Optional parameter with default
 ):
     """Train with configuration."""
@@ -31,8 +32,8 @@ def train(
 
 **CLI Usage:**
 ```bash
-# params-proto calls Config() to instantiate it
-python train.py config --lr 0.01 --batch-size 64
+# params-proto calls Params() to instantiate it
+python train.py params --lr 0.01 --batch-size 64
 ```
 
 ### Union Types as Subcommands
@@ -97,7 +98,7 @@ The **callable type instantiation only applies to required parameters**:
 @proto.cli
 def train(
     # Required: Type hint MUST be callable, will be instantiated
-    config: Config,
+    config: Params,
 
     # Optional: Uses the default value, type hint is for validation
     epochs: int = 100,

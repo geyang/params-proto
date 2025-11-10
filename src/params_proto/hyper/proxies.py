@@ -1,7 +1,7 @@
 """Proxy classes for Sweep integration with v3 proto decorators."""
 from typing import Any, Dict
 
-from ..proto import ProtoClass, ProtoWrapper
+from ..proto import ProtoWrapper
 
 
 class BaseProxy:
@@ -102,9 +102,7 @@ class PrefixProxy(BaseProxy):
     def _prefix(self):
         """Return lowercase prefix."""
         proto = object.__getattribute__(self, "_proto")
-        if isinstance(proto, ProtoClass):
-            return proto._cls.__name__.lower()
-        elif isinstance(proto, ProtoWrapper):
+        if isinstance(proto, ProtoWrapper):
             return proto._name.lower()
         return None
 
@@ -119,33 +117,22 @@ class PrefixProxy(BaseProxy):
                 for k, v in __d.items():
                     if k.startswith(prefix_key):
                         param_name = k[len(prefix_key):]
-                        if isinstance(proto, ProtoClass):
-                            if param_name in proto._annotations:
-                                proto._overrides[param_name] = v
-                        elif isinstance(proto, ProtoWrapper):
+                        if isinstance(proto, ProtoWrapper):
                             if param_name in proto._params:
                                 proto._overrides[param_name] = v
                     elif "." not in k:
-                        if isinstance(proto, ProtoClass):
-                            if k in proto._annotations:
-                                proto._overrides[k] = v
-                        elif isinstance(proto, ProtoWrapper):
+                        if isinstance(proto, ProtoWrapper):
                             if k in proto._params:
                                 proto._overrides[k] = v
 
         for k, v in kwargs.items():
-            if isinstance(proto, ProtoClass):
-                if k in proto._annotations:
-                    proto._overrides[k] = v
-            elif isinstance(proto, ProtoWrapper):
+            if isinstance(proto, ProtoWrapper):
                 if k in proto._params:
                     proto._overrides[k] = v
 
     def __dir__(self):
         """Return parameter names."""
         proto = object.__getattribute__(self, "_proto")
-        if isinstance(proto, ProtoClass):
-            return list(proto._annotations.keys())
-        elif isinstance(proto, ProtoWrapper):
+        if isinstance(proto, ProtoWrapper):
             return list(proto._params.keys())
         return []

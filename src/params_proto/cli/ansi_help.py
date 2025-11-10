@@ -360,7 +360,7 @@ def get_ansi_help(wrapper) -> str:
   """Get ANSI-formatted help string from a proto wrapper.
 
   Args:
-      wrapper: ProtoWrapper or ProtoClass instance with __help_str__
+      wrapper: ProtoWrapper instance with __help_str__
 
   Returns:
       ANSI-formatted help text

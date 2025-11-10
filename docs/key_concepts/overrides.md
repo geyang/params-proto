@@ -630,7 +630,7 @@ train()  # Should use default lr=0.001
 
 ## Related
 
-- [Decorators](decorators.md) - Overview of @proto, @proto.cli, @proto.prefix
-- [Functions](functions.md) - Function-based configurations
-- [Prefixes](prefixes.md) - Singleton configurations
-- [Classes](classes.md) - Class-based configurations
+- [Configuration Basics](configuration_basics.md) - Functions vs classes, @proto decorators
+- [Advanced Patterns](advanced_patterns.md) - Prefixes and Union-based subcommands
+- [Hyperparameter Sweeps](hyperparameter_sweeps.md) - Declarative parameter sweeps with Sweep
+- [Parameter Iterators (piter)](piter.md) - Lightweight sweeps with operators

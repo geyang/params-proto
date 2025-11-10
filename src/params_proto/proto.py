@@ -18,7 +18,7 @@ from typing import (
 # Import utilities from separate modules
 from params_proto.type_utils import _convert_type
 from params_proto.documentation import _extract_docs_from_source
-from params_proto.cli.help_gen import _generate_help_for_function, _generate_help_for_class
+from params_proto.cli.help_gen import _generate_help_for_function
 
 T = TypeVar("T")
 F = TypeVar("F", bound=Callable)
@@ -536,112 +536,6 @@ class ptype(type):
     return instance
 
 
-class ProtoClass:
-  """Wrapper for proto-decorated classes."""
-
-  def __init__(self, cls: Type[T], is_cli: bool = False, is_prefix: bool = False):
-    self._cls = cls
-    self._is_cli = is_cli
-    self._is_prefix = is_prefix
-    self._overrides = {}
-
-    # Extract annotations and defaults
-    self._annotations = getattr(cls, "__annotations__", {})
-    self._defaults = {}
-    self._field_docs = _extract_docs_from_source(cls)
-
-    for name in self._annotations.keys():
-      if hasattr(cls, name):
-        value = getattr(cls, name)
-        # Skip methods
-        if not callable(value):
-          self._defaults[name] = value
-
-    # Generate help if needed
-    if is_cli:
-      self.__help_str__ = _generate_help_for_class(self)
-
-  def __call__(self, *args, **kwargs):
-    # Create instance with merged values
-    final_kwargs = {}
-
-    # Start with defaults
-    final_kwargs.update(self._defaults)
-
-    # Apply class-level overrides
-    final_kwargs.update(self._overrides)
-
-    # Apply bind context
-    for key, value in _BIND_CONTEXT.items():
-      if "." not in key and key in self._annotations:
-        final_kwargs[key] = value
-
-    # Apply direct kwargs
-    final_kwargs.update(kwargs)
-
-    # Create instance
-    instance = object.__new__(self._cls)
-
-    # Set attributes
-    for name in self._annotations.keys():
-      if name in final_kwargs:
-        setattr(instance, name, final_kwargs[name])
-      elif name in self._defaults:
-        setattr(instance, name, self._defaults[name])
-      else:
-        # Required field
-        setattr(instance, name, None)
-
-    # Copy methods from original class and wrap to return self
-    for name in dir(self._cls):
-      if not name.startswith("__"):
-        attr = getattr(self._cls, name)
-        if callable(attr):
-          # Get the bound method
-          bound_method = attr.__get__(instance, self._cls)
-
-          # Wrap it to return self if it returns None
-          def make_wrapper(method):
-            def wrapper(*args, **kwargs):
-              result = method(*args, **kwargs)
-              return instance if result is None else result
-
-            return wrapper
-
-          setattr(instance, name, make_wrapper(bound_method))
-
-    return instance
-
-  def __setattr__(self, name, value):
-    if name.startswith("_") or name in ("__help_str__",):
-      object.__setattr__(self, name, value)
-    else:
-      # Store override at class level
-      if not hasattr(self, "_overrides"):
-        object.__setattr__(self, "_overrides", {})
-      self._overrides[name] = value
-
-  def __getattr__(self, name):
-    # Use object.__getattribute__ to avoid recursion during deepcopy
-    try:
-      overrides = object.__getattribute__(self, "_overrides")
-      if name in overrides:
-        return overrides[name]
-    except AttributeError:
-      pass
-
-    try:
-      cls = object.__getattribute__(self, "_cls")
-      attr = getattr(cls, name)
-      return attr
-    except AttributeError:
-      pass
-
-    raise AttributeError(
-      f"'{self.__class__.__name__}' object has no attribute '{name}'"
-    )
-
-
 def proto(
   cls_or_func: Callable = None,
   *,
@@ -730,18 +624,6 @@ def proto(
         _SINGLETONS[singleton_key] = new_cls
       else:
         type.__setattr__(new_cls, "__proto_prefix__", None)
-
-      # Generate help if CLI
-      if cli:
-        # Create a temporary ProtoClass-like object for help generation
-        temp_wrapper = type('temp', (), {
-          '_annotations': annotations,
-          '_defaults': defaults,
-          '_field_docs': field_docs,
-          '__name__': obj.__name__,
-        })()
-        help_str = _generate_help_for_class(temp_wrapper)
-        type.__setattr__(new_cls, "__proto_help_str__", help_str)
 
       return new_cls
     else:
