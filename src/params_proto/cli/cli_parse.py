@@ -306,6 +306,11 @@ def parse_cli_args(wrapper) -> Dict[str, Any]:
       else:
         result[param_name] = param_info.get("default")
 
+  # Apply prefix values to singletons BEFORE instantiating Union classes
+  # This ensures that singleton overrides are available when creating Union instances
+  for (singleton, param_name), value in prefix_values.items():
+    setattr(singleton, param_name, value)
+
   # Instantiate Union classes with collected attributes
   for param_name, selected_class in union_selections.items():
     # Collect attributes for this Union parameter
@@ -325,15 +330,24 @@ def parse_cli_args(wrapper) -> Dict[str, Any]:
           # No annotations, treat as string
           attrs[attr_name] = value_str
 
+    # If selected_class is a proto.prefix singleton, merge its overrides
+    from params_proto.proto import _SINGLETONS, ptype
+    for singleton_key, singleton in _SINGLETONS.items():
+      if singleton is selected_class:
+        # This is a proto.prefix class - merge overrides into attrs
+        if isinstance(singleton, type) and isinstance(singleton, ptype):
+          overrides = type.__getattribute__(singleton, "__proto_overrides__")
+          # Overrides take precedence over defaults, but CLI attrs take precedence over overrides
+          for key, value in overrides.items():
+            if key not in attrs:  # Only use override if not explicitly set via CLI
+              attrs[key] = value
+        break
+
     # Instantiate the class with collected attributes
     try:
       instance = selected_class(**attrs)
       result[param_name] = instance
     except TypeError as e:
       raise SystemExit(f"error: failed to instantiate {selected_class.__name__}: {e}")
-
-  # Apply prefix values to singletons
-  for (singleton, param_name), value in prefix_values.items():
-    setattr(singleton, param_name, value)
 
   return result
