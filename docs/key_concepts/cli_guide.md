@@ -1,8 +1,8 @@
-# Building You CLI
+# Building Your CLI
 
 `params-proto` automatically generates command-line interfaces from your Python code. There are two main ways to
 do so: via a python class namespace, or via a function. Function interface is simple and useful for scripts,
-but it lack the ability to directly reference and expose configuration objects. For more detailed discussion, refer to 
+but it lacks the ability to directly reference and expose configuration objects. For more detailed discussion, refer to
 [Best Practice for Function Parameters](function_best_practices.md).
 
 ## How It Works

@@ -113,7 +113,10 @@ from params_proto import proto
 for lr in [0.001, 0.01, 0.1]:
     for batch_size in [32, 64, 128]:
         print(f"\n=== Training with lr={lr}, batch_size={batch_size} ===")
-        with proto.bind(lr=lr, batch_size=batch_size):
+        with proto.bind(**{
+            "train_mnist.lr": lr,
+            "train_mnist.batch_size": batch_size,
+        }):
             train_mnist(epochs=5)  # Quick test
 ```
 

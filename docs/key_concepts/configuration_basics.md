@@ -166,10 +166,10 @@ print(config1.lr, config2.lr)  # 0.001 0.01
 
 ```python
 # Access class defaults
-print(TrainParams.lr)  # 0.001
+print(TrainConfig.lr)  # 0.001
 
 # Modify class default (affects new instances)
-TrainParams.lr = 0.01
+TrainConfig.lr = 0.01
 
 config3 = TrainConfig()
 print(config3.lr)  # 0.01 (uses new default)
@@ -219,7 +219,8 @@ from dataclasses import dataclass
 
 @proto
 @dataclass
-class Params:    """Model configuration."""
+class Params:
+    """Model configuration."""
     hidden_size: int = 256
     num_layers: int = 4
     dropout: float = 0.1
@@ -230,8 +231,8 @@ class Params:    """Model configuration."""
             raise ValueError("dropout must be in [0, 1]")
 
 # Dataclass features work
-config = Config(hidden_size=512)
-print(config)  # Config(hidden_size=512, num_layers=4, dropout=0.1)
+config = Params(hidden_size=512)
+print(config)  # Params(hidden_size=512, num_layers=4, dropout=0.1)
 ```
 
 ### Using Classes with CLI
@@ -392,17 +393,18 @@ def train(
 
 ```python
 @proto
-class Params:    model_type: str = "resnet"
+class Params:
+    model_type: str = "resnet"
     hidden_size: int = 256
 
-def create_model(config: Config):
+def create_model(config: Params):
     """Create model from config."""
     if config.model_type == "resnet":
         return ResNet(config.hidden_size)
     elif config.model_type == "transformer":
         return Transformer(config.hidden_size)
 
-config = Config(model_type="transformer")
+config = Params(model_type="transformer")
 model = create_model(config)
 ```
 

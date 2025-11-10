@@ -18,7 +18,7 @@ from typing import (
 if TYPE_CHECKING:
   import pandas as pd
 
-from ..proto import ProtoClass, ProtoWrapper, ptype
+from ..proto import ProtoWrapper, ptype
 
 
 class ParameterIterator:
@@ -152,20 +152,24 @@ def piter(spec):
             Values can be single values or lists/iterables.
 
   Returns:
-      ParameterIterator over the Cartesian product of all parameters.
+      ParameterIterator that zips parameter lists element-wise.
 
   Example:
-      # Simple dict (no prefix)
+      # Element-wise zip (default behavior)
       piter({"lr": [0.001, 0.01], "batch_size": [32, 64]})
-      # Creates 4 configs (2 × 2)
+      # Creates 2 configs: (0.001, 32), (0.01, 64)
 
       # Fixed value
       piter({"seed": 200})
       # Creates 1 config with seed=200
 
+      # For Cartesian product, use * operator:
+      piter({"lr": [0.001, 0.01]}) * piter({"batch_size": [32, 64]})
+      # Creates 4 configs (2 × 2)
+
       # With prefixes for multiple proto classes
       piter({"model.depth": [18, 50], "training.lr": [0.001, 0.01]})
-      # Creates 4 configs (2 × 2)
+      # Creates 2 configs (zipped)
   """
   # Convert values to lists if needed
   params = {}
@@ -175,19 +179,20 @@ def piter(spec):
     param_values = values if isinstance(values, (list, tuple, range)) else [values]
     params[key] = param_values
 
-  # Create iterator over Cartesian product
-  def product_iter():
+  # Create iterator by zipping parameter lists
+  def zip_iter():
     if not params:
       return
 
     keys = list(params.keys())
     value_lists = [params[k] for k in keys]
 
-    for combination in itertools.product(*value_lists):
+    # Zip parameter lists element-wise
+    for combination in zip(*value_lists):
       config = dict(zip(keys, combination))
       yield config
 
-  return ParameterIterator(product_iter())
+  return ParameterIterator(zip_iter())
 
 
 def dot_join(*keys):
@@ -262,9 +267,6 @@ class SweepProxy:
     # Check if it's a metaclass-based proto class
     if isinstance(target, type) and isinstance(target, ptype):
       return type.__getattribute__(target, "__proto_prefix__")
-    # Check if it's a ProtoClass wrapper (old style)
-    elif isinstance(target, ProtoClass):
-      return target._cls.__name__.lower() if target._is_prefix else None
     elif isinstance(target, ProtoWrapper):
       return target._name.lower() if target._is_prefix else None
     return None
@@ -277,8 +279,6 @@ class SweepProxy:
     def get_annotations():
       if isinstance(target, type) and isinstance(target, ptype):
         return type.__getattribute__(target, "__proto_annotations__")
-      elif isinstance(target, ProtoClass):
-        return target._annotations
       elif isinstance(target, ProtoWrapper):
         return target._params
       return {}
@@ -288,8 +288,6 @@ class SweepProxy:
       if isinstance(target, type) and isinstance(target, ptype):
         overrides = type.__getattribute__(target, "__proto_overrides__")
         overrides[key] = value
-      elif isinstance(target, ProtoClass):
-        target._overrides[key] = value
       elif isinstance(target, ProtoWrapper):
         target._overrides[key] = value
 
@@ -367,8 +365,6 @@ class SweepProxy:
     if isinstance(target, type) and isinstance(target, ptype):
       annotations = type.__getattribute__(target, "__proto_annotations__")
       return list(annotations.keys())
-    elif isinstance(target, ProtoClass):
-      return list(target._annotations.keys())
     elif isinstance(target, ProtoWrapper):
       return list(target._params.keys())
     return []
@@ -403,7 +399,7 @@ class Sweep:
     Initialize Sweep with proto objects.
 
     Args:
-        *protos: ProtoClass, ProtoWrapper instances, or metaclass-based proto classes
+        *protos: ProtoWrapper instances or metaclass-based proto classes
     """
     # Store proto objects directly (both ptype and ProtoWrapper can switch modes themselves)
     self.root: Dict[Union[str, object], Any] = {}
@@ -415,11 +411,6 @@ class Sweep:
       elif isinstance(p, ProtoWrapper):
         # ProtoWrapper now has built-in sweep mode support
         key = p._prefix or p
-      elif isinstance(p, ProtoClass):
-        # Wrap old ProtoClass in SweepProxy for backward compatibility
-        proxy = SweepProxy(p)
-        key = proxy._prefix or proxy
-        p = proxy
       else:
         key = getattr(p, "_prefix", None) or p
 

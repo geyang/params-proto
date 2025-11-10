@@ -132,7 +132,7 @@ def train(
 
 dep = {"train.lr": 0.01, "train.batch_size": 256, "train.n_epochs": 10}
 
-proto.bind(**dep: DepencencyDict)
+proto.bind(**dep)
 
 assert train.lr == 0.01, "this is now overriden."
 assert train.batch_size == 256, "this is now overriden."
@@ -270,9 +270,12 @@ The Quick Start covers the basics. For deeper understanding, see:
 
 - **[Configuration Basics](key_concepts/configuration_basics.md)** - Functions vs classes, when to use each
 - **[Types](key_concepts/types.md)** - Type hints, Union types, and type validation
-- **[CLI Generation](key_concepts/cli_generation.md)** - How Python names become CLI arguments
+- **[Building Your CLI](key_concepts/cli_guide.md)** - How Python names become CLI arguments
+- **[Function Best Practices](key_concepts/function_best_practices.md)** - Solving the parameter referencing problem
 - **[Overrides](key_concepts/overrides.md)** - CLI, context managers, YAML configs
 - **[Advanced Patterns](key_concepts/advanced_patterns.md)** - Prefixes and Union-based subcommands
+- **[Hyperparameter Sweeps](key_concepts/hyperparameter_sweeps.md)** - Declarative parameter sweeps with Sweep
+- **[Parameter Iterators (piter)](key_concepts/piter.md)** - Lightweight, composable sweeps with operators
 - **[ANSI Formatting](key_concepts/ansi_formatting.md)** - Terminal colors and formatting
 
 ## Documentation Contents
@@ -290,12 +293,14 @@ Release Notes <release_notes>
 :maxdepth: 2
 :caption: Key Concepts
 
-Building Your CLI <key_concepts/cli_guide>
-Function Best Practices <key_concepts/function_best_practices>
 Configuration Basics <key_concepts/configuration_basics>
 Type Annotations <key_concepts/types>
+Building Your CLI <key_concepts/cli_guide>
+Function Best Practices <key_concepts/function_best_practices>
 Parameter Overrides <key_concepts/overrides>
 Advanced Patterns <key_concepts/advanced_patterns>
+Hyperparameter Sweeps <key_concepts/hyperparameter_sweeps>
+Parameter Iterators (piter) <key_concepts/piter>
 ANSI Formatting <key_concepts/ansi_formatting>
 ```
 
