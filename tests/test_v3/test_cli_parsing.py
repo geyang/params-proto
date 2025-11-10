@@ -708,7 +708,7 @@ def test_single_class_positional(run_cli):
 
 
 def test_prefix_override(run_cli):
-  """Test custom prefix name for singleton registration."""
+  """Test custom prefix name for singleton registration and field overrides."""
   script = dedent("""
     from dataclasses import dataclass
     from params_proto import proto
@@ -727,12 +727,21 @@ def test_prefix_override(run_cli):
         from params_proto.proto import _SINGLETONS
         assert "perspective" in _SINGLETONS
         assert "config" in _SINGLETONS
-        print(f"{camera.__class__.__name__}")
+        print(f"{camera.__class__.__name__}:{camera.fov}")
 
     if __name__ == "__main__":
         main()
     """)
 
-  # Class selection still uses the actual class name
+  # Test 1: Class selection with actual class name
   result = run_cli(script, ["--camera:perspective-camera"])
-  assert result["stdout"].strip() == "PerspectiveCamera"
+  assert result["stdout"].strip() == "PerspectiveCamera:60.0"
+
+  # Test 2: Field override using custom prefix
+  # When @proto.prefix("perspective") is used, CLI args should use the custom prefix
+  result = run_cli(script, ["--camera:perspective-camera", "--perspective.fov", "80"])
+  assert result["stdout"].strip() == "PerspectiveCamera:80.0"
+
+  # Test 3: Field override using custom prefix with positional class selection
+  result = run_cli(script, ["perspective-camera", "--perspective.fov", "90"])
+  assert result["stdout"].strip() == "PerspectiveCamera:90.0"
