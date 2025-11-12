@@ -48,6 +48,7 @@ Repository = "https://github.com/geyang/params-proto"
 [project.optional-dependencies]
 dev = [
     "pytest",
+    "pytest-xdist",  # Parallel test execution
     "restructuredtext-lint",
     "twine",
     "ruff",
@@ -128,3 +129,5 @@ python_files = "test_*.py"
 python_classes = "Test*"
 python_functions = "test_*"
 addopts = "--capture=sys"
+# For parallel execution, use: pytest -n auto
+# Note: Single-threaded is faster for this suite due to fast tests
