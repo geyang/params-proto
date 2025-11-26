@@ -2,16 +2,28 @@
 
 params-proto v3 provides multiple ways to override parameter values at runtime, from CLI arguments to programmatic assignment.
 
-## Overview
+## The Three Decorators
 
-Parameters can be overridden in multiple ways, with clear precedence rules:
+| Decorator | Purpose | CLI? | Instances |
+|-----------|---------|------|-----------|
+| `@proto.cli` | Script entry points | Yes, parses `--args` | Single function |
+| `@proto.prefix` | Namespaced config groups | Yes, via `--Prefix.key` | Singleton (global) |
+| `@proto` | Library/reusable config | No | Multiple instances |
 
-1. **Function kwargs** (highest priority)
-2. **proto.bind() context**
-3. **Direct assignment**
-4. **CLI arguments**
-5. **Environment variables**
-6. **Default values** (lowest priority)
+- **`@proto.cli`** = "I'm a runnable script" → auto-parses CLI args
+- **`@proto.prefix`** = "I'm a config namespace" → accessed as `Model.lr`, `Training.epochs`
+- **`@proto`** = "I'm just data" → no CLI magic, instantiate manually
+
+## Override Precedence
+
+Parameters can be overridden in multiple ways, with clear precedence (highest to lowest):
+
+1. **Function kwargs** - `train(lr=0.1)`
+2. **proto.bind() context** - `proto.bind(lr=0.01)`
+3. **Direct assignment** - `train.lr = 0.01`
+4. **CLI arguments** - `--lr 0.01`
+5. **Environment variables** - `LR=0.01`
+6. **Default values** - `lr: float = 0.001`
 
 ## Override Methods
 
@@ -71,7 +83,8 @@ train()  # Uses lr=0.01, batch_size=64
 **With classes:**
 ```python
 @proto
-class Params:    lr: float = 0.001
+class Params:
+    lr: float = 0.001
     batch_size: int = 32
 
 # Modify class defaults
@@ -79,7 +92,7 @@ Params.lr = 0.01
 Params.batch_size = 64
 
 # New instances use updated defaults
-config = Config()
+config = Params()
 print(config.lr)  # 0.01
 ```
 
@@ -161,8 +174,8 @@ main()  # Back to defaults or previous bindings
 # Set default
 train.lr = 0.001
 
-# Bind new value
-proto.bind(**{"train.lr": 0.01})
+# Bind new value (use direct keys for @proto.cli)
+proto.bind(lr=0.01)
 
 # Kwargs still take highest priority
 train(lr=0.1)  # Uses 0.1, not 0.01
@@ -190,8 +203,8 @@ def train(lr: float = 0.001, batch_size: int = 32):
 # 4. Direct assignment
 train.lr = 0.01
 
-# 5. proto.bind() context
-proto.bind(**{"train.lr": 0.01})
+# 5. proto.bind() context (direct keys for @proto.cli)
+proto.bind(lr=0.01)
 
 # 6. Function kwargs (highest priority)
 train(lr=0.1)  # This wins
@@ -231,8 +244,8 @@ Training.lr = 0.01
 
 main()
 
-# Method 2: CLI with prefixes
-# python main.py --Model.name vit --Training.lr 0.01
+# Method 2: CLI with prefixes (kebab-case)
+# python main.py --model.name vit --training.lr 0.01
 
 # Method 3: proto.bind() with dotted names
 proto.bind(**{
@@ -296,8 +309,8 @@ def test_training():
     assert result["lr"] == 0.01
     assert result["epochs"] == 10
 
-    # Test with proto.bind()
-    with proto.bind(**{"train.lr": 0.1}):
+    # Test with proto.bind() (direct keys for @proto.cli)
+    with proto.bind(lr=0.1):
         result = train()
         assert result["lr"] == 0.1
 ```
@@ -318,14 +331,11 @@ def train(
     # ... training code ...
     return accuracy
 
-# Parameter sweep
+# Parameter sweep (direct keys for @proto.cli)
 results = []
 for lr in [0.001, 0.01, 0.1]:
     for batch_size in [32, 64, 128]:
-        with proto.bind(**{
-            "train.lr": lr,
-            "train.batch_size": batch_size,
-        }):
+        with proto.bind(lr=lr, batch_size=batch_size):
             accuracy = train()
             results.append({
                 "lr": lr,
@@ -402,8 +412,8 @@ def load_config(config_file: str):
     with open(config_file) as f:
         config = json.load(f)
 
-    # Apply configuration using proto.bind()
-    proto.bind(**{f"train.{k}": v for k, v in config.items()})
+    # Apply configuration using proto.bind() (direct keys for @proto.cli)
+    proto.bind(**config)
 
 # Load from JSON file
 # config.json: {"lr": 0.01, "batch_size": 64, "epochs": 200}
@@ -430,8 +440,8 @@ def train(
 train(lr=0.01, batch_size=64)
 # lr=0.01, batch_size=64, epochs=100 (default), warmup_steps=1000 (default)
 
-# Using proto.bind()
-with proto.bind(**{"train.lr": 0.01}):
+# Using proto.bind() (direct keys for @proto.cli)
+with proto.bind(lr=0.01):
     train()  # Only lr overridden
 ```
 
@@ -448,12 +458,12 @@ def train(lr: float = 0.001):
 # Default behavior
 train()  # lr=0.001
 
-# Scoped override
-with proto.bind(**{"train.lr": 0.01}):
+# Scoped override (direct keys for @proto.cli)
+with proto.bind(lr=0.01):
     train()  # lr=0.01
 
     # Nested contexts
-    with proto.bind(**{"train.lr": 0.1}):
+    with proto.bind(lr=0.1):
         train()  # lr=0.1 (inner context wins)
 
     train()  # lr=0.01 (back to outer context)
@@ -505,7 +515,7 @@ if __name__ == "__main__":
 ```python
 # ✓ Good: Clean testing with context managers
 def test_train():
-    with proto.bind(**{"train.lr": 0.01}):
+    with proto.bind(lr=0.01):  # direct keys for @proto.cli
         result = train()
         assert result["lr"] == 0.01
 ```
@@ -536,7 +546,7 @@ def train(lr: float = 0.001):
     Programmatic:
         train(lr=0.01)
         # or
-        proto.bind(**{"train.lr": 0.01})
+        proto.bind(lr=0.01)  # direct keys for @proto.cli
         train()
     """
     pass
@@ -591,8 +601,8 @@ if __name__ == "__main__":
     # Option 2: Use kwargs (highest priority)
     train(lr=0.01)  # Always works
 
-    # Option 3: Use proto.bind()
-    proto.bind(**{"train.lr": 0.01})
+    # Option 3: Use proto.bind() (direct keys for @proto.cli)
+    proto.bind(lr=0.01)
     train()
 ```
 
