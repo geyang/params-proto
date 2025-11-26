@@ -43,24 +43,22 @@ if __name__ == "__main__":
 
 ## Overview: Three Decorators
 
-params-proto v3 provides three decorators for different use cases:
+params-proto v3 provides three decorators in two categories:
 
-1. **`@proto.cli`** - Creates a CLI from a function (what we just used)
-   - For script entry points and standalone tools
-   - Automatically parses command-line arguments
-   - Perfect for simple to medium complexity CLIs
+### Config Decorators (define parameter schemas)
 
-2. **`@proto.prefix`** - Creates namespaced configuration groups
-   - For organizing configs into logical modules (`--Model.name`, `--Training.lr`)
-   - Singleton pattern - one global instance
-   - Great for composing configurations from multiple locations
+| Decorator | Scope | Use Case |
+|-----------|-------|----------|
+| `@proto` | Multiple instances | Library code, reusable components |
+| `@proto.prefix` | Singleton (global) | Namespaced config groups (`Model.lr`, `Training.epochs`) |
 
-3. **`@proto`** - Basic configuration without CLI
-   - For library code and reusable components
-   - No automatic CLI parsing
-   - Can create multiple instances
+### App Decorator (creates CLI entry point)
 
-**You'll mostly use `@proto.cli` and `@proto.prefix` together** for building structured CLI applications.
+| Decorator | Use Case |
+|-----------|----------|
+| `@proto.cli` | Script entry points—wraps a function or class to parse CLI args |
+
+**Typical pattern:** Define configs with `@proto`/`@proto.prefix`, then create an entry point with `@proto.cli`.
 
 Run it:
 ```bash

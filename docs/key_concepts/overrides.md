@@ -4,15 +4,20 @@ params-proto v3 provides multiple ways to override parameter values at runtime, 
 
 ## The Three Decorators
 
-| Decorator | Purpose | CLI? | Instances |
-|-----------|---------|------|-----------|
-| `@proto.cli` | Script entry points | Yes, parses `--args` | Single function |
-| `@proto.prefix` | Namespaced config groups | Yes, via `--Prefix.key` | Singleton (global) |
-| `@proto` | Library/reusable config | No | Multiple instances |
+**Config decorators** define parameter schemas:
 
-- **`@proto.cli`** = "I'm a runnable script" → auto-parses CLI args
-- **`@proto.prefix`** = "I'm a config namespace" → accessed as `Model.lr`, `Training.epochs`
-- **`@proto`** = "I'm just data" → no CLI magic, instantiate manually
+| Decorator | Scope | Use Case |
+|-----------|-------|----------|
+| `@proto` | Multiple instances | Library code, reusable components |
+| `@proto.prefix` | Singleton (global) | Namespaced config groups (`Model.lr`, `Training.epochs`) |
+
+**App decorator** creates CLI entry point:
+
+| Decorator | Use Case |
+|-----------|----------|
+| `@proto.cli` | Wraps a function or class to parse CLI args |
+
+**Typical pattern:** Define configs with `@proto`/`@proto.prefix`, then create an entry point with `@proto.cli`.
 
 ## Override Precedence
 
