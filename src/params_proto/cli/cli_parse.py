@@ -298,13 +298,12 @@ def parse_cli_args(wrapper) -> Dict[str, Any]:
       if param_name not in result:
         result[param_name] = value
 
-  # Fill in defaults for unset optional parameters
+  # Check for missing required parameters (but don't fill in defaults)
+  # Defaults are handled by the caller to preserve bind context priority
   for param_name, param_info in wrapper._params.items():
     if param_name not in result and param_name not in union_selections:
       if param_info.get("required", False):
         raise SystemExit(f"error: the following argument is required: {param_name}")
-      else:
-        result[param_name] = param_info.get("default")
 
   # Apply prefix values to singletons BEFORE instantiating Union classes
   # This ensures that singleton overrides are available when creating Union instances
