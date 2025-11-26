@@ -130,12 +130,11 @@ def train(
   print(f"Training with lr={lr}, batch_size={batch_size}, n_epochs={n_epochs}")
 
 
-dep = {"train.lr": 0.01, "train.batch_size": 256, "train.n_epochs": 10}
+proto.bind(lr=0.01, batch_size=256, n_epochs=10)
 
-proto.bind(**dep)
-
-assert train.lr == 0.01, "this is now overriden."
-assert train.batch_size == 256, "this is now overriden."
+assert train.lr == 0.01, "this is now overridden."
+assert train.batch_size == 256, "this is now overridden."
+assert train.n_epochs == 10, "this is now overridden."
 ```
 
 - Track what parameters exist
