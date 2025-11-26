@@ -255,6 +255,21 @@ class ProtoWrapper:
     except AttributeError:
       pass
 
+    # Check bind context (from proto.bind())
+    try:
+      func_name = object.__getattribute__(self, "_name")
+      # Check for prefixed key like "train.lr"
+      prefixed_key = f"{func_name}.{name}"
+      if prefixed_key in _BIND_CONTEXT:
+        return _BIND_CONTEXT[prefixed_key]
+      # Check for direct key (non-prefixed)
+      if name in _BIND_CONTEXT and "." not in name:
+        params = object.__getattribute__(self, "_params")
+        if name in params:
+          return _BIND_CONTEXT[name]
+    except AttributeError:
+      pass
+
     # Try to get default value
     try:
       defaults = object.__getattribute__(self, "_defaults")
