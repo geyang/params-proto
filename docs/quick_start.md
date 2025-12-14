@@ -3,12 +3,12 @@
 Get started with params-proto v3 in 10 minutes!
 
 ```bash
-pip install params-proto
+pip install params-proto==3.0.0-rc4
 ```
 
 Or with uv:
 ```bash
-uv add params-proto
+uv add params-proto==3.0.0-rc4
 ```
 
 ## Your First Proto Function CLI

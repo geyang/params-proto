@@ -372,3 +372,74 @@ def test_proto_envvar_explicit_dtype():
   finally:
     del os.environ["WORKERS"]
     del os.environ["THRESHOLD"]
+
+
+def test_proto_envvar_class_based():
+  """Test EnvVar resolution works for proto-decorated classes (not just functions)."""
+  import os
+
+  from params_proto import EnvVar, proto
+
+  os.environ["AVP_IP"] = "192.168.1.1"
+  os.environ["CAMERA_PATH"] = "/dev/video0"
+
+  try:
+
+    @proto.prefix
+    class Connection:
+      ip: str = EnvVar @ "AVP_IP" | "10.11.106.153"
+      port: int = EnvVar @ "PORT" | 5000  # Not set, uses default
+
+    @proto.prefix
+    class Camera:
+      path: str = EnvVar @ "CAMERA_PATH" | "/dev/video1"
+      fps: int = 30  # Regular default (no env var)
+
+    # Test direct class attribute access - should return resolved values
+    assert Connection.ip == "192.168.1.1", f"Expected env value, got {Connection.ip}"
+    assert Connection.port == 5000, f"Expected default, got {Connection.port}"
+    assert Camera.path == "/dev/video0", f"Expected env value, got {Camera.path}"
+    assert Camera.fps == 30, f"Expected default, got {Camera.fps}"
+
+    # Verify types
+    assert isinstance(Connection.ip, str), "ip should be str"
+    assert isinstance(Connection.port, int), "port should be int"
+    assert isinstance(Camera.path, str), "path should be str"
+    assert isinstance(Camera.fps, int), "fps should be int"
+
+  finally:
+    del os.environ["AVP_IP"]
+    del os.environ["CAMERA_PATH"]
+
+
+def test_proto_envvar_class_with_type_conversion():
+  """Test EnvVar type conversion works for proto-decorated classes."""
+  import os
+
+  from params_proto import EnvVar, proto
+
+  os.environ["PORT"] = "8080"
+  os.environ["DEBUG"] = "true"
+  os.environ["RATIO"] = "0.75"
+
+  try:
+
+    @proto.prefix
+    class ServerConfig:
+      port: int = EnvVar @ "PORT" | 3000  # String "8080" → int 8080
+      debug: bool = EnvVar @ "DEBUG" | False  # String "true" → bool True
+      ratio: float = EnvVar @ "RATIO" | 0.5  # String "0.75" → float 0.75
+
+    assert ServerConfig.port == 8080, f"Expected 8080, got {ServerConfig.port}"
+    assert ServerConfig.debug is True, f"Expected True, got {ServerConfig.debug}"
+    assert ServerConfig.ratio == 0.75, f"Expected 0.75, got {ServerConfig.ratio}"
+
+    # Verify types
+    assert isinstance(ServerConfig.port, int), "port should be int"
+    assert isinstance(ServerConfig.debug, bool), "debug should be bool"
+    assert isinstance(ServerConfig.ratio, float), "ratio should be float"
+
+  finally:
+    del os.environ["PORT"]
+    del os.environ["DEBUG"]
+    del os.environ["RATIO"]
