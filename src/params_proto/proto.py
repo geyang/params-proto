@@ -622,8 +622,25 @@ def proto(
       for name in annotations.keys():
         if hasattr(obj, name):
           value = getattr(obj, name)
-          # Skip methods
-          if not callable(value):
+          # Check for EnvVar first (before callable check, since _EnvVar has __call__)
+          is_env_var = (
+            hasattr(value, "__class__") and value.__class__.__name__ == "_EnvVar"
+          )
+
+          if is_env_var:
+            # Resolve env var at decoration time
+            env_value = value.get()
+            annotation = annotations.get(name, str)
+
+            # Apply type conversion based on dtype (if provided) or annotation
+            if env_value is not None:
+              target_type = value.dtype if value.dtype is not None else annotation
+              resolved_value = _convert_type(env_value, target_type)
+            else:
+              resolved_value = value.default  # Use the EnvVar's default value
+            defaults[name] = resolved_value
+          elif not callable(value):
+            # Skip methods, but include regular values
             defaults[name] = value
 
       # Handle existing metaclass

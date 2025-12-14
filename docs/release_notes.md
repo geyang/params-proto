@@ -2,6 +2,17 @@
 
 This page contains the release history and changelog for params-proto.
 
+## Version 3.0.0-rc4 (2025-12-14)
+
+### 🐛 Bug Fixes
+
+- **EnvVar Class Resolution**: Fixed EnvVar not resolving at import time for class-based configs.
+  Previously, accessing `Config.ip` on a `@proto.prefix` class with `ip: str = EnvVar @ "VAR" | "default"`
+  would return the `EnvVar` object instead of the resolved value. Now EnvVar values are resolved at
+  decoration time for both functions and classes.
+
+---
+
 ## Version 3.0.0 (Upcoming)
 
 ### 🎉 Major Release: Complete v3 Redesign

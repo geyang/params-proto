@@ -13,8 +13,8 @@ messages.
 Here is a quick example: first install params-proto using uv or pip
 
 ```shell
-uv add params-proto  # or
-pip install params-proto
+uv add params-proto==3.0.0-rc4  # or
+pip install params-proto==3.0.0-rc4
 ```
 
 Now you can convert this function into a CLI program:
