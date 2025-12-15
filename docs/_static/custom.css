@@ -1,0 +1,20 @@
+/* Remove table borders for cleaner look */
+table {
+    border-collapse: collapse;
+    border: none !important;
+}
+
+table th,
+table td {
+    border: none !important;
+    border-bottom: 1px solid var(--color-table-border) !important;
+    padding: 0.5rem 1rem;
+}
+
+table thead th {
+    border-bottom: 2px solid var(--color-table-border) !important;
+}
+
+table tbody tr:last-child td {
+    border-bottom: none !important;
+}

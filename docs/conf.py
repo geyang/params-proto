@@ -55,8 +55,9 @@ def setup(app):
     app.add_config_value("REPLACEMENT_LIST", {}, True)
     app.connect("source-read", versioning)
 
-    # Add ANSI color CSS
+    # Add custom CSS files
     app.add_css_file("ansi.css")
+    app.add_css_file("custom.css")
 
 
 templates_path = ["_templates"]
