@@ -22,7 +22,7 @@ If you're using Claude Code in a project that depends on params-proto, point to 
 You can reference the skill files from the params-proto repository:
 
 ```
-.claude/skills/params-proto/
+skill/
 ├── index.md              # Overview and navigation
 ├── quick-reference.md    # Cheat sheet
 ├── api/
@@ -42,7 +42,7 @@ You can reference the skill files from the params-proto repository:
 You can reference the skill files directly from GitHub:
 
 ```
-https://raw.githubusercontent.com/geyang/params-proto/main/.claude/skills/params-proto/index.md
+https://raw.githubusercontent.com/geyang/params-proto/main/skill/index.md
 ```
 
 ## Skill Contents
