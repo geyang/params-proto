@@ -278,6 +278,7 @@ The Quick Start covers the basics. For deeper understanding, see:
 - **[Hyperparameter Sweeps](key_concepts/hyperparameter_sweeps.md)** - Declarative parameter sweeps with Sweep
 - **[Parameter Iterators (piter)](key_concepts/piter.md)** - Lightweight, composable sweeps with operators
 - **[ANSI Formatting](key_concepts/ansi_formatting.md)** - Terminal colors and formatting
+- **[Claude Skill](key_concepts/claude_skill.md)** - AI assistance for params-proto development
 
 ## Documentation Contents
 
@@ -304,6 +305,7 @@ Advanced Patterns <key_concepts/advanced_patterns>
 Hyperparameter Sweeps <key_concepts/hyperparameter_sweeps>
 Parameter Iterators (piter) <key_concepts/piter>
 ANSI Formatting <key_concepts/ansi_formatting>
+Claude Skill <key_concepts/claude_skill>
 ```
 
 ```{toctree}
