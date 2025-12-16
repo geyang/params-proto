@@ -178,15 +178,15 @@ def test_proto_cli_bool_flags():
   # Note: --no-cuda is shown because cuda defaults to True,
   # so the user would want --no-cuda to disable it
   expected = dedent("""
-  usage: train [-h] [--verbose] [--no-cuda] [--debug]
+  usage: train [-h] [--verbose BOOL] [--no-cuda BOOL] [--debug BOOL]
 
   Train model with boolean configuration flags.
 
   options:
     -h, --help           show this help message and exit
-    --verbose            Enable verbose output (default: False)
-    --no-cuda            Use CUDA acceleration (default: True)
-    --debug              Debug (default: False)
+    --verbose BOOL       Enable verbose output (default: False)
+    --no-cuda BOOL       Use CUDA acceleration (default: True)
+    --debug BOOL         Debug (default: False)
   """)
   assert train.__help_str__ == expected, "help string is not correct"
 

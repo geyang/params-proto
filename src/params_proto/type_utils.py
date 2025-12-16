@@ -59,7 +59,7 @@ def _get_type_name(annotation: Any) -> str:
   elif annotation == str or annotation is str:
     return "STR"
   elif annotation == bool or annotation is bool:
-    return ""  # Boolean flags don't show type
+    return "BOOL"
   elif inspect.isclass(annotation) and issubclass(annotation, Enum):
     return f"{{{','.join(e.name for e in annotation)}}}"
   else:

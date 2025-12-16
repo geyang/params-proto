@@ -2,6 +2,19 @@
 
 This page contains the release history and changelog for params-proto.
 
+## Version 3.0.0-rc6 (2025-12-16)
+
+### 🐛 Bug Fixes
+
+- **Boolean Type Display**: Boolean flags now show `BOOL` type in help text for consistency
+  with other types (INT, STR, FLOAT).
+  ```
+  --verbose BOOL       Enable verbose output (default: False)
+  --no-cuda BOOL       Use CUDA acceleration (default: True)
+  ```
+
+---
+
 ## Version 3.0.0-rc5 (2025-12-16)
 
 ### 🐛 Bug Fixes
@@ -18,7 +31,7 @@ This page contains the release history and changelog for params-proto.
   Now:        `--no-cuda         Use CUDA acceleration (default: True)`
 
 - **ANSI Help Colorization**: Fixed regex that incorrectly colored the first word of boolean
-  flag descriptions as a type. Now only uppercase type names (INT, STR, FLOAT) and enum choices
+  flag descriptions as a type. Now only uppercase type names (INT, STR, FLOAT, BOOL) and enum choices
   (`{A,B,C}`) are colorized as types.
 
 ---

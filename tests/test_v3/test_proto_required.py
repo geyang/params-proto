@@ -216,15 +216,15 @@ def test_required_boolean_flag():
     pass
 
   expected = dedent("""
-  usage: build [-h] [--enable-optimizations] [--verbose]
+  usage: build [-h] [--enable-optimizations BOOL] [--verbose BOOL]
 
   Build the project.
 
   options:
     -h, --help           show this help message and exit
-    --enable-optimizations
+    --enable-optimizations BOOL
                          Enable compiler optimizations (required)
-    --verbose            Verbose output (default: False)
+    --verbose BOOL       Verbose output (default: False)
   """)
 
   assert build.__help_str__ == expected
