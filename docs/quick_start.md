@@ -7,8 +7,23 @@ pip install params-proto=={VERSION}
 ```
 
 Or with uv:
+
 ```bash
 uv add params-proto=={VERSION}
+```
+
+## For AI Assistants
+
+We provide a Claude skill for params-proto. To use it, either type in Claude Code:
+
+```
+# add https://raw.githubusercontent.com/geyang/params-proto/main/skill/index.md as a skill
+```
+
+Or add this import to your project's `CLAUDE.md` file:
+
+```markdown
+@import https://raw.githubusercontent.com/geyang/params-proto/main/skill/index.md
 ```
 
 ## Your First Proto Function CLI
@@ -20,17 +35,19 @@ Create `train.py`:
 ```python
 from params_proto import proto
 
+
 @proto.cli
 def train(
-    lr: float = 0.001,  # Learning rate
-    batch_size: int = 32,  # Training batch size
-    epochs: int = 100,  # Number of training epochs
+  lr: float = 0.001,  # Learning rate
+  batch_size: int = 32,  # Training batch size
+  epochs: int = 100,  # Number of training epochs
 ):
-    """Train a neural network on CIFAR-10."""
-    print(f"Training: {epochs} epochs, lr={lr}, batch_size={batch_size}")
+  """Train a neural network on CIFAR-10."""
+  print(f"Training: {epochs} epochs, lr={lr}, batch_size={batch_size}")
+
 
 if __name__ == "__main__":
-    train()
+  train()
 ```
 
 **That's it!** No argparse boilerplate. Just type hints and inline comments.
@@ -47,20 +64,21 @@ params-proto v3 provides three decorators in two categories:
 
 ### Config Decorators (define parameter schemas)
 
-| Decorator | Scope | Use Case |
-|-----------|-------|----------|
-| `@proto` | Multiple instances | Library code, reusable components |
+| Decorator       | Scope              | Use Case                                                 |
+|-----------------|--------------------|----------------------------------------------------------|
+| `@proto`        | Multiple instances | Library code, reusable components                        |
 | `@proto.prefix` | Singleton (global) | Namespaced config groups (`Model.lr`, `Training.epochs`) |
 
 ### App Decorator (creates CLI entry point)
 
-| Decorator | Use Case |
-|-----------|----------|
+| Decorator    | Use Case                                                        |
+|--------------|-----------------------------------------------------------------|
 | `@proto.cli` | Script entry points—wraps a function or class to parse CLI args |
 
 **Typical pattern:** Define configs with `@proto`/`@proto.prefix`, then create an entry point with `@proto.cli`.
 
 Run it:
+
 ```bash
 $ python train.py --help
 ```
@@ -114,22 +132,23 @@ from params_proto import proto
 
 
 @proto
-class Params::
-  """Training configuration."""
+class Params: :
 
-  # Model settings
-  model: str = "resnet50"  # Model architecture
-  pretrained: bool = True  # Use pretrained weights
 
-  # Training settings
-  lr: float = 0.001  # Learning rate
-  batch_size: int = 32  # Batch size
-  epochs: int = 100  # Number of epochs
+"""Training configuration."""
 
-  # Data settings
-  data_dir: str = "./data"  # Data directory
-  num_workers: int = 4  # Number of data loading workers
+# Model settings
+model: str = "resnet50"  # Model architecture
+pretrained: bool = True  # Use pretrained weights
 
+# Training settings
+lr: float = 0.001  # Learning rate
+batch_size: int = 32  # Batch size
+epochs: int = 100  # Number of epochs
+
+# Data settings
+data_dir: str = "./data"  # Data directory
+num_workers: int = 4  # Number of data loading workers
 
 # Access as class attributes
 print(f"Training {Params.model} with lr={Params.lr}")
@@ -143,46 +162,52 @@ print(f"Batch size: {config.batch_size}")
 
 ## Composing Configurations from Multiple Locations
 
-For larger projects, split configuration into logical groups using `@proto.prefix`. This creates namespaced parameters like `--model.name` and `--training.lr`.
+For larger projects, split configuration into logical groups using `@proto.prefix`. This creates namespaced parameters
+like `--model.name` and `--training.lr`.
 
 Create `train_rl.py`:
 
 ```python
 from params_proto import proto
 
+
 @proto.prefix
 class Model:
-    """Model configuration."""
-    name: str = "resnet50"  # Architecture name
-    pretrained: bool = True  # Use pretrained weights
-    dropout: float = 0.5  # Dropout rate
+  """Model configuration."""
+  name: str = "resnet50"  # Architecture name
+  pretrained: bool = True  # Use pretrained weights
+  dropout: float = 0.5  # Dropout rate
+
 
 @proto.prefix
 class Data:
-    """Data configuration."""
-    dataset: str = "cifar10"  # Dataset name
-    data_dir: str = "./data"  # Data directory
-    num_workers: int = 4  # Data loading workers
+  """Data configuration."""
+  dataset: str = "cifar10"  # Dataset name
+  data_dir: str = "./data"  # Data directory
+  num_workers: int = 4  # Data loading workers
+
 
 @proto.prefix
 class Training:
-    """Training hyperparameters."""
-    lr: float = 0.001  # Learning rate
-    batch_size: int = 32  # Batch size
-    epochs: int = 100  # Number of epochs
+  """Training hyperparameters."""
+  lr: float = 0.001  # Learning rate
+  batch_size: int = 32  # Batch size
+  epochs: int = 100  # Number of epochs
+
 
 @proto.cli
 def main(
-    seed: int = 42,  # Random seed
-    device: str = "cuda",  # Device to use (cuda/cpu)
+  seed: int = 42,  # Random seed
+  device: str = "cuda",  # Device to use (cuda/cpu)
 ):
-    """Train a model on a dataset."""
-    print(f"Training {Model.name} on {Data.dataset}")
-    print(f"  LR: {Training.lr}, Batch size: {Training.batch_size}")
-    print(f"  Device: {device}, Seed: {seed}")
+  """Train a model on a dataset."""
+  print(f"Training {Model.name} on {Data.dataset}")
+  print(f"  LR: {Training.lr}, Batch size: {Training.batch_size}")
+  print(f"  Device: {device}, Seed: {seed}")
+
 
 if __name__ == "__main__":
-    main()
+  main()
 ```
 
 Notice how parameters are organized into groups! Run it:
@@ -241,17 +266,18 @@ With custom arguments:
   Device: cuda, Seed: 123
 ```
 
-**Prefixes create organization**: Each `@proto.prefix` class becomes a group in the help text and uses dotted notation on the CLI.
+**Prefixes create organization**: Each `@proto.prefix` class becomes a group in the help text and uses dotted notation
+on the CLI.
 
 ## Summary: Three Patterns
 
 You've learned three core patterns in 10 minutes:
 
-| Pattern | Decorator | Use Case | Access Pattern |
-|---------|-----------|----------|----------------|
-| **Functions** | `@proto.cli` | Simple CLIs, scripts | Function parameters |
-| **Classes** | `@proto` | Organized configs | Class attributes |
-| **Prefixes** | `@proto.prefix` | Multi-namespace configs | Namespaced (e.g., `Model.name`) |
+| Pattern       | Decorator       | Use Case                | Access Pattern                  |
+|---------------|-----------------|-------------------------|---------------------------------|
+| **Functions** | `@proto.cli`    | Simple CLIs, scripts    | Function parameters             |
+| **Classes**   | `@proto`        | Organized configs       | Class attributes                |
+| **Prefixes**  | `@proto.prefix` | Multi-namespace configs | Namespaced (e.g., `Model.name`) |
 
 ## Quick Tips
 
@@ -259,7 +285,7 @@ You've learned three core patterns in 10 minutes:
 
 ```python
 lr: float = 0.001  # ✅ Required
-lr = 0.001         # ❌ Won't work
+lr = 0.001  # ❌ Won't work
 ```
 
 **Inline comments become help text**: Write comments after parameters.
@@ -272,14 +298,16 @@ lr: float = 0.001  # Learning rate  ← This appears in --help
 
 ```python
 # CLI
-$ python train.py --lr 0.01
+$ python
+train.py - -lr
+0.01
 
 # Direct assignment
 Training.lr = 0.01
 
 # Context manager
 with proto.bind(lr=0.01):
-    train()
+  train()
 ```
 
 ## What's Next?

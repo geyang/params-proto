@@ -1,25 +1,18 @@
 # Claude Skill
 
+A Claude skill is a collection of documentation files that Claude Code and other Claude-based tools can use to provide
+better assistance when working with a library or codebase.
+
 params-proto includes a Claude skill that helps AI assistants work with the library effectively.
 
-## What is a Claude Skill?
+## Skill Structure
 
-A Claude skill is a collection of documentation files that Claude Code and other Claude-based tools can use to provide better assistance when working with a library or codebase.
+The skill provides:
 
-## Using the Skill
-
-### In Claude Code
-
-If you're using Claude Code in a project that depends on params-proto, point to the skill directory:
-
-```bash
-# In your project's .claude/settings.json or CLAUDE.md
-# Reference the skill from the installed package or cloned repo
-```
-
-### Importing the Skill
-
-You can reference the skill files from the params-proto repository:
+1. **Quick Reference** - Cheat sheet for common patterns and syntax
+2. **API Documentation** - Detailed docs for each decorator
+3. **Feature Guides** - Help generation, environment variables, sweeps
+4. **Examples** - Common patterns for ML training, multi-namespace configs
 
 ```
 skill/
@@ -37,23 +30,29 @@ skill/
     └── patterns.md       # Common patterns
 ```
 
-### Via Raw GitHub URL
+## Using the Skill
 
-You can reference the skill files directly from GitHub:
+### Option 1: Add via Claude Code (Recommended)
+
+Type in Claude Code:
 
 ```
-https://raw.githubusercontent.com/geyang/params-proto/main/skill/index.md
+# add https://raw.githubusercontent.com/geyang/params-proto/main/skill/index.md as a skill
 ```
 
-## Skill Contents
+### Option 2: Import in CLAUDE.md
 
-The skill provides:
+Add this import to your project's `CLAUDE.md` file:
 
-1. **Quick Reference** - Cheat sheet for common patterns and syntax
-2. **API Documentation** - Detailed docs for each decorator
-3. **Feature Guides** - Help generation, environment variables, sweeps
-4. **Examples** - Common patterns for ML training, multi-namespace configs
+```markdown
+@import https://raw.githubusercontent.com/geyang/params-proto/main/skill/index.md
+```
+
+### Option 3: Copy Locally
+
+Copy the `skill/` folder to your project's `.claude/skills/params-proto/` directory.
 
 ## Contributing to the Skill
 
-The skill files are located in `.claude/skills/params-proto/`. PRs welcome to improve the documentation!
+The skill files are located in `skill/` and are automatically generated from the documentation in `docs/`.
+Feel free to contribute by filing an issue! 
