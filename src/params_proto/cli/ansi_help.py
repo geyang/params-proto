@@ -170,7 +170,9 @@ def colorize_help(help_str: str, width: Optional[int] = None) -> str:
     if re.match(r'^\s+--', line):
       # Parse the option line: "  --option TYPE     description..."
       # Match: (indent)(--option-name)( TYPE)?( spaces)(description)
-      match = re.match(r'^(\s+)(--\S+)(\s+\S+)?(\s+)(.*)$', line)
+      # TYPE must be uppercase (INT, STR, FLOAT, VALUE) or enum choices ({A,B,C})
+      # to avoid mistakenly matching first description word as type
+      match = re.match(r'^(\s+)(--\S+)(\s+(?:[A-Z]+|\{[^}]+\}))?(\s+)(.*)$', line)
 
       if match:
         indent_str = match.group(1)  # Leading spaces

@@ -2,6 +2,27 @@
 
 This page contains the release history and changelog for params-proto.
 
+## Version 3.0.0-rc5 (2025-12-16)
+
+### 🐛 Bug Fixes
+
+- **Boolean Flag Help Text**: Fixed help text for boolean flags with `default=True`.
+  Previously, `--flag` was shown in help even when the flag defaulted to True (making `--flag` a no-op).
+  Now shows `--no-flag` for booleans defaulting to True, making it clear how to disable the feature.
+  ```python
+  @proto.cli
+  def train(cuda: bool = True):  # Use CUDA acceleration
+      ...
+  ```
+  Previously: `--cuda            Use CUDA acceleration (default: True)`
+  Now:        `--no-cuda         Use CUDA acceleration (default: True)`
+
+- **ANSI Help Colorization**: Fixed regex that incorrectly colored the first word of boolean
+  flag descriptions as a type. Now only uppercase type names (INT, STR, FLOAT) and enum choices
+  (`{A,B,C}`) are colorized as types.
+
+---
+
 ## Version 3.0.0-rc4 (2025-12-14)
 
 ### 🐛 Bug Fixes

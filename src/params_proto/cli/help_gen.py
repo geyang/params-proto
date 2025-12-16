@@ -66,8 +66,14 @@ def _generate_help_for_function(wrapper: "ProtoWrapper") -> str:
   # Build usage line with actual arguments
   usage_parts = [f"\nusage: {script_name}", "[-h]"]
   for name, param_info in wrapper._params.items():
-    arg_name = f"--{name.replace('_', '-')}"
+    kebab_name = name.replace('_', '-')
     type_name = _get_type_name(param_info["annotation"])
+    # For booleans defaulting to True, show --no-flag (to disable)
+    # For booleans defaulting to False, show --flag (to enable)
+    if param_info["annotation"] == bool and wrapper._defaults.get(name) is True:
+      arg_name = f"--no-{kebab_name}"
+    else:
+      arg_name = f"--{kebab_name}"
     usage_parts.append(f"[{arg_name} {type_name}]" if type_name else f"[{arg_name}]")
 
   # Add [OPTIONS] if there are prefixed singletons
@@ -98,11 +104,16 @@ def _generate_help_for_function(wrapper: "ProtoWrapper") -> str:
 
   # Add parameters
   for name, param_info in wrapper._params.items():
-    arg_name = f"--{name.replace('_', '-')}"
+    kebab_name = name.replace('_', '-')
     type_name = _get_type_name(param_info["annotation"])
     default = wrapper._defaults.get(name)
     is_required = param_info.get("required", False)
     help_text = wrapper._field_docs.get(name, "")
+    # For booleans defaulting to True, show --no-flag (to disable)
+    if param_info["annotation"] == bool and default is True:
+      arg_name = f"--no-{kebab_name}"
+    else:
+      arg_name = f"--{kebab_name}"
 
     # Auto-generate description if missing
     if not help_text:

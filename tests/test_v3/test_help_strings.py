@@ -158,7 +158,12 @@ def test_proto_cli_hierarchy():
 
 
 def test_proto_cli_bool_flags():
-  """Test CLI help output for boolean flags."""
+  """Test CLI help output for boolean flags.
+
+  Boolean flags should show the form that changes the default:
+  - default=False: show --flag (to enable)
+  - default=True: show --no-flag (to disable)
+  """
   from params_proto import proto
 
   @proto.cli(prog="train")
@@ -170,15 +175,17 @@ def test_proto_cli_bool_flags():
     """Train model with boolean configuration flags."""
     print(f"verbose={verbose}, cuda={cuda}")
 
+  # Note: --no-cuda is shown because cuda defaults to True,
+  # so the user would want --no-cuda to disable it
   expected = dedent("""
-  usage: train [-h] [--verbose] [--cuda] [--debug]
+  usage: train [-h] [--verbose] [--no-cuda] [--debug]
 
   Train model with boolean configuration flags.
 
   options:
     -h, --help           show this help message and exit
     --verbose            Enable verbose output (default: False)
-    --cuda               Use CUDA acceleration (default: True)
+    --no-cuda            Use CUDA acceleration (default: True)
     --debug              Debug (default: False)
   """)
   assert train.__help_str__ == expected, "help string is not correct"
