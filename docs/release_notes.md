@@ -2,6 +2,19 @@
 
 This page contains the release history and changelog for params-proto.
 
+## Version 3.0.0-rc7 (2025-12-16)
+
+### ✨ Features
+
+- **Claude Skill**: Added hierarchical Claude skill documentation in `skill/` directory.
+  Provides AI assistants with comprehensive params-proto knowledge including:
+  - Quick reference and cheat sheet
+  - API documentation for all decorators
+  - Feature guides (help generation, environment variables, sweeps)
+  - Common patterns and examples
+
+---
+
 ## Version 3.0.0-rc6 (2025-12-16)
 
 ### 🐛 Bug Fixes
