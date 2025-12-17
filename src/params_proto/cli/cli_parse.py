@@ -62,7 +62,10 @@ def _match_class_by_name(name: str, classes: list) -> type | None:
   - PascalCase (e.g., 'PerspectiveCamera')
   - lowercase (e.g., 'perspectivecamera')
   - kebab-case (e.g., 'perspective-camera')
+  - Abbreviated first word (e.g., 'perspective' → PerspectiveCamera)
   """
+  import re
+
   normalized = _normalize_class_name(name)
 
   for cls in classes:
@@ -72,6 +75,12 @@ def _match_class_by_name(name: str, classes: list) -> type | None:
 
     # Try normalized match
     if _normalize_class_name(cls.__name__) == normalized:
+      return cls
+
+    # Try abbreviated match: 'perspective' should match 'PerspectiveCamera'
+    # Extract first word from PascalCase class name
+    words = re.findall(r'[A-Z][a-z]*', cls.__name__)
+    if words and words[0].lower() == name.lower():
       return cls
 
   return None

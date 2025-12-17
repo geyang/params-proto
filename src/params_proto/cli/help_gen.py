@@ -272,3 +272,107 @@ def _generate_help_for_function(wrapper: "ProtoWrapper") -> str:
 
   lines.append("")
   return "\n".join(lines)
+
+
+def _generate_help_for_subcommand(subcommand_class: type, script_name: str) -> str:
+  """Generate help text for a Union subcommand class (e.g., PerspectiveCamera).
+
+  Args:
+      subcommand_class: The dataclass/class that represents the subcommand
+      script_name: The script name to show in usage
+
+  Returns:
+      Help text string
+  """
+  from params_proto.proto import _pascal_to_kebab
+
+  lines = []
+  class_name = subcommand_class.__name__
+  kebab_name = _pascal_to_kebab(class_name)
+
+  # Usage line
+  lines.append(f"\nusage: {script_name} {kebab_name} [-h] [OPTIONS]")
+  lines.append("")
+
+  # Description from docstring
+  if subcommand_class.__doc__:
+    lines.append(subcommand_class.__doc__.strip())
+    lines.append("")
+
+  # Options section
+  lines.append("options:")
+  lines.append("  -h, --help           show this help message and exit")
+
+  # Get annotations and defaults
+  annotations = getattr(subcommand_class, "__annotations__", {})
+
+  # Get defaults from class attributes or dataclass fields
+  defaults = {}
+  if hasattr(subcommand_class, "__dataclass_fields__"):
+    # Dataclass
+    for field_name, field in subcommand_class.__dataclass_fields__.items():
+      if field.default is not field.default_factory:
+        defaults[field_name] = field.default
+      elif field.default_factory is not field.default_factory:
+        defaults[field_name] = field.default_factory()
+  else:
+    # Regular class - get defaults from class dict
+    for name in annotations:
+      if hasattr(subcommand_class, name):
+        defaults[name] = getattr(subcommand_class, name)
+
+  # Get field docs from source (inline comments)
+  field_docs = {}
+  try:
+    import inspect
+    source = inspect.getsource(subcommand_class)
+    # Simple extraction of inline comments
+    for line in source.split("\n"):
+      if ":" in line and "#" in line:
+        # Try to extract field name and comment
+        parts = line.split("#", 1)
+        if len(parts) == 2:
+          field_part = parts[0].strip()
+          comment = parts[1].strip()
+          # Extract field name (before the colon)
+          if ":" in field_part:
+            field_name = field_part.split(":")[0].strip()
+            if field_name in annotations:
+              field_docs[field_name] = comment
+  except (OSError, TypeError):
+    pass
+
+  # Add parameters
+  for param_name, annotation in annotations.items():
+    kebab_param = param_name.replace("_", "-")
+    type_name = _get_type_name(annotation)
+    default = defaults.get(param_name)
+    help_text = field_docs.get(param_name, "")
+
+    # Auto-generate description if missing
+    if not help_text:
+      help_text = _generate_param_description(param_name, class_name.lower())
+
+    # Build the option line
+    if type_name:
+      option_str = f"  --{kebab_param} {type_name}"
+    else:
+      option_str = f"  --{kebab_param}"
+
+    # Pad to align descriptions
+    if len(option_str) < 23:
+      option_str = option_str.ljust(23)
+    else:
+      option_str = option_str + "  "
+
+    # Build description with default
+    desc_parts = []
+    if help_text:
+      desc_parts.append(help_text)
+    if default is not None:
+      desc_parts.append(f"(default: {default})")
+
+    lines.append(option_str + " ".join(desc_parts))
+
+  lines.append("")
+  return "\n".join(lines)

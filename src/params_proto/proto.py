@@ -18,7 +18,7 @@ from typing import (
 # Import utilities from separate modules
 from params_proto.type_utils import _convert_type
 from params_proto.documentation import _extract_docs_from_source
-from params_proto.cli.help_gen import _generate_help_for_function
+from params_proto.cli.help_gen import _generate_help_for_function, _generate_help_for_subcommand
 
 T = TypeVar("T")
 F = TypeVar("F", bound=Callable)
@@ -302,7 +302,35 @@ class ProtoWrapper:
         if '--help' in sys.argv or '-h' in sys.argv:
           # Import ANSI colorization
           from params_proto.cli.ansi_help import colorize_help
-          print(colorize_help(self.__help_str__))
+          from params_proto.cli.cli_parse import _is_union_type, _get_union_classes, _match_class_by_name
+
+          # Check if a subcommand precedes the help flag
+          help_idx = sys.argv.index('--help') if '--help' in sys.argv else sys.argv.index('-h')
+          subcommand_class = None
+
+          # Look for Union type parameters and check if a subcommand name is in argv before --help
+          for param_name, param_info in self._params.items():
+            annotation = param_info["annotation"]
+            if _is_union_type(annotation):
+              union_classes = _get_union_classes(annotation)
+              # Check each arg before --help to see if it matches a union class
+              for arg in sys.argv[1:help_idx]:
+                if not arg.startswith('-'):
+                  matched = _match_class_by_name(arg, union_classes)
+                  if matched:
+                    subcommand_class = matched
+                    break
+              if subcommand_class:
+                break
+
+          if subcommand_class:
+            # Show help for the subcommand only
+            from pathlib import Path
+            script_name = Path(sys.argv[0]).name if sys.argv[0] else self.__name__
+            print(colorize_help(_generate_help_for_subcommand(subcommand_class, script_name)))
+          else:
+            # Show main help
+            print(colorize_help(self.__help_str__))
           sys.exit(0)
 
         # Parse CLI arguments from sys.argv into kwargs
