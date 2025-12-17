@@ -1,3 +1,8 @@
+---
+title: Quick Reference
+description: Cheat sheet for params-proto patterns and syntax
+---
+
 # params-proto Quick Reference
 
 ## Installation

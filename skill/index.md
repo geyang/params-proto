@@ -1,3 +1,8 @@
+---
+title: params-proto Skill
+description: Claude skill for working with params-proto v3 - declarative hyperparameter management for ML
+---
+
 # params-proto Skill
 
 A Claude skill for working with params-proto v3 - a declarative hyperparameter management library for ML.

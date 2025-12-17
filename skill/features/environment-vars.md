@@ -1,3 +1,8 @@
+---
+title: Environment Variables
+description: Read configuration from environment variables with EnvVar
+---
+
 # Environment Variables
 
 params-proto supports reading configuration from environment variables.

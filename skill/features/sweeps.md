@@ -1,3 +1,8 @@
+---
+title: Hyperparameter Sweeps
+description: Systematic hyperparameter exploration with Sweep
+---
+
 # Hyperparameter Sweeps
 
 params-proto provides `Sweep` for systematic hyperparameter exploration.

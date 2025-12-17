@@ -1,3 +1,8 @@
+---
+title: Type Annotations
+description: Supported type hints for CLI parsing and help generation
+---
+
 # Type Annotations
 
 params-proto uses type hints for CLI parsing and help generation.

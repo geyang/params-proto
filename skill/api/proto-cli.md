@@ -1,3 +1,8 @@
+---
+title: "@proto.cli Decorator"
+description: Create CLI entry points from functions or classes
+---
+
 # @proto.cli Decorator
 
 The `@proto.cli` decorator creates CLI entry points from functions or classes.

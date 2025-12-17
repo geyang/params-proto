@@ -1,3 +1,8 @@
+---
+title: "@proto.prefix Decorator"
+description: Create singleton configuration classes with namespaced CLI arguments
+---
+
 # @proto.prefix Decorator
 
 The `@proto.prefix` decorator creates singleton configuration classes with namespaced CLI arguments.

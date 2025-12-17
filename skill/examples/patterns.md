@@ -1,3 +1,8 @@
+---
+title: Common Patterns
+description: Real-world examples and patterns for params-proto
+---
+
 # Common Patterns
 
 ## Simple Training Script

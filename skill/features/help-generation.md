@@ -1,3 +1,8 @@
+---
+title: Help Text Generation
+description: Automatic CLI help text from inline comments and docstrings
+---
+
 # Help Text Generation
 
 params-proto automatically generates CLI help text from code.
