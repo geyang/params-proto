@@ -132,23 +132,22 @@ from params_proto import proto
 
 
 @proto
-class Params: :
+class Params:
+    """Training configuration."""
 
+    # Model settings
+    model: str = "resnet50"  # Model architecture
+    pretrained: bool = True  # Use pretrained weights
 
-"""Training configuration."""
+    # Training settings
+    lr: float = 0.001  # Learning rate
+    batch_size: int = 32  # Batch size
+    epochs: int = 100  # Number of epochs
 
-# Model settings
-model: str = "resnet50"  # Model architecture
-pretrained: bool = True  # Use pretrained weights
+    # Data settings
+    data_dir: str = "./data"  # Data directory
+    num_workers: int = 4  # Number of data loading workers
 
-# Training settings
-lr: float = 0.001  # Learning rate
-batch_size: int = 32  # Batch size
-epochs: int = 100  # Number of epochs
-
-# Data settings
-data_dir: str = "./data"  # Data directory
-num_workers: int = 4  # Number of data loading workers
 
 # Access as class attributes
 print(f"Training {Params.model} with lr={Params.lr}")
