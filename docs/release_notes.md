@@ -2,6 +2,40 @@
 
 This page contains the release history and changelog for params-proto.
 
+## Version 3.0.0-rc10 (2025-12-17)
+
+### 🐛 Bug Fixes
+
+- **Classmethod/Staticmethod Support**: Fixed `@proto`, `@proto.cli`, and `@proto.partial` decorators
+  to properly handle `@classmethod` and `@staticmethod` descriptors. Previously, decorating methods
+  with `@proto` would incorrectly include `self`/`cls` in CLI parameters or corrupt method calls.
+
+  **Correct decorator order** (proto decorator on the OUTSIDE):
+  ```python
+  class Trainer:
+      @proto.cli      # proto.cli on OUTSIDE receives the descriptor
+      @classmethod
+      def train(cls, lr: float = 0.01):
+          return cls.run_training(lr)
+
+      @proto.cli
+      @staticmethod
+      def evaluate(model_path: str):
+          return load_and_eval(model_path)
+  ```
+
+  The decorators now:
+  - Detect `classmethod`/`staticmethod` descriptors via `isinstance()`
+  - Properly unwrap to get the underlying function signature
+  - Exclude `cls` parameter for classmethods automatically
+  - Implement descriptor protocol (`__get__`) for proper method binding
+  - Re-wrap results in `classmethod()`/`staticmethod()` for `proto.partial`
+
+- **VAR_POSITIONAL/VAR_KEYWORD Handling**: `*args` and `**kwargs` parameters are now properly
+  excluded from CLI parameters by checking `inspect.Parameter.kind` instead of just parameter names.
+
+---
+
 ## Version 3.0.0-rc7 (2025-12-16)
 
 ### ✨ Features

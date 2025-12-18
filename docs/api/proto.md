@@ -62,6 +62,65 @@ class Model:
 - Automatic CLI prefix (`--Model.name value`)
 - Global access via class attributes
 
+## Using with Class Methods
+
+The `@proto` decorators work with `@classmethod` and `@staticmethod`. **Important:** Place the proto decorator on the OUTSIDE (applied last).
+
+### Staticmethod
+
+```python
+class Trainer:
+    @proto.cli          # proto.cli on OUTSIDE
+    @staticmethod
+    def evaluate(model_path: str, threshold: float = 0.5):
+        """Evaluate a saved model."""
+        return evaluate_model(model_path, threshold)
+
+# Usage:
+Trainer.evaluate("model.pt")
+# Or from CLI: python script.py --model-path model.pt --threshold 0.7
+```
+
+### Classmethod
+
+```python
+class Trainer:
+    default_lr = 0.001
+
+    @proto.cli          # proto.cli on OUTSIDE
+    @classmethod
+    def train(cls, lr: float = 0.01, epochs: int = 100):
+        """Train using class defaults."""
+        return cls.run_training(lr or cls.default_lr, epochs)
+
+# Usage:
+Trainer.train(lr=0.001)
+# Or from CLI: python script.py --lr 0.001 --epochs 50
+```
+
+### With proto.partial
+
+```python
+class Config:
+    lr: float = 0.01
+    batch_size: int = 32
+
+class Trainer:
+    @proto.partial(Config)  # proto.partial on OUTSIDE
+    @classmethod
+    def train(cls, lr, batch_size):
+        return {"lr": lr, "batch_size": batch_size}
+
+# Config values are injected, cls is bound correctly
+Trainer.train()  # → {"lr": 0.01, "batch_size": 32}
+```
+
+```{note}
+The decorator order matters because Python applies decorators bottom-up.
+`@proto.cli` on the outside receives the `classmethod`/`staticmethod` descriptor,
+allowing it to detect and handle method binding correctly.
+```
+
 ## Functions
 
 ### `proto.bind(**kwargs)`

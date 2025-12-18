@@ -78,6 +78,26 @@ class ProtoResult:
     return f"ProtoResult({self._data!r})"
 
 
+class _BoundProtoWrapper:
+  """A bound version of ProtoWrapper for instance/class method calls.
+
+  This is returned by ProtoWrapper.__get__ when accessed via an instance
+  or class, providing proper self/cls binding.
+  """
+
+  def __init__(self, wrapper: "ProtoWrapper", bound_to):
+    self._wrapper = wrapper
+    self._bound_to = bound_to
+
+  def __call__(self, *args, **kwargs):
+    """Call the wrapped function with the bound object as first argument."""
+    return self._wrapper._actual_func(self._bound_to, *args, **kwargs)
+
+  def __getattr__(self, name):
+    """Delegate attribute access to the underlying wrapper."""
+    return getattr(self._wrapper, name)
+
+
 class ProtoWrapper:
   """Wrapper for proto-decorated functions."""
 
@@ -88,28 +108,60 @@ class ProtoWrapper:
     is_prefix: bool = False,
     prog: str = None,
   ):
-    self._func = func
+    # Detect and unwrap classmethod/staticmethod descriptors
+    self._is_classmethod = isinstance(func, classmethod)
+    self._is_staticmethod = isinstance(func, staticmethod)
+
+    if self._is_classmethod or self._is_staticmethod:
+      # Unwrap to get the actual function
+      actual_func = func.__func__
+    else:
+      actual_func = func
+
+    self._func = func  # Store original (may be descriptor)
+    self._actual_func = actual_func  # Store unwrapped function for calling
     self._is_cli = is_cli
     self._is_prefix = is_prefix
     self._prog = prog  # Override script name for help generation
     self._overrides = {}
-    self._name = func.__name__
+    self._name = actual_func.__name__
 
     # Copy function metadata
-    self.__name__ = func.__name__
-    self.__doc__ = func.__doc__
-    self.__module__ = func.__module__
+    self.__name__ = actual_func.__name__
+    self.__doc__ = actual_func.__doc__
+    self.__module__ = actual_func.__module__
 
     # Extract function signature info
-    self._sig = inspect.signature(func)
+    self._sig = inspect.signature(actual_func)
     self._params = {}
     self._annotations = {}
     self._defaults = {}
     self._field_docs = {}
 
+    # Determine if we should skip the first parameter
+    # - classmethod: always skip first param (cls)
+    # - staticmethod: never skip (no self/cls)
+    # - regular function: skip if first param is named self/cls (likely a method)
+    skip_first_param = self._is_classmethod
+    is_first_param = True
+
     for param_name, param in self._sig.parameters.items():
-      if param_name == "kwargs":
+      # Skip **kwargs (VAR_KEYWORD)
+      if param.kind == inspect.Parameter.VAR_KEYWORD:
         continue
+
+      # Skip *args (VAR_POSITIONAL)
+      if param.kind == inspect.Parameter.VAR_POSITIONAL:
+        is_first_param = False
+        continue
+
+      # Skip first param for classmethod, or if it's named self/cls for regular functions
+      if is_first_param:
+        if skip_first_param or (not self._is_staticmethod and param_name in ("self", "cls")):
+          is_first_param = False
+          continue
+
+      is_first_param = False
 
       annotation = (
         param.annotation if param.annotation != inspect.Parameter.empty else str
@@ -169,6 +221,29 @@ class ProtoWrapper:
     self._sweep_mode = False
     self._sweep_callback = None
     self._sweep_data = {}
+
+  def __get__(self, obj, objtype=None):
+    """Descriptor protocol for proper method binding.
+
+    This allows ProtoWrapper to work correctly when wrapping:
+    - staticmethod: returns self (no binding needed)
+    - classmethod: returns a bound version with cls
+    - instance methods: returns a bound version with self
+    """
+    if self._is_staticmethod:
+      # staticmethod: no binding, return the wrapper as-is
+      return self
+    elif self._is_classmethod:
+      # classmethod: bind to the class
+      if objtype is None:
+        objtype = type(obj)
+      return _BoundProtoWrapper(self, objtype)
+    elif obj is not None:
+      # Instance method: bind to the instance
+      return _BoundProtoWrapper(self, obj)
+    else:
+      # Class-level access of regular method: return wrapper
+      return self
 
   @property
   def _prefix(self):
@@ -633,11 +708,13 @@ def proto(
   """
 
   def decorator(obj):
-    if inspect.isfunction(obj):
+    # Handle functions, classmethod, and staticmethod descriptors
+    if inspect.isfunction(obj) or isinstance(obj, (classmethod, staticmethod)):
       wrapper = ProtoWrapper(obj, is_cli=cli, is_prefix=prefix, prog=prog)
       if prefix:
         # Use custom prefix name if provided, otherwise convert to kebab-case
-        singleton_key = prefix_name if prefix_name else _pascal_to_kebab(obj.__name__)
+        func_name = obj.__func__.__name__ if isinstance(obj, (classmethod, staticmethod)) else obj.__name__
+        singleton_key = prefix_name if prefix_name else _pascal_to_kebab(func_name)
         _SINGLETONS[singleton_key] = wrapper
       return wrapper
     elif inspect.isclass(obj):
@@ -901,8 +978,21 @@ def partial(config_class: Type, method: bool = False):
   from functools import wraps, partialmethod
 
   def decorator(func: Callable) -> Callable:
-    sig = inspect.signature(func)
+    # Detect and unwrap classmethod/staticmethod descriptors
+    is_classmethod = isinstance(func, classmethod)
+    is_staticmethod = isinstance(func, staticmethod)
+
+    if is_classmethod or is_staticmethod:
+      actual_func = func.__func__
+    else:
+      actual_func = func
+
+    sig = inspect.signature(actual_func)
     params = sig.parameters
+
+    # For classmethod, skip the first parameter (cls)
+    if is_classmethod:
+      params = dict(list(params.items())[1:])
 
     # Check for keyword-only parameters without defaults
     has_keyword_only = any(
@@ -910,14 +1000,16 @@ def partial(config_class: Type, method: bool = False):
       for p in params.values()
     )
 
-    @wraps(func)
+    @wraps(actual_func)
     def wrapper(*args, **kwargs):
       # Build overrides from config class
       overrides = {}
 
       # Determine which parameters are already bound by positional args
+      # For classmethod, first arg is cls which we've excluded from params
       param_names = list(params.keys())
-      positional_bound = set(param_names[:len(args)])
+      effective_args_len = len(args) - 1 if is_classmethod else len(args)
+      positional_bound = set(param_names[:max(0, effective_args_len)])
 
       for param_name, param in params.items():
         # Skip if already bound by positional argument
@@ -949,9 +1041,14 @@ def partial(config_class: Type, method: bool = False):
       overrides.update(kwargs)
 
       # Call function with merged parameters
-      return func(*args, **overrides)
+      return actual_func(*args, **overrides)
 
-    if method:
+    # Re-wrap in classmethod/staticmethod if needed
+    if is_classmethod:
+      return classmethod(wrapper)
+    elif is_staticmethod:
+      return staticmethod(wrapper)
+    elif method:
       return partialmethod(wrapper)
     return wrapper
 

@@ -187,6 +187,33 @@ error: unrecognized argument: --unknown-arg
 - `1` - Argument parsing error
 - Other - From your function
 
+## With @classmethod and @staticmethod
+
+Place `@proto.cli` on the OUTSIDE (applied last):
+
+```python
+class Trainer:
+    @proto.cli          # OUTSIDE - receives the descriptor
+    @staticmethod
+    def evaluate(model_path: str, threshold: float = 0.5):
+        """Evaluate a model."""
+        pass
+
+    @proto.cli          # OUTSIDE - receives the descriptor
+    @classmethod
+    def train(cls, lr: float = 0.01):
+        """Train using class configuration."""
+        return cls.run(lr)
+```
+
+**Why this order?** Python applies decorators bottom-up. `@proto.cli` on the outside
+receives the `classmethod`/`staticmethod` descriptor, allowing it to:
+- Detect the method type
+- Exclude `cls`/`self` from CLI parameters automatically
+- Handle method binding correctly when called
+
+**Wrong order** (proto inside) would cause `cls` to appear as a CLI argument.
+
 ## Best Practices
 
 1. **Always use type hints** - Required for CLI parsing
@@ -194,3 +221,4 @@ error: unrecognized argument: --unknown-arg
 3. **Use descriptive docstrings** - Become CLI description
 4. **Group related params** - Use `@proto.prefix` for organization
 5. **Test with `--help`** - Verify help text is clear
+6. **Decorator order for methods** - Put `@proto.cli` on the OUTSIDE of `@classmethod`/`@staticmethod`
