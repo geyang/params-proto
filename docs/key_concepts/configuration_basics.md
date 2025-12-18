@@ -256,6 +256,54 @@ if __name__ == "__main__":
 
 Or use `@proto.prefix` for global configuration (see [Advanced Patterns](advanced_patterns.md#prefixed-configurations)).
 
+### Methods in Configuration Classes
+
+`@proto` classes can include methods just like regular classes. Methods (`classmethod`, `staticmethod`, and instance methods) work as expected:
+
+```python
+@proto
+class Config:
+    lr: float = 0.01
+    batch_size: int = 32
+
+    @classmethod
+    def from_preset(cls, preset: str = "default"):
+        """Create config from a preset."""
+        if preset == "large":
+            cls.lr = 0.001
+            cls.batch_size = 128
+        return cls()
+
+    @staticmethod
+    def validate_lr(lr: float) -> bool:
+        """Validate learning rate."""
+        return 0 < lr < 1.0
+
+    def summary(self):
+        """Return config summary."""
+        return f"lr={self.lr}, batch_size={self.batch_size}"
+```
+
+**Usage:**
+```python
+# Classmethod receives the correct cls
+config = Config.from_preset("large")
+print(config.lr)  # 0.001
+
+# Staticmethod works as expected
+assert Config.validate_lr(0.01) is True
+
+# Instance methods work normally
+config = Config()
+print(config.summary())  # lr=0.01, batch_size=32
+```
+
+**Key points:**
+- Methods are **not** included in configuration parameters (only type-annotated class attributes are)
+- `@classmethod` receives the correct wrapped class, so modifications to `cls` attributes reflect in the config
+- `@staticmethod` works identically to regular classes
+- Instance methods have access to instance attributes via `self`
+
 ## Choosing Between Functions and Classes
 
 ### Use Functions When:

@@ -764,7 +764,12 @@ def proto(
       for key in dir(obj):
         if not key.startswith("__") or key in ("__annotations__", "__module__", "__qualname__", "__doc__"):
           try:
-            namespace[key] = getattr(obj, key)
+            # Use __dict__ to preserve classmethod/staticmethod descriptors
+            # getattr() would return bound methods instead of descriptors
+            if key in obj.__dict__:
+              namespace[key] = obj.__dict__[key]
+            else:
+              namespace[key] = getattr(obj, key)
           except AttributeError:
             pass
 
