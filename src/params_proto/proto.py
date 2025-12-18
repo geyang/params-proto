@@ -694,6 +694,10 @@ class ptype(type):
 
           setattr(instance, name, make_wrapper(method))
 
+    # Call __post_init__ if defined (like dataclasses)
+    if hasattr(instance, '__post_init__'):
+      instance.__post_init__()
+
     return instance
 
 

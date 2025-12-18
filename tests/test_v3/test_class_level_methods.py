@@ -213,3 +213,86 @@ class TestProtoPrefixWithMethods:
     # Inherited staticmethod should work correctly
     assert obj.static_method(42) == 42
     assert Child.static_method(42) == 42
+
+
+class TestPostInit:
+  """Test __post_init__ hook for @proto classes."""
+
+  def test_post_init_called(self):
+    """Test that __post_init__ is called after instance creation."""
+    calls = []
+
+    @proto
+    class Config:
+      lr: float = 0.01
+
+      def __post_init__(self):
+        calls.append("post_init")
+
+    Config()
+    assert calls == ["post_init"]
+
+  def test_post_init_has_access_to_attributes(self):
+    """Test that __post_init__ can access all config attributes."""
+
+    @proto
+    class Config:
+      lr: float = 0.01
+      batch_size: int = 32
+      lr_squared: float = None
+
+      def __post_init__(self):
+        self.lr_squared = self.lr ** 2
+
+    c = Config(lr=0.5)
+    assert c.lr_squared == 0.25
+
+  def test_post_init_validation(self):
+    """Test using __post_init__ for validation."""
+
+    @proto
+    class Config:
+      lr: float = 0.01
+
+      def __post_init__(self):
+        if self.lr > 1:
+          raise ValueError("lr must be <= 1")
+
+    # Valid config works
+    Config(lr=0.5)
+
+    # Invalid config raises
+    try:
+      Config(lr=2.0)
+      assert False, "Should have raised ValueError"
+    except ValueError as e:
+      assert "lr must be <= 1" in str(e)
+
+  def test_post_init_with_proto_prefix(self):
+    """Test __post_init__ with @proto.prefix classes."""
+    calls = []
+
+    @proto.prefix
+    class Config:
+      lr: float = 0.01
+
+      def __post_init__(self):
+        calls.append(f"post_init lr={self.lr}")
+
+    obj = Config()
+    assert calls == ["post_init lr=0.01"]
+
+  def test_post_init_computed_attributes(self):
+    """Test using __post_init__ for computed attributes."""
+
+    @proto
+    class TrainConfig:
+      batch_size: int = 32
+      num_batches: int = 100
+      total_samples: int = None
+
+      def __post_init__(self):
+        self.total_samples = self.batch_size * self.num_batches
+
+    c = TrainConfig(batch_size=64, num_batches=50)
+    assert c.total_samples == 3200

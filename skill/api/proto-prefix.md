@@ -241,6 +241,30 @@ class Config(Base):
 Config().helper(21)  # 42 - inherited staticmethod works
 ```
 
+## Post-Initialization Hook
+
+Use `__post_init__` for validation and computed attributes:
+
+```python
+@proto.prefix
+class Config:
+    lr: float = 0.01
+    batch_size: int = 32
+    total_samples: int = None
+
+    def __post_init__(self):
+        # Validation
+        if self.lr > 1:
+            raise ValueError("lr must be <= 1")
+        # Computed attributes
+        self.total_samples = self.batch_size * 100
+
+obj = Config()
+print(obj.total_samples)  # 3200
+```
+
+`__post_init__` runs after all attributes are set, similar to dataclasses.
+
 ## Best Practices
 
 1. **Group related params** - One class per logical group

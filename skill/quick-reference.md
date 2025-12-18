@@ -8,7 +8,7 @@ description: Cheat sheet for params-proto patterns and syntax
 ## Installation
 
 ```bash
-pip install params-proto==3.0.0-rc13
+pip install params-proto==3.0.0-rc14
 ```
 
 ## Decorators
@@ -210,4 +210,21 @@ def train(optimizer: Adam | SGD):
 ```bash
 python train.py adam --lr 0.001
 python train.py sgd --momentum 0.95
+```
+
+### Post-Init Hook
+
+```python
+@proto
+class Config:
+    lr: float = 0.01
+    total: int = None  # Computed
+
+    def __post_init__(self):
+        if self.lr > 1:
+            raise ValueError("lr too high")
+        self.total = int(self.lr * 1000)
+
+c = Config(lr=0.5)
+print(c.total)  # 500
 ```

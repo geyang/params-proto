@@ -304,6 +304,40 @@ print(config.summary())  # lr=0.01, batch_size=32
 - `@staticmethod` works identically to regular classes
 - Instance methods have access to instance attributes via `self`
 
+### Post-Initialization Hook
+
+`@proto` classes support `__post_init__` (like dataclasses) for validation and computed attributes:
+
+```python
+@proto
+class TrainConfig:
+    lr: float = 0.01
+    batch_size: int = 32
+    total_samples: int = None  # Computed
+
+    def __post_init__(self):
+        # Validation
+        if self.lr > 1:
+            raise ValueError("lr must be <= 1")
+
+        # Computed attributes
+        self.total_samples = self.batch_size * 100
+```
+
+**Usage:**
+```python
+config = TrainConfig(lr=0.5, batch_size=64)
+print(config.total_samples)  # 6400
+
+TrainConfig(lr=2.0)  # Raises ValueError
+```
+
+**Key points:**
+- `__post_init__` runs after all attributes are set
+- Access attributes via `self.attr`
+- Use for validation, computed values, or side effects
+- Works with both `@proto` and `@proto.prefix` classes
+
 ## Choosing Between Functions and Classes
 
 ### Use Functions When:
