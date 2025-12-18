@@ -8,7 +8,7 @@ description: Cheat sheet for params-proto patterns and syntax
 ## Installation
 
 ```bash
-pip install params-proto==3.0.0-rc6
+pip install params-proto==3.0.0-rc13
 ```
 
 ## Decorators

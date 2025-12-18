@@ -197,6 +197,50 @@ Use `@proto` for:
 - Multiple config instances
 - Library code
 
+## Methods in @proto.prefix Classes
+
+`@proto.prefix` classes support all Python method types:
+
+```python
+@proto.prefix
+class Config:
+    lr: float = 0.01
+
+    @staticmethod
+    def validate_lr(lr: float) -> bool:
+        """Staticmethods work correctly."""
+        return 0 < lr < 1.0
+
+    @classmethod
+    def get_lr(cls):
+        """Classmethods receive the instance (singleton behavior)."""
+        return cls.lr
+
+    def summary(self):
+        """Instance methods work normally."""
+        return f"lr={self.lr}"
+
+obj = Config()
+obj.validate_lr(0.01)  # True - staticmethod works
+obj.get_lr()           # 0.01 - classmethod works
+obj.summary()          # "lr=0.01" - instance method works
+```
+
+**Note:** Methods can also be inherited from base classes:
+
+```python
+class Base:
+    @staticmethod
+    def helper(x):
+        return x * 2
+
+@proto.prefix
+class Config(Base):
+    value: int = 10
+
+Config().helper(21)  # 42 - inherited staticmethod works
+```
+
 ## Best Practices
 
 1. **Group related params** - One class per logical group
