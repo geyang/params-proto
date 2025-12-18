@@ -667,8 +667,12 @@ class ptype(type):
     # Copy methods from original class and wrap to return self
     for name in dir(original_cls):
       if not name.startswith("__"):
-        # Check raw descriptor in __dict__ to detect staticmethod
-        raw_attr = original_cls.__dict__.get(name)
+        # Check raw descriptor in MRO to detect staticmethod (handles inheritance)
+        raw_attr = None
+        for klass in original_cls.__mro__:
+          if name in klass.__dict__:
+            raw_attr = klass.__dict__[name]
+            break
         attr = getattr(original_cls, name)
         if callable(attr):
           if isinstance(raw_attr, staticmethod):

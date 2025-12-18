@@ -195,3 +195,21 @@ class TestProtoPrefixWithMethods:
     assert obj.static_method(21) == 42
     assert obj.class_method() == "default"
     assert obj.instance_method() == "DEFAULT"
+
+  def test_proto_prefix_inherited_staticmethod(self):
+    """Test @proto.prefix with staticmethod inherited from non-proto base."""
+
+    class Base:
+      @staticmethod
+      def static_method(value):
+        return value
+
+    @proto.prefix
+    class Child(Base):
+      config: str = "default"
+
+    obj = Child()
+
+    # Inherited staticmethod should work correctly
+    assert obj.static_method(42) == 42
+    assert Child.static_method(42) == 42
