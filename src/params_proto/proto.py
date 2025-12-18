@@ -667,20 +667,28 @@ class ptype(type):
     # Copy methods from original class and wrap to return self
     for name in dir(original_cls):
       if not name.startswith("__"):
+        # Check raw descriptor in __dict__ to detect staticmethod
+        raw_attr = original_cls.__dict__.get(name)
         attr = getattr(original_cls, name)
         if callable(attr):
-          # Get the bound method
-          bound_method = attr.__get__(instance, original_cls)
+          if isinstance(raw_attr, staticmethod):
+            # For staticmethod, use directly (no binding needed)
+            method = attr
+          else:
+            # For instance methods and classmethods, bind to instance
+            # Note: classmethods bound to instance is intentional for @proto
+            # semantics where instances have all attributes accessible
+            method = attr.__get__(instance, original_cls)
 
           # Wrap it to return self if it returns None
-          def make_wrapper(method):
+          def make_wrapper(m):
             def wrapper(*args, **kwargs):
-              result = method(*args, **kwargs)
+              result = m(*args, **kwargs)
               return instance if result is None else result
 
             return wrapper
 
-          setattr(instance, name, make_wrapper(bound_method))
+          setattr(instance, name, make_wrapper(method))
 
     return instance
 

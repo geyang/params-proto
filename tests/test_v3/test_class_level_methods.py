@@ -110,3 +110,88 @@ class TestClassLevelProtoWithMethods:
     assert "factory" not in annotations
     assert "helper" not in annotations
     assert "instance_method" not in annotations
+
+
+class TestProtoPrefixWithMethods:
+  """Test @proto.prefix decorator on class that contains methods."""
+
+  def test_proto_prefix_with_staticmethod(self):
+    """Test @proto.prefix on class with @staticmethod inside.
+
+    This tests the fix for staticmethod receiving incorrect self argument.
+    """
+
+    @proto.prefix
+    class Config:
+      lr: float = 0.01
+
+      @staticmethod
+      def validate_lr(lr: float) -> bool:
+        """Validate learning rate."""
+        return 0 < lr < 1.0
+
+    obj = Config()
+
+    # Staticmethod should work correctly without receiving self
+    assert obj.validate_lr(0.01) is True
+    assert obj.validate_lr(1.5) is False
+    assert Config.validate_lr(0.01) is True
+
+  def test_proto_prefix_with_classmethod(self):
+    """Test @proto.prefix on class with @classmethod inside."""
+
+    @proto.prefix
+    class Config:
+      lr: float = 0.01
+
+      @classmethod
+      def get_lr(cls):
+        return cls.lr
+
+    obj = Config()
+
+    # Classmethod should have access to config attributes via instance
+    assert obj.get_lr() == 0.01
+
+    # Note: classmethods on instances are bound to the instance,
+    # so they see instance attributes (not class-level updates)
+    obj.lr = 0.001
+    assert obj.get_lr() == 0.001
+
+  def test_proto_prefix_with_instance_method(self):
+    """Test @proto.prefix on class with regular instance method."""
+
+    @proto.prefix
+    class Config:
+      lr: float = 0.01
+
+      def summary(self):
+        return f"lr={self.lr}"
+
+    obj = Config()
+    assert obj.summary() == "lr=0.01"
+
+  def test_proto_prefix_all_method_types(self):
+    """Test @proto.prefix with all method types together."""
+
+    @proto.prefix
+    class Config:
+      value: str = "default"
+
+      @staticmethod
+      def static_method(x):
+        return x * 2
+
+      @classmethod
+      def class_method(cls):
+        return cls.value
+
+      def instance_method(self):
+        return self.value.upper()
+
+    obj = Config()
+
+    # All method types should work correctly
+    assert obj.static_method(21) == 42
+    assert obj.class_method() == "default"
+    assert obj.instance_method() == "DEFAULT"
