@@ -2,6 +2,29 @@
 
 This page contains the release history and changelog for params-proto.
 
+## Version 3.0.0-rc15 (2025-12-19)
+
+### 🐛 Bug Fixes
+
+- **EnvVar dtype Conversion**: Fixed `EnvVar.get()` to apply the `dtype` parameter for type conversion.
+  Previously, the `dtype` was stored but not used when reading from environment variables, causing
+  values to always be returned as strings.
+
+  ```python
+  import os
+  from params_proto import EnvVar
+
+  os.environ["PORT"] = "9000"
+
+  # Before fix: returned '9000' (str)
+  # After fix: returns 9000 (int)
+  port = EnvVar("PORT", dtype=int, default=8012).get()
+  ```
+
+  All dtypes are now properly applied: `int`, `float`, `bool`, and `str`.
+
+---
+
 ## Version 3.0.0-rc10 (2025-12-17)
 
 ### 🐛 Bug Fixes

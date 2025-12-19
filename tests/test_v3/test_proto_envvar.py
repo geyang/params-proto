@@ -443,3 +443,79 @@ def test_proto_envvar_class_with_type_conversion():
     del os.environ["PORT"]
     del os.environ["DEBUG"]
     del os.environ["RATIO"]
+
+
+def test_envvar_get_with_dtype():
+  """Test EnvVar.get() applies dtype conversion correctly.
+
+  This tests the direct .get() method, not via @proto decoration.
+  Previously, dtype was stored but not applied in .get().
+  """
+  import os
+
+  from params_proto import EnvVar
+
+  os.environ["PORT"] = "9000"
+  os.environ["THRESHOLD"] = "0.75"
+  os.environ["DEBUG"] = "true"
+  os.environ["ENABLED"] = "1"
+  os.environ["DISABLED"] = "false"
+
+  try:
+    # Test int conversion
+    port = EnvVar("PORT", dtype=int, default=8012).get()
+    assert port == 9000, f"Expected 9000, got {port}"
+    assert isinstance(port, int), f"Expected int, got {type(port)}"
+
+    # Test float conversion
+    threshold = EnvVar("THRESHOLD", dtype=float, default=0.5).get()
+    assert threshold == 0.75, f"Expected 0.75, got {threshold}"
+    assert isinstance(threshold, float), f"Expected float, got {type(threshold)}"
+
+    # Test bool conversion - "true"
+    debug = EnvVar("DEBUG", dtype=bool, default=False).get()
+    assert debug is True, f"Expected True, got {debug}"
+    assert isinstance(debug, bool), f"Expected bool, got {type(debug)}"
+
+    # Test bool conversion - "1"
+    enabled = EnvVar("ENABLED", dtype=bool, default=False).get()
+    assert enabled is True, f"Expected True, got {enabled}"
+
+    # Test bool conversion - "false"
+    disabled = EnvVar("DISABLED", dtype=bool, default=True).get()
+    assert disabled is False, f"Expected False, got {disabled}"
+
+    # Test default value when env var not set
+    missing = EnvVar("MISSING_VAR", dtype=int, default=42).get()
+    assert missing == 42, f"Expected 42 (default), got {missing}"
+    assert isinstance(missing, int), f"Expected int, got {type(missing)}"
+
+    # Test without dtype - should return string
+    port_str = EnvVar("PORT", default="8012").get()
+    assert port_str == "9000", f"Expected '9000', got {port_str}"
+    assert isinstance(port_str, str), f"Expected str, got {type(port_str)}"
+
+  finally:
+    del os.environ["PORT"]
+    del os.environ["THRESHOLD"]
+    del os.environ["DEBUG"]
+    del os.environ["ENABLED"]
+    del os.environ["DISABLED"]
+
+
+def test_envvar_get_with_dtype_template():
+  """Test EnvVar.get() applies dtype with template syntax."""
+  import os
+
+  from params_proto import EnvVar
+
+  os.environ["COUNT"] = "100"
+
+  try:
+    # Test with $ prefix template
+    count = EnvVar("$COUNT", dtype=int, default=0).get()
+    assert count == 100, f"Expected 100, got {count}"
+    assert isinstance(count, int), f"Expected int, got {type(count)}"
+
+  finally:
+    del os.environ["COUNT"]

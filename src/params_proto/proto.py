@@ -1161,11 +1161,12 @@ class _EnvVar:
     Get the value from environment variable.
 
     Returns:
-        Value from environment or default
+        Value from environment or default, converted to dtype if specified
     """
     import os
 
     from params_proto.parse_env_template import parse_env_template
+    from params_proto.type_utils import _convert_type
 
     # Use only the explicitly set template
     # NO auto-inference for security reasons
@@ -1186,10 +1187,20 @@ class _EnvVar:
           # Replace both ${VAR} and $VAR forms
           expanded = expanded.replace(f"${{{var}}}", var_value)
           expanded = expanded.replace(f"${var}", var_value)
-        return expanded if expanded != name else self.default
+        value = expanded if expanded != name else self.default
+        # Apply dtype conversion if specified
+        if value is not None and self.dtype is not None:
+          return _convert_type(value, self.dtype)
+        return value
 
     # Simple env var lookup
-    return os.environ.get(name, self.default)
+    value = os.environ.get(name)
+    if value is not None:
+      # Apply dtype conversion if specified
+      if self.dtype is not None:
+        return _convert_type(value, self.dtype)
+      return value
+    return self.default
 
   def __repr__(self):
     if self.template:
