@@ -6,7 +6,7 @@ Simple custom parser - no argparse dependency.
 """
 
 import sys
-from typing import Any, Dict, get_args, get_origin
+from typing import Any, Dict, Union, get_args, get_origin
 
 from params_proto.type_utils import _convert_type
 
@@ -55,7 +55,7 @@ def _normalize_class_name(class_name: str) -> str:
   return class_name.replace("-", "").replace("_", "").lower()
 
 
-def _match_class_by_name(name: str, classes: list) -> type | None:
+def _match_class_by_name(name: str, classes: list) -> Union[type, None]:
   """Match a string to one of the Union classes.
 
   Supports:
@@ -79,7 +79,7 @@ def _match_class_by_name(name: str, classes: list) -> type | None:
 
     # Try abbreviated match: 'perspective' should match 'PerspectiveCamera'
     # Extract first word from PascalCase class name
-    words = re.findall(r'[A-Z][a-z]*', cls.__name__)
+    words = re.findall(r"[A-Z][a-z]*", cls.__name__)
     if words and words[0].lower() == name.lower():
       return cls
 
@@ -121,7 +121,16 @@ def parse_cli_args(wrapper) -> Dict[str, Any]:
 
     # Check if this is a single class type (dataclass, etc.)
     # Treat as a "union" with one option to enable same syntax
-    if isinstance(annotation, type) and annotation not in {int, str, float, bool, list, dict, tuple, set}:
+    if isinstance(annotation, type) and annotation not in {
+      int,
+      str,
+      float,
+      bool,
+      list,
+      dict,
+      tuple,
+      set,
+    }:
       union_params[kebab_name] = (param_name, [annotation])
       if param_info.get("required", False):
         required_params.append(param_name)
@@ -340,6 +349,7 @@ def parse_cli_args(wrapper) -> Dict[str, Any]:
 
     # If selected_class is a proto.prefix singleton, merge its overrides
     from params_proto.proto import _SINGLETONS, ptype
+
     for singleton_key, singleton in _SINGLETONS.items():
       if singleton is selected_class:
         # This is a proto.prefix class - merge overrides into attrs
