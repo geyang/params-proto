@@ -2,6 +2,64 @@
 
 This page contains the release history and changelog for params-proto.
 
+## Version 3.0.0-rc18 (2025-12-26)
+
+### 🐛 Bug Fixes
+
+- **EnvVar Instantiation Fix**: Fixed `@proto.prefix` classes with EnvVar fields failing on instantiation
+  with `AttributeError: '_EnvVar' object has no attribute '__get__'`.
+
+  The bug occurred because `_EnvVar` is callable (has `__call__`), so it was incorrectly detected as a
+  method during instance creation. The fix uses precise method detection with `inspect.isfunction` and
+  `inspect.ismethod` instead of the overly broad `callable()` check.
+
+  ```python
+  from params_proto import proto, EnvVar
+
+  @proto.prefix
+  class Config:
+      host: str = EnvVar @ "HOST" | "localhost"
+
+  # Before fix: AttributeError: '_EnvVar' object has no attribute '__get__'
+  # After fix: works correctly
+  c = Config()
+  ```
+
+### 📚 Documentation
+
+- Added EnvVar + inheritance documentation and tests
+- Documented that inherited EnvVar fields are resolved and type-converted correctly
+
+---
+
+## Version 3.0.0-rc17 (2025-12-26)
+
+### ✨ Features
+
+- **Inherited Fields**: Support inherited fields in `@proto` classes. Parent class fields are now
+  properly included in `vars()`, CLI args, and work with EnvVar.
+
+  ```python
+  class BaseConfig:
+      host: str = EnvVar @ "HOST" | "localhost"
+      port: int = EnvVar @ "PORT" | 8080
+
+  @proto.prefix
+  class AppConfig(BaseConfig):
+      debug: bool = EnvVar @ "DEBUG" | False
+  ```
+
+---
+
+## Version 3.0.0-rc16 (2025-12-26)
+
+### 🐛 Bug Fixes
+
+- **Python 3.10 Support**: Use `Union[]` syntax instead of `|` operator for type hints to support
+  Python 3.10 (#17).
+
+---
+
 ## Version 3.0.0-rc15 (2025-12-19)
 
 ### 🐛 Bug Fixes
