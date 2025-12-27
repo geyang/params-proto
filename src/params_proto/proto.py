@@ -735,10 +735,17 @@ def proto(
       return wrapper
     elif inspect.isclass(obj):
       # New metaclass-based approach for classes
-      # Extract annotations and defaults
-      annotations = getattr(obj, "__annotations__", {})
+      # Extract annotations and defaults, including inherited ones
+      # Walk MRO in reverse so child annotations override parent
+      annotations = {}
       defaults = {}
       field_docs = _extract_docs_from_source(obj)
+
+      for klass in reversed(obj.__mro__):
+        if klass is object:
+          continue
+        klass_annotations = getattr(klass, "__annotations__", {})
+        annotations.update(klass_annotations)
 
       for name in annotations.keys():
         if hasattr(obj, name):
