@@ -666,33 +666,41 @@ class ptype(type):
 
     # Copy methods from original class and wrap to return self
     for name in dir(original_cls):
-      if not name.startswith("__"):
-        # Check raw descriptor in MRO to detect staticmethod (handles inheritance)
-        raw_attr = None
-        for klass in original_cls.__mro__:
-          if name in klass.__dict__:
-            raw_attr = klass.__dict__[name]
-            break
-        attr = getattr(original_cls, name)
-        if callable(attr):
-          if isinstance(raw_attr, staticmethod):
-            # For staticmethod, use directly (no binding needed)
-            method = attr
-          else:
-            # For instance methods and classmethods, bind to instance
-            # Note: classmethods bound to instance is intentional for @proto
-            # semantics where instances have all attributes accessible
-            method = attr.__get__(instance, original_cls)
+      # Skip dunder methods and proto fields (fields are handled above)
+      if name.startswith("__") or name in annotations:
+        continue
 
-          # Wrap it to return self if it returns None
-          def make_wrapper(m):
-            def wrapper(*args, **kwargs):
-              result = m(*args, **kwargs)
-              return instance if result is None else result
+      # Check raw descriptor in MRO to detect staticmethod/classmethod (handles inheritance)
+      raw_attr = None
+      for klass in original_cls.__mro__:
+        if name in klass.__dict__:
+          raw_attr = klass.__dict__[name]
+          break
 
-            return wrapper
+      attr = getattr(original_cls, name)
 
-          setattr(instance, name, make_wrapper(method))
+      # Only process actual methods (staticmethod, classmethod, or function)
+      if isinstance(raw_attr, staticmethod):
+        # For staticmethod, use directly (no binding needed)
+        method = attr
+      elif isinstance(raw_attr, classmethod) or inspect.isfunction(raw_attr) or inspect.ismethod(attr):
+        # For instance methods and classmethods, bind to instance
+        # Note: classmethods bound to instance is intentional for @proto
+        # semantics where instances have all attributes accessible
+        method = attr.__get__(instance, original_cls)
+      else:
+        # Not a method (e.g., _EnvVar, property, or other callable), skip
+        continue
+
+      # Wrap it to return self if it returns None
+      def make_wrapper(m):
+        def wrapper(*args, **kwargs):
+          result = m(*args, **kwargs)
+          return instance if result is None else result
+
+        return wrapper
+
+      setattr(instance, name, make_wrapper(method))
 
     # Call __post_init__ if defined (like dataclasses)
     if hasattr(instance, '__post_init__'):

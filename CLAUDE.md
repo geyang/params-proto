@@ -1,22 +1,42 @@
 # Release Process
 
-## Full Release (with PyPI publish)
+## Full Release (with PR and PyPI publish)
 
-### 1. Bump Version
+### 1. Prepare Changes
 
-Update `pyproject.toml`:
+Update `pyproject.toml` version:
 ```toml
 version = "3.0.0-rcX"
 ```
 
-### 2. Commit and Push
+Update `docs/release_notes.md` with changes.
+
+Update `skill/quick-reference.md` version if needed.
+
+### 2. Create PR
 
 ```bash
-git add -A && git commit -m "Bump version to 3.0.0-rcX"
-git push origin main
+# Create feature branch
+git checkout -b release/v3.0.0-rcX
+
+# Commit all changes
+git add -A && git commit -m "Release v3.0.0-rcX: brief description"
+
+# Push and create PR
+git push -u origin release/v3.0.0-rcX
+gh pr create --title "Release v3.0.0-rcX" --body "## Changes
+- Feature/fix 1
+- Feature/fix 2"
 ```
 
-### 3. Create Tags
+### 3. Merge PR
+
+```bash
+gh pr merge --squash --delete-branch
+git checkout main && git pull
+```
+
+### 4. Create Tags
 
 ```bash
 git tag -f v3.0.0-rcX HEAD
@@ -25,15 +45,15 @@ git push origin refs/tags/v3.0.0-rcX --force
 git push origin refs/tags/latest --force
 ```
 
-### 4. Create GitHub Release
+### 5. Create GitHub Release
 
 ```bash
 gh release create v3.0.0-rcX --title "v3.0.0-rcX" --latest --notes "## Changes
-- Feature 1
-- Feature 2"
+- Feature/fix 1
+- Feature/fix 2"
 ```
 
-### 5. Publish to PyPI
+### 6. Publish to PyPI
 
 ```bash
 rm -rf dist && uv build
@@ -45,7 +65,7 @@ uv publish --token "$(pass show pypi | head -1)"
 When updating docs without a new PyPI release:
 
 ```bash
-# Commit and push
+# Commit and push directly to main
 git add -A && git commit -m "Update docs: description"
 git push origin main
 
@@ -54,4 +74,20 @@ git tag -f latest HEAD
 git push origin refs/tags/latest --force
 ```
 
-Note: RTD uses the `latest` tag (not branch) to build documentation.
+## Quick Fixes (No PR needed)
+
+For small fixes that don't need review:
+
+```bash
+# Commit and push to main
+git add -A && git commit -m "Fix: description"
+git push origin main
+
+# If releasing: follow steps 4-6 above
+```
+
+## Notes
+
+- RTD uses the `latest` tag (not branch) to build documentation
+- Always update `docs/release_notes.md` for code changes
+- Update `skill/quick-reference.md` version number for new releases

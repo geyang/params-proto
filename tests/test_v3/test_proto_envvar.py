@@ -610,3 +610,59 @@ def test_proto_envvar_inheritance_fallback():
 
   finally:
     os.environ.pop("BASE_HOST", None)
+
+
+def test_proto_prefix_envvar_instantiation():
+  """Test that @proto.prefix classes with EnvVar can be instantiated.
+
+  Regression test for: AttributeError: '_EnvVar' object has no attribute '__get__'
+
+  The _EnvVar object returned by `EnvVar @ 'HOST' | 'localhost'` must be resolved
+  before @proto.prefix stores it, otherwise instantiation fails because _EnvVar
+  is not a descriptor (missing __get__).
+  """
+  import os
+
+  from params_proto import EnvVar, proto
+
+  os.environ["HOST"] = "test-host"
+
+  try:
+
+    @proto.prefix
+    class Config:
+      host: str = EnvVar @ "HOST" | "localhost"
+
+    # This should not raise: AttributeError: '_EnvVar' object has no attribute '__get__'
+    c = Config()
+
+    # Verify the value is resolved correctly
+    assert c.host == "test-host", f"Expected 'test-host', got {c.host}"
+    assert isinstance(c.host, str), f"host should be str, got {type(c.host)}"
+
+    # Also verify class-level access works
+    assert Config.host == "test-host", f"Expected 'test-host', got {Config.host}"
+
+  finally:
+    os.environ.pop("HOST", None)
+
+
+def test_proto_prefix_envvar_instantiation_with_fallback():
+  """Test @proto.prefix with EnvVar fallback can be instantiated when env var not set."""
+  import os
+
+  from params_proto import EnvVar, proto
+
+  # Ensure env var is NOT set
+  os.environ.pop("MISSING_HOST", None)
+
+  @proto.prefix
+  class Config:
+    host: str = EnvVar @ "MISSING_HOST" | "default-host"
+
+  # This should not raise
+  c = Config()
+
+  # Verify the fallback value is used
+  assert c.host == "default-host", f"Expected 'default-host', got {c.host}"
+  assert Config.host == "default-host", f"Expected 'default-host', got {Config.host}"
