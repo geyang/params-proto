@@ -8,7 +8,7 @@ description: Cheat sheet for params-proto patterns and syntax
 ## Installation
 
 ```bash
-pip install params-proto==3.0.0-rc14
+pip install params-proto==3.0.0-rc17
 ```
 
 ## Decorators
@@ -211,6 +211,23 @@ def train(optimizer: Adam | SGD):
 python train.py adam --lr 0.001
 python train.py sgd --momentum 0.95
 ```
+
+### Inheritance
+
+```python
+class BaseConfig:
+    lr: float = 0.001
+    batch_size: int = 32
+
+@proto
+class TrainConfig(BaseConfig):
+    epochs: int = 100
+
+c = TrainConfig()
+vars(c)  # {'lr': 0.001, 'batch_size': 32, 'epochs': 100}
+```
+
+Parent fields are included in `vars()` and CLI args.
 
 ### Post-Init Hook
 
