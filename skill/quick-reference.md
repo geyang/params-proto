@@ -229,6 +229,27 @@ vars(c)  # {'lr': 0.001, 'batch_size': 32, 'epochs': 100}
 
 Parent fields are included in `vars()` and CLI args.
 
+### Inheritance with EnvVar
+
+EnvVar fields are inherited and type-converted correctly:
+
+```python
+class BaseConfig:
+    host: str = EnvVar @ "HOST" | "localhost"
+    port: int = EnvVar @ "PORT" | 8080
+
+@proto.prefix
+class AppConfig(BaseConfig):
+    debug: bool = EnvVar @ "DEBUG" | False
+```
+
+```bash
+HOST=10.0.0.1 PORT=3000 DEBUG=true python app.py
+# AppConfig.host = "10.0.0.1" (str)
+# AppConfig.port = 3000 (int)
+# AppConfig.debug = True (bool)
+```
+
 ### Post-Init Hook
 
 ```python

@@ -68,6 +68,31 @@ class Config:
     debug: bool = EnvVar @ "DEBUG" | False
 ```
 
+## With Inheritance
+
+EnvVar fields are inherited and type-converted correctly:
+
+```python
+class BaseConfig:
+    host: str = EnvVar @ "HOST" | "localhost"
+    port: int = EnvVar @ "PORT" | 8080
+    debug: bool = EnvVar @ "DEBUG" | False
+
+@proto.prefix
+class AppConfig(BaseConfig):
+    timeout: int = EnvVar @ "TIMEOUT" | 30
+    api_key: str = EnvVar @ "API_KEY"
+```
+
+```bash
+HOST=10.0.0.1 PORT=3000 DEBUG=true TIMEOUT=60 API_KEY=secret python app.py
+```
+
+Both inherited and child EnvVar fields:
+- Resolve from environment variables
+- Convert to the correct type (str, int, bool, float)
+- Use fallback defaults when env var is not set
+
 ## Template Expansion
 
 Multiple variables in one value:

@@ -423,6 +423,53 @@ def worker():
     print(f"Connecting to service at {K8sConfig.service_host}:{K8sConfig.service_port}")
 ```
 
+### Pattern 5: Inheritance with EnvVar
+
+EnvVar fields work correctly with class inheritance. Inherited fields are resolved and type-converted:
+
+```python
+class BaseConfig:
+    """Common configuration shared across services."""
+    host: str = EnvVar @ "HOST" | "localhost"
+    port: int = EnvVar @ "PORT" | 8080
+    debug: bool = EnvVar @ "DEBUG" | False
+    log_level: str = EnvVar @ "LOG_LEVEL" | "INFO"
+
+@proto.prefix
+class APIConfig(BaseConfig):
+    """API service configuration."""
+    timeout: int = EnvVar @ "API_TIMEOUT" | 30
+    max_retries: int = EnvVar @ "API_MAX_RETRIES" | 3
+    api_key: str = EnvVar @ "API_KEY"
+
+@proto.prefix
+class WorkerConfig(BaseConfig):
+    """Background worker configuration."""
+    concurrency: int = EnvVar @ "WORKER_CONCURRENCY" | 4
+    queue_name: str = EnvVar @ "WORKER_QUEUE" | "default"
+```
+
+Both inherited and child EnvVar fields:
+- Resolve from environment variables at decoration time
+- Convert to the annotated type (`str`, `int`, `bool`, `float`)
+- Use fallback defaults when the env var is not set
+
+**Usage:**
+```bash
+# Shared config applies to both services
+export HOST=10.0.0.1
+export PORT=3000
+export DEBUG=true
+
+# Service-specific config
+export API_TIMEOUT=60
+export API_KEY=secret-key
+export WORKER_CONCURRENCY=8
+
+python api_server.py   # Uses APIConfig with inherited HOST, PORT, DEBUG
+python worker.py       # Uses WorkerConfig with same inherited fields
+```
+
 ## Security Considerations
 
 ### 1. Never Log Secrets

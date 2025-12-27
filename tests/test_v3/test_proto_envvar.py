@@ -519,3 +519,94 @@ def test_envvar_get_with_dtype_template():
 
   finally:
     del os.environ["COUNT"]
+
+
+def test_proto_envvar_inheritance():
+  """Test EnvVar resolution works for inherited fields in proto-decorated classes.
+
+  This tests that:
+  1. EnvVar fields from base classes are properly inherited
+  2. Type conversion (dtype) works for inherited EnvVar fields
+  3. Both inherited and child EnvVar fields coexist correctly
+  """
+  import os
+
+  from params_proto import EnvVar, proto
+
+  os.environ["BASE_HOST"] = "192.168.1.1"
+  os.environ["BASE_PORT"] = "8080"
+  os.environ["BASE_DEBUG"] = "true"
+  os.environ["BASE_RATIO"] = "0.75"
+  os.environ["CHILD_TIMEOUT"] = "30"
+  os.environ["CHILD_ENABLED"] = "1"
+
+  try:
+    # Base class with EnvVar fields (not decorated)
+    class BaseConfig:
+      host: str = EnvVar @ "BASE_HOST" | "localhost"
+      port: int = EnvVar @ "BASE_PORT" | 3000
+      debug: bool = EnvVar @ "BASE_DEBUG" | False
+      ratio: float = EnvVar @ "BASE_RATIO" | 0.5
+
+    @proto.prefix
+    class AppConfig(BaseConfig):
+      timeout: int = EnvVar @ "CHILD_TIMEOUT" | 10
+      enabled: bool = EnvVar @ "CHILD_ENABLED" | False
+
+    # Test inherited fields - values
+    assert AppConfig.host == "192.168.1.1", f"Expected '192.168.1.1', got {AppConfig.host}"
+    assert AppConfig.port == 8080, f"Expected 8080, got {AppConfig.port}"
+    assert AppConfig.debug is True, f"Expected True, got {AppConfig.debug}"
+    assert AppConfig.ratio == 0.75, f"Expected 0.75, got {AppConfig.ratio}"
+
+    # Test inherited fields - types
+    assert isinstance(AppConfig.host, str), f"host should be str, got {type(AppConfig.host)}"
+    assert isinstance(AppConfig.port, int), f"port should be int, got {type(AppConfig.port)}"
+    assert isinstance(AppConfig.debug, bool), f"debug should be bool, got {type(AppConfig.debug)}"
+    assert isinstance(AppConfig.ratio, float), f"ratio should be float, got {type(AppConfig.ratio)}"
+
+    # Test child fields - values
+    assert AppConfig.timeout == 30, f"Expected 30, got {AppConfig.timeout}"
+    assert AppConfig.enabled is True, f"Expected True, got {AppConfig.enabled}"
+
+    # Test child fields - types
+    assert isinstance(AppConfig.timeout, int), f"timeout should be int, got {type(AppConfig.timeout)}"
+    assert isinstance(AppConfig.enabled, bool), f"enabled should be bool, got {type(AppConfig.enabled)}"
+
+  finally:
+    for key in ["BASE_HOST", "BASE_PORT", "BASE_DEBUG", "BASE_RATIO", "CHILD_TIMEOUT", "CHILD_ENABLED"]:
+      os.environ.pop(key, None)
+
+
+def test_proto_envvar_inheritance_fallback():
+  """Test EnvVar fallback values work correctly for inherited fields."""
+  import os
+
+  from params_proto import EnvVar, proto
+
+  # Only set some env vars to test fallback behavior
+  os.environ["BASE_HOST"] = "10.0.0.1"
+  # BASE_PORT not set - should use fallback
+
+  try:
+    class BaseConfig:
+      host: str = EnvVar @ "BASE_HOST" | "localhost"
+      port: int = EnvVar @ "BASE_PORT" | 3000  # Should fallback to 3000
+
+    @proto.prefix
+    class AppConfig(BaseConfig):
+      timeout: int = EnvVar @ "APP_TIMEOUT" | 60  # Should fallback to 60
+
+    # Inherited field with env var set
+    assert AppConfig.host == "10.0.0.1", f"Expected '10.0.0.1', got {AppConfig.host}"
+
+    # Inherited field with fallback
+    assert AppConfig.port == 3000, f"Expected 3000 (fallback), got {AppConfig.port}"
+    assert isinstance(AppConfig.port, int), f"port should be int, got {type(AppConfig.port)}"
+
+    # Child field with fallback
+    assert AppConfig.timeout == 60, f"Expected 60 (fallback), got {AppConfig.timeout}"
+    assert isinstance(AppConfig.timeout, int), f"timeout should be int, got {type(AppConfig.timeout)}"
+
+  finally:
+    os.environ.pop("BASE_HOST", None)
