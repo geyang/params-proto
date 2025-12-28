@@ -40,7 +40,7 @@ def _get_union_classes(annotation) -> list:
   if not args and hasattr(annotation, "__args__"):
     args = annotation.__args__
 
-  return [arg for arg in args if isinstance(arg, type)]
+  return [arg for arg in args if isinstance(arg, type) and arg is not type(None)]
 
 
 def _normalize_class_name(class_name: str) -> str:
@@ -112,12 +112,17 @@ def parse_cli_args(wrapper) -> Dict[str, Any]:
     # Check if this is a Union type
     if _is_union_type(annotation):
       union_classes = _get_union_classes(annotation)
-      if union_classes:
+      # Only treat as Union subcommand if there's more than one class
+      # If there's exactly one class, it's Optional[T] and should be treated as a regular param
+      if len(union_classes) > 1:
         union_params[kebab_name] = (param_name, union_classes)
         # Union parameters are handled specially
         if param_info.get("required", False):
           required_params.append(param_name)
         continue
+      elif len(union_classes) == 1:
+        # This is Optional[T], use the inner type for type conversion
+        annotation = union_classes[0]
 
     # Check if this is a single class type (dataclass, etc.)
     # Treat as a "union" with one option to enable same syntax
