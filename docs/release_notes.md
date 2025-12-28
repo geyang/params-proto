@@ -7,12 +7,51 @@ This page contains the release history and changelog for params-proto.
 ### 🐛 Bug Fixes
 
 - **Optional[T] CLI Parsing**: Fixed `Optional[str]`, `Optional[int]`, and other `Optional[T]` types failing to parse correctly in CLI
-  - These were incorrectly treated as Union subcommands instead of simple optional parameters
-  - Now work with standard `--param value` syntax: `python script.py --checkpoint model.pt`
-  - Fixed in `cli_parse.py`: `_get_union_classes()` now filters out `NoneType` from Union args
-  - Fixed in `cli_parse.py`: Added logic to detect `Optional[T]` patterns (Union with only one non-None type) and treat them as regular optional params
-  - Fixed in `type_utils.py`: `_get_type_name()` now recognizes `Optional[T]` and extracts the correct type name for help text
-  - Improved help output to show `STR`, `INT` instead of generic `VALUE` for Optional types
+
+  The issue: `Optional[T]` types were incorrectly treated as Union subcommands, requiring special syntax instead of working as simple optional parameters.
+
+  **Before (v3.0.0-rc19):**
+  ```python
+  from typing import Optional
+  from params_proto import proto
+
+  @proto.cli
+  def train(checkpoint: Optional[str] = None, learning_rate: float = 0.001):
+      print(f"checkpoint={checkpoint}, lr={learning_rate}")
+  ```
+
+  ❌ This would fail:
+  ```bash
+  python train.py --checkpoint model.pt
+  # error: unrecognized argument: --checkpoint
+  ```
+
+  ✅ **After (v3.0.0-rc20):**
+  ```bash
+  # Now works correctly with standard syntax
+  python train.py --checkpoint model.pt
+  # Output: checkpoint=model.pt, lr=0.001
+
+  # Still supports omitting the optional parameter
+  python train.py
+  # Output: checkpoint=None, lr=0.001
+
+  # Works seamlessly with other parameters
+  python train.py --checkpoint model.pt --learning-rate 0.01
+  # Output: checkpoint=model.pt, lr=0.01
+  ```
+
+  **Improved help output:**
+  ```
+  Before:  --checkpoint VALUE   Path to checkpoint file
+  After:   --checkpoint STR     Path to checkpoint file
+  ```
+
+  **Technical fixes:**
+  - Fixed `cli_parse.py:_get_union_classes()`: Now filters out `NoneType` from Union type arguments
+  - Fixed `cli_parse.py` Union handling: Added detection for `Optional[T]` patterns (Union with single non-None type) and treats them as regular optional parameters
+  - Fixed `type_utils.py:_get_type_name()`: Now recognizes `Optional[T]` patterns and recursively extracts the correct inner type name for help text
+  - Help text now shows specific types (`STR`, `INT`, `FLOAT`) instead of generic `VALUE` for Optional types
 
 ## Version 3.0.0-rc19 (2025-12-28)
 
