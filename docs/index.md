@@ -270,10 +270,13 @@ The Quick Start covers the basics. For deeper understanding, see:
 
 - **[Core Concepts](key_concepts/core-concepts.md)** - The three main decorators (@proto, @proto.cli, @proto.prefix)
 - **[Configuration Patterns](key_concepts/configuration-patterns.md)** - Functions vs classes, when to use each
+
+**Building CLIs** (related guides for creating command-line interfaces):
 - **[CLI Fundamentals](key_concepts/cli-fundamentals.md)** - Basic CLI features and type display
 - **[CLI Patterns](key_concepts/cli-patterns.md)** - Advanced patterns like grouped options and custom program names
 - **[Naming Conventions](key_concepts/naming-conventions.md)** - How Python names convert to CLI arguments
 - **[Help Generation](key_concepts/help-generation.md)** - Automatic help text from comments and docstrings
+
 - **[Type System](key_concepts/type-system.md)** - Complete type hints reference and type validation
 - **[Union Types: Subcommands](key_concepts/union_types.md)** - Union types as subcommands, optional parameters, and multi-way dispatching
 - **[Environment Variables](key_concepts/environment_variables.md)** - Configuration from environment with EnvVar

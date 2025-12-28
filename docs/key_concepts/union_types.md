@@ -1,6 +1,20 @@
-# Union Types and Subcommands
+# Union Types: Subcommands and Configuration Selection
 
-Quick reference for working with Union types and the difference between `Union[T]` and `Optional[T]`.
+Union types enable powerful multi-way dispatching in your CLI programs, allowing users to choose between different configurations or implementations at runtime. This is essential for building flexible, composable CLI tools.
+
+## Why Union Types Matter
+
+When building complex CLI applications, you often need to support **multiple alternatives**:
+- Different optimizer algorithms (Adam vs SGD vs RMSprop)
+- Different model architectures (ResNet vs Vision Transformer vs CNN)
+- Different data loaders or preprocessing strategies
+- Different deployment environments (local vs cloud vs GPU)
+
+Without Union types, you'd need separate scripts or manual conditional logic. With Union types, params-proto automatically generates:
+- ✅ Subcommand-like syntax that feels natural
+- ✅ Isolated parameter spaces (each option has its own parameters)
+- ✅ Type-safe dispatch with `isinstance()` checks
+- ✅ Automatic help generation per option
 
 ## Quick Reference
 
@@ -54,37 +68,61 @@ def process(checkpoint: str = None, batch_size: int = 32):
 
 ## Union[ClassA, ClassB]: Choosing Classes
 
-Use Union types when you need to **select which class to instantiate**:
+Use Union types when you need to **select which class to instantiate**. This creates subcommand-like behavior where each option has isolated parameters.
 
-```python
-@dataclass
-class PerspectiveCamera:
-    fov: float = 60.0
-    aspect: float = 1.33
+### Example: Camera Selection
 
-@dataclass
-class OrthographicCamera:
-    scale: float = 1.0
-
-@proto.cli
-def render(camera: PerspectiveCamera | OrthographicCamera, output: str = "out.png"):
-    pass
-```
-
-**CLI Syntax:**
+First, let's see how users interact with this from the command line:
 
 ```bash
-# Named selection (all these work)
-python render.py --camera:PerspectiveCamera
-python render.py --camera:perspective-camera
-python render.py --camera:perspectivecamera
+# Positional selection (simplest)
+python render.py perspective-camera --output scene.png
 
-# Positional selection
-python render.py perspective-camera
+# Named selection (explicit)
+python render.py --camera:perspective-camera
 
 # With attribute overrides
 python render.py perspective-camera --camera.fov 45 --camera.aspect 1.77
+
+# Alternative class
+python render.py --camera:OrthographicCamera --camera.scale 2.0
 ```
+
+Now the implementation:
+
+```python
+from dataclasses import dataclass
+from params_proto import proto
+
+@dataclass
+class PerspectiveCamera:
+    fov: float = 60.0          # Field of view in degrees
+    aspect: float = 1.33       # Aspect ratio
+
+@dataclass
+class OrthographicCamera:
+    scale: float = 1.0         # Orthographic scale factor
+
+@proto.cli
+def render(
+    camera: PerspectiveCamera | OrthographicCamera,  # Union type creates selector
+    output: str = "out.png",                           # Shared parameter
+):
+    """Render scene with selected camera type."""
+    if isinstance(camera, PerspectiveCamera):
+        print(f"Rendering with perspective: fov={camera.fov}, aspect={camera.aspect}")
+    else:
+        print(f"Rendering with orthographic: scale={camera.scale}")
+
+if __name__ == "__main__":
+    render()
+```
+
+**How it works:**
+- `camera` is a **required parameter** with Union type
+- params-proto instantiates the selected class
+- Each class has its own parameter namespace (`--camera.fov`, `--camera.aspect`, etc.)
+- Use `isinstance()` to dispatch on the selected type
 
 ## Optional[T]: Simple Optional Parameters
 
@@ -162,80 +200,108 @@ class Config:
 
 ### Example 1: Optimizer Selection
 
+Command-line usage:
+
+```bash
+# Choose optimizer and override defaults
+python train.py adam --optimizer.lr 0.01
+python train.py sgd --optimizer.momentum 0.95
+python train.py --optimizer:Adam --optimizer.beta1 0.95
+```
+
+Implementation:
+
 ```python
 @dataclass
 class Adam:
-    lr: float = 0.001
-    beta1: float = 0.9
-    beta2: float = 0.999
+    lr: float = 0.001        # Learning rate
+    beta1: float = 0.9       # Exponential decay rate for 1st moment
+    beta2: float = 0.999     # Exponential decay rate for 2nd moment
 
 @dataclass
 class SGD:
-    lr: float = 0.001
-    momentum: float = 0.9
+    lr: float = 0.001        # Learning rate
+    momentum: float = 0.9    # Momentum factor
 
 @proto.cli
-def train(optimizer: Adam | SGD):
+def train(optimizer: Adam | SGD):  # Union type selector
+    """Train with chosen optimizer."""
     if isinstance(optimizer, Adam):
-        print(f"Adam: lr={optimizer.lr}, beta1={optimizer.beta1}")
-    else:
+        print(f"Adam: lr={optimizer.lr}, beta1={optimizer.beta1}, beta2={optimizer.beta2}")
+    elif isinstance(optimizer, SGD):
         print(f"SGD: lr={optimizer.lr}, momentum={optimizer.momentum}")
-```
-
-**Usage:**
-
-```bash
-python train.py adam --optimizer.lr 0.01
-python train.py sgd --optimizer.momentum 0.95
 ```
 
 ### Example 2: Configuration Class
 
+Command-line usage:
+
+```bash
+# Positional class selection
+python connect.py database-config --db.host prod.example.com --db.port 3306
+
+# Or named selection
+python connect.py --db:DatabaseConfig --db.user root
+```
+
+Implementation:
+
 ```python
 @dataclass
 class DatabaseConfig:
-    host: str = "localhost"
-    port: int = 5432
-    user: str = "admin"
+    host: str = "localhost"  # Database host
+    port: int = 5432         # Database port
+    user: str = "admin"      # Database user
 
 @proto.cli
-def connect(db: DatabaseConfig):
-    print(f"Connecting to {db.host}:{db.port}")
+def connect(db: DatabaseConfig):  # Single class (still uses Union mechanism)
+    """Connect to database with configuration."""
+    print(f"Connecting to {db.host}:{db.port} as {db.user}")
 ```
 
-**Usage:**
+### Example 3: Mixed Union and Regular Parameters
+
+Command-line usage:
 
 ```bash
-python connect.py database-config --db.host prod.example.com --db.port 3306
+# Union option + shared parameters
+python render.py perspective-camera --output scene.png --verbose
+
+# Different union option with overrides
+python render.py --camera:OrthographicCamera --camera.scale 2.0 --verbose
+
+# Help shows all options
+python render.py --help
 ```
 
-### Example 3: Mixed Parameters
+Implementation:
 
 ```python
 @dataclass
 class PerspectiveCamera:
-    fov: float = 60.0
+    fov: float = 60.0        # Field of view in degrees
 
 @dataclass
 class OrthographicCamera:
-    scale: float = 1.0
+    scale: float = 1.0       # Scale factor
 
 @proto.cli
 def render(
-    camera: PerspectiveCamera | OrthographicCamera,
-    output: str = "render.png",
-    verbose: bool = False,
+    camera: PerspectiveCamera | OrthographicCamera,  # Union selector
+    output: str = "render.png",                        # Shared parameter
+    verbose: bool = False,                             # Shared flag
 ):
     """Render scene with selected camera."""
-    pass
+    if isinstance(camera, PerspectiveCamera):
+        print(f"Perspective render: fov={camera.fov}, output={output}")
+    else:
+        print(f"Orthographic render: scale={camera.scale}, output={output}")
+
+    if verbose:
+        print("Verbose output enabled")
 ```
 
-**Usage:**
-
-```bash
-python render.py perspective-camera --output scene.png --verbose
-python render.py --camera:OrthographicCamera --camera.scale 2.0 --verbose
-```
+**Key point:** Union parameters are **required**, while other parameters can be optional with defaults.
 
 ## Related
 
