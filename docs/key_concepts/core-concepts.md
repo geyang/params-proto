@@ -222,6 +222,8 @@ params-proto uses Python's type hints to:
 ## Related
 
 - [Welcome](welcome.md) - Introduction and quick start
+- [CLI Fundamentals](cli-fundamentals.md) - Basic CLI features
+- [CLI Patterns](cli-patterns.md) - Advanced CLI patterns
 - [Configuration Patterns](configuration-patterns.md) - Functions vs classes in depth
 - [Union Types](union-types.md) - Subcommands and optional parameters
 - [Advanced Patterns](advanced-patterns.md) - Prefixes and composition

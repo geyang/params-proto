@@ -590,6 +590,8 @@ def test_config(test_env):
 
 ## Related
 
-- [Parameter Overrides](overrides.md) - Override precedence and context managers
-- [Configuration Basics](configuration_basics.md) - Functions vs classes
-- [Types](types.md) - Type conversion rules
+- [Core Concepts](core-concepts.md) - Decorators and basic usage
+- [CLI Fundamentals](cli-fundamentals.md) - Basic CLI features
+- [Configuration Patterns](configuration-patterns.md) - Function vs class configurations
+- [Type System](type-system.md) - Type conversion rules
+- [Parameter Overrides](parameter-overrides.md) - Override precedence and context managers

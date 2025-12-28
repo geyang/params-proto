@@ -655,7 +655,8 @@ def clear(value: Literal[1, 2, 3] = 1):
 
 ## Related
 
-- [Decorators](decorators.md) - Using type annotations with decorators
-- [Functions](functions.md) - Type annotations in function parameters
-- [Classes](classes.md) - Type annotations in class attributes
-- [CLI Applications](../examples/cli_applications.md) - Real-world type usage
+- [Core Concepts](core-concepts.md) - Decorators and basic usage
+- [CLI Fundamentals](cli-fundamentals.md) - Type display in CLI
+- [CLI Patterns](cli-patterns.md) - Advanced patterns with type parameters
+- [Union Types](union-types.md) - Union types as subcommands
+- [Configuration Patterns](configuration-patterns.md) - Type annotations in configurations

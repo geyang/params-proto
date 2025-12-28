@@ -256,6 +256,7 @@ def optimize(optimizer: Optimizer = Optimizer.ADAM):
 ## Related
 
 - [CLI Fundamentals](cli-fundamentals.md) - Core CLI features
+- [CLI Patterns](cli-patterns.md) - Advanced CLI patterns
 - [Naming Conventions](naming-conventions.md) - Name conversion rules
 - [ANSI Formatting](ansi-formatting.md) - Terminal colors and formatting
 - [Configuration Patterns](configuration-patterns.md) - Function and class documentation

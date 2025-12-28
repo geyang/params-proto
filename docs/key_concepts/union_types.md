@@ -239,6 +239,8 @@ python render.py --camera:OrthographicCamera --camera.scale 2.0 --verbose
 
 ## Related
 
-- [CLI Guide](cli_guide.md) - Full CLI documentation
-- [Configuration Basics](configuration_basics.md) - Defining configurations
-- [Type System](types.md) - Type annotation reference
+- [Core Concepts](core-concepts.md) - Three main decorators
+- [CLI Fundamentals](cli-fundamentals.md) - Basic CLI features
+- [CLI Patterns](cli-patterns.md) - Advanced CLI patterns
+- [Configuration Patterns](configuration-patterns.md) - Function vs class configurations
+- [Type System](type-system.md) - Type annotation reference

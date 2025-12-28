@@ -543,6 +543,8 @@ config = get_config("resnet")
 ## Related
 
 - [Core Concepts](core-concepts.md) - The three decorators
+- [CLI Fundamentals](cli-fundamentals.md) - Basic CLI features
+- [CLI Patterns](cli-patterns.md) - Advanced CLI patterns
 - [Type System](type-system.md) - Complete type annotation reference
 - [Advanced Patterns](advanced-patterns.md) - Prefixes and subcommands
 - [Parameter Overrides](parameter-overrides.md) - Ways to override values

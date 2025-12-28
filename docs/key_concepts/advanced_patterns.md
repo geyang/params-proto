@@ -515,7 +515,10 @@ class SystemModelArchitecture:
 
 ## Related
 
-- [Configuration Basics](configuration_basics.md) - Functions vs classes
-- [Type System](types.md) - Required parameters and callable types
-- [CLI Generation](cli_generation.md) - Naming conventions
-- [Parameter Overrides](overrides.md) - Override methods
+- [Core Concepts](core-concepts.md) - Three main decorators
+- [Configuration Patterns](configuration-patterns.md) - Function vs class configurations
+- [CLI Fundamentals](cli-fundamentals.md) - Basic CLI features
+- [CLI Patterns](cli-patterns.md) - Advanced CLI patterns
+- [Naming Conventions](naming-conventions.md) - Name conversion rules
+- [Type System](type-system.md) - Type annotation reference
+- [Parameter Overrides](parameter-overrides.md) - Override methods

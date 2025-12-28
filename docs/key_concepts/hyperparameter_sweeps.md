@@ -4,7 +4,7 @@ Hyperparameter sweeps are essential for finding optimal configurations in machin
 guide shows you how to perform systematic parameter searches using params-proto. Simply wrap the configuration class
 or the cli entrypoint function with the `Sweep` class:
 
-> **Looking for a lighter alternative?** Check out [`piter`](piter.md) for a dictionary-based approach with operator composition (`*`, `%`, `**`).
+> **Looking for a lighter alternative?** Check out [`piter`](parameter-iteration.md) for a dictionary-based approach with operator composition (`*`, `%`, `**`).
 
 ```python
 from params_proto import proto, Sweep
@@ -143,3 +143,11 @@ print(df.describe())
 # Filter configurations
 high_lr = df[df["Params.lr"] > 0.005]
 ```
+
+## Related
+
+- [Core Concepts](core-concepts.md) - Decorators and basic usage
+- [Configuration Patterns](configuration-patterns.md) - Function vs class configurations
+- [Parameter Overrides](parameter-overrides.md) - Override methods and context managers
+- [Parameter Iteration](parameter-iteration.md) - Lightweight sweeps with piter
+- [Advanced Patterns](advanced-patterns.md) - Prefixes and composition

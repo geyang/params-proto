@@ -398,8 +398,11 @@ Create a parameter iterator from a specification dictionary.
 | `__mod__(other)` | Apply overrides to all configs (`%`) |
 | `__pow__(n)` | Repeat each config n times (`**`) |
 
-## See Also
+## Related
 
-- [Hyperparameter Sweeps](hyperparameter_sweeps.md) - Traditional `Sweep` class with `@proto` integration
-- [Configuration Basics](configuration_basics.md) - Using `@proto` decorators
-- [CLI Guide](cli_guide.md) - Running sweeps from command line
+- [Core Concepts](core-concepts.md) - Decorators and basic usage
+- [Configuration Patterns](configuration-patterns.md) - Function vs class configurations
+- [CLI Fundamentals](cli-fundamentals.md) - Basic CLI features
+- [Parameter Overrides](parameter-overrides.md) - Override methods and context managers
+- [Hyperparameter Sweeps](hyperparameter-sweeps.md) - Traditional `Sweep` class with `@proto` integration
+- [Advanced Patterns](advanced-patterns.md) - Prefixes and composition
