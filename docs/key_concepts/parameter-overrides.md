@@ -645,11 +645,11 @@ train()  # Should use default lr=0.001
 
 ## Related
 
-- [Core Concepts](core-concepts.md) - Decorators and basic usage
-- [CLI Fundamentals](cli-fundamentals.md) - Basic CLI features
-- [CLI Patterns](cli-patterns.md) - Advanced CLI patterns
-- [Configuration Patterns](configuration-patterns.md) - Function vs class configurations
-- [Advanced Patterns](advanced-patterns.md) - Prefixes and Union-based subcommands
-- [Environment Variables](environment-variables.md) - EnvVar configuration
-- [Hyperparameter Sweeps](hyperparameter-sweeps.md) - Declarative parameter sweeps
-- [Parameter Iteration](parameter-iteration.md) - Lightweight sweeps with operators
+- [Core Concepts](core-concepts) - Decorators and basic usage
+- [CLI Fundamentals](cli-fundamentals) - Basic CLI features
+- [CLI Patterns](cli-patterns) - Advanced CLI patterns
+- [Configuration Patterns](configuration-patterns) - Function vs class configurations
+- [Advanced Patterns](advanced-patterns) - Prefixes and Union-based subcommands
+- [Environment Variables](environment-variables) - EnvVar configuration
+- [Hyperparameter Sweeps](hyperparameter-sweeps) - Declarative parameter sweeps
+- [Parameter Iteration](parameter-iteration) - Lightweight sweeps with operators

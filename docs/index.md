@@ -274,11 +274,11 @@ The Quick Start covers the basics. For deeper understanding, see:
 - **[CLI Patterns](key_concepts/cli-patterns.md)** - Advanced patterns like grouped options and custom program names
 - **[Naming Conventions](key_concepts/naming-conventions.md)** - How Python names convert to CLI arguments
 - **[Help Generation](key_concepts/help-generation.md)** - Automatic help text from comments and docstrings
-- **[Union Types](key_concepts/union-types.md)** - Union types as subcommands and optional parameters
 - **[Type System](key_concepts/type-system.md)** - Complete type hints reference and type validation
+- **[Union Types: Subcommands](key_concepts/union_types.md)** - Union types as subcommands, optional parameters, and multi-way dispatching
 - **[Environment Variables](key_concepts/environment_variables.md)** - Configuration from environment with EnvVar
 - **[Parameter Overrides](key_concepts/parameter-overrides.md)** - CLI, context managers, and other override methods
-- **[Advanced Patterns](key_concepts/advanced_patterns.md)** - Prefixes, composition, and complex patterns
+- **[Advanced Patterns: Prefixes & Composition](key_concepts/advanced_patterns.md)** - Global singleton configs with @proto.prefix, namespaced parameters, and complex composition
 - **[Hyperparameter Sweeps](key_concepts/hyperparameter_sweeps.md)** - Declarative parameter sweeps with Sweep
 - **[Parameter Iteration](key_concepts/parameter-iteration.md)** - Lightweight, composable sweeps with piter
 - **[ANSI Formatting](key_concepts/ansi_formatting.md)** - Terminal colors and formatting
@@ -306,11 +306,11 @@ CLI Fundamentals <key_concepts/cli-fundamentals>
 CLI Patterns <key_concepts/cli-patterns>
 Naming Conventions <key_concepts/naming-conventions>
 Help Generation <key_concepts/help-generation>
-Union Types <key_concepts/union_types>
 Type System <key_concepts/type-system>
+Union Types: Subcommands <key_concepts/union_types>
 Environment Variables <key_concepts/environment_variables>
 Parameter Overrides <key_concepts/parameter-overrides>
-Advanced Patterns <key_concepts/advanced_patterns>
+Advanced Patterns: Prefixes & Composition <key_concepts/advanced_patterns>
 Hyperparameter Sweeps <key_concepts/hyperparameter_sweeps>
 Parameter Iteration <key_concepts/parameter-iteration>
 ANSI Formatting <key_concepts/ansi_formatting>

@@ -400,9 +400,9 @@ Create a parameter iterator from a specification dictionary.
 
 ## Related
 
-- [Core Concepts](core-concepts.md) - Decorators and basic usage
-- [Configuration Patterns](configuration-patterns.md) - Function vs class configurations
-- [CLI Fundamentals](cli-fundamentals.md) - Basic CLI features
-- [Parameter Overrides](parameter-overrides.md) - Override methods and context managers
-- [Hyperparameter Sweeps](hyperparameter-sweeps.md) - Traditional `Sweep` class with `@proto` integration
-- [Advanced Patterns](advanced-patterns.md) - Prefixes and composition
+- [Core Concepts](core-concepts) - Decorators and basic usage
+- [Configuration Patterns](configuration-patterns) - Function vs class configurations
+- [CLI Fundamentals](cli-fundamentals) - Basic CLI features
+- [Parameter Overrides](parameter-overrides) - Override methods and context managers
+- [Hyperparameter Sweeps](hyperparameter-sweeps) - Traditional `Sweep` class with `@proto` integration
+- [Advanced Patterns](advanced-patterns) - Prefixes and composition

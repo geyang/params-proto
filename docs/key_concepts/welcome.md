@@ -54,43 +54,43 @@ Training with lr=0.01, batch=64
 ## Quick Start Paths
 
 **For scripts and CLI tools:**
-Start with [Configuration Patterns](configuration-patterns.md) to learn function-based configs.
+Start with [Configuration Patterns](configuration-patterns) to learn function-based configs.
 
 **For libraries and reusable components:**
-Start with [Core Concepts](core-concepts.md) to understand decorators and classes.
+Start with [Core Concepts](core-concepts) to understand decorators and classes.
 
 **For detailed CLI features:**
-Check [CLI Fundamentals](cli-fundamentals.md) for naming, help generation, and types.
+Check [CLI Fundamentals](cli-fundamentals) for naming, help generation, and types.
 
 **For advanced patterns:**
-See [Advanced Patterns](advanced-patterns.md) for prefixes, singletons, and composition.
+See [Advanced Patterns](advanced-patterns) for prefixes, singletons, and composition.
 
 ## Next Steps
 
-1. Read [Core Concepts](core-concepts.md) - Understand the 3 main decorators
+1. Read [Core Concepts](core-concepts) - Understand the 3 main decorators
 2. Pick your pattern:
-   - Functions → [Configuration Patterns](configuration-patterns.md)
-   - Classes → [Advanced Patterns](advanced-patterns.md)
-   - Union types → [Union Types](union-types.md)
+   - Functions → [Configuration Patterns](configuration-patterns)
+   - Classes → [Advanced Patterns](advanced-patterns)
+   - Union types → [Union Types](union-types)
 3. Explore features:
-   - CLI basics → [CLI Fundamentals](cli-fundamentals.md)
-   - CLI patterns → [CLI Patterns](cli-patterns.md)
-   - Environment variables → [Environment Variables](environment-variables.md)
-   - Parameter sweeps → [Hyperparameter Sweeps](hyperparameter-sweeps.md)
+   - CLI basics → [CLI Fundamentals](cli-fundamentals)
+   - CLI patterns → [CLI Patterns](cli-patterns)
+   - Environment variables → [Environment Variables](environment-variables)
+   - Parameter sweeps → [Hyperparameter Sweeps](hyperparameter-sweeps)
 
 ## Documentation
 
-- [Core Concepts](core-concepts.md) - Decorators and basic usage
-- [Configuration Patterns](configuration-patterns.md) - Functions vs classes
-- [CLI Fundamentals](cli-fundamentals.md) - Building CLIs
-- [CLI Patterns](cli-patterns.md) - Advanced CLI patterns
-- [Union Types](union-types.md) - Subcommands and optional parameters
-- [Advanced Patterns](advanced-patterns.md) - Prefixes and composition
-- [Type System](type-system.md) - Supported types and conversion
-- [Environment Variables](environment-variables.md) - EnvVar integration
-- [Parameter Overrides](parameter-overrides.md) - Multiple override methods
-- [Hyperparameter Sweeps](hyperparameter-sweeps.md) - Systematic exploration
-- [Parameter Iteration](parameter-iteration.md) - Lightweight sweeps with piter
+- [Core Concepts](core-concepts) - Decorators and basic usage
+- [Configuration Patterns](configuration-patterns) - Functions vs classes
+- [CLI Fundamentals](cli-fundamentals) - Building CLIs
+- [CLI Patterns](cli-patterns) - Advanced CLI patterns
+- [Union Types](union-types) - Subcommands and optional parameters
+- [Advanced Patterns](advanced-patterns) - Prefixes and composition
+- [Type System](type-system) - Supported types and conversion
+- [Environment Variables](environment-variables) - EnvVar integration
+- [Parameter Overrides](parameter-overrides) - Multiple override methods
+- [Hyperparameter Sweeps](hyperparameter-sweeps) - Systematic exploration
+- [Parameter Iteration](parameter-iteration) - Lightweight sweeps with piter
 
 ## Features
 

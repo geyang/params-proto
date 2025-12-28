@@ -193,7 +193,7 @@ proto.bind(**{
 })
 ```
 
-See [Parameter Overrides](overrides.md) for details.
+See [Parameter Overrides](overrides) for details.
 
 ## Union-Based Subcommands
 
@@ -515,10 +515,10 @@ class SystemModelArchitecture:
 
 ## Related
 
-- [Core Concepts](core-concepts.md) - Three main decorators
-- [Configuration Patterns](configuration-patterns.md) - Function vs class configurations
-- [CLI Fundamentals](cli-fundamentals.md) - Basic CLI features
-- [CLI Patterns](cli-patterns.md) - Advanced CLI patterns
-- [Naming Conventions](naming-conventions.md) - Name conversion rules
-- [Type System](type-system.md) - Type annotation reference
-- [Parameter Overrides](parameter-overrides.md) - Override methods
+- [Core Concepts](core-concepts) - Three main decorators
+- [Configuration Patterns](configuration-patterns) - Function vs class configurations
+- [CLI Fundamentals](cli-fundamentals) - Basic CLI features
+- [CLI Patterns](cli-patterns) - Advanced CLI patterns
+- [Naming Conventions](naming-conventions) - Name conversion rules
+- [Type System](type-system) - Type annotation reference
+- [Parameter Overrides](parameter-overrides) - Override methods

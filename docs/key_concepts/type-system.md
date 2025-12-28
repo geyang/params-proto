@@ -655,8 +655,8 @@ def clear(value: Literal[1, 2, 3] = 1):
 
 ## Related
 
-- [Core Concepts](core-concepts.md) - Decorators and basic usage
-- [CLI Fundamentals](cli-fundamentals.md) - Type display in CLI
-- [CLI Patterns](cli-patterns.md) - Advanced patterns with type parameters
-- [Union Types](union-types.md) - Union types as subcommands
-- [Configuration Patterns](configuration-patterns.md) - Type annotations in configurations
+- [Core Concepts](core-concepts) - Decorators and basic usage
+- [CLI Fundamentals](cli-fundamentals) - Type display in CLI
+- [CLI Patterns](cli-patterns) - Advanced patterns with type parameters
+- [Union Types](union-types) - Union types as subcommands
+- [Configuration Patterns](configuration-patterns) - Type annotations in configurations

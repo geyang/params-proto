@@ -128,7 +128,7 @@ python tool.py train --lr 0.01
 python tool.py evaluate --model checkpoint.pt
 ```
 
-See [Type System](type-system.md) for details on required parameters.
+See [Type System](type-system) for details on required parameters.
 
 ---
 
@@ -258,7 +258,7 @@ if __name__ == "__main__":
     train()
 ```
 
-Or use `@proto.prefix` for global configuration (see [Advanced Patterns](advanced-patterns.md)).
+Or use `@proto.prefix` for global configuration (see [Advanced Patterns](advanced-patterns)).
 
 ### Methods in Configuration Classes
 
@@ -542,10 +542,10 @@ config = get_config("resnet")
 
 ## Related
 
-- [Core Concepts](core-concepts.md) - The three decorators
-- [CLI Fundamentals](cli-fundamentals.md) - Basic CLI features
-- [CLI Patterns](cli-patterns.md) - Advanced CLI patterns
-- [Type System](type-system.md) - Complete type annotation reference
-- [Advanced Patterns](advanced-patterns.md) - Prefixes and subcommands
-- [Parameter Overrides](parameter-overrides.md) - Ways to override values
-- [Hyperparameter Sweeps](hyperparameter-sweeps.md) - Systematic exploration
+- [Core Concepts](core-concepts) - The three decorators
+- [CLI Fundamentals](cli-fundamentals) - Basic CLI features
+- [CLI Patterns](cli-patterns) - Advanced CLI patterns
+- [Type System](type-system) - Complete type annotation reference
+- [Advanced Patterns](advanced-patterns) - Prefixes and subcommands
+- [Parameter Overrides](parameter-overrides) - Ways to override values
+- [Hyperparameter Sweeps](hyperparameter-sweeps) - Systematic exploration

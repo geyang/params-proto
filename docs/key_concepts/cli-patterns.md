@@ -58,7 +58,7 @@ This groups options visually and makes help text more readable for complex CLIs 
 - **Discoverability** - Users can find related options easily
 - **Scalability** - Works well with many parameters
 
-See [Advanced Patterns](advanced-patterns.md) for more on prefixes and singleton behavior.
+See [Advanced Patterns](advanced-patterns) for more on prefixes and singleton behavior.
 
 ---
 
@@ -182,8 +182,8 @@ Numbers remain in both the parameter name and the CLI argument, making it easy t
 
 ## Related
 
-- [CLI Fundamentals](cli-fundamentals.md) - Basic CLI features
-- [Naming Conventions](naming-conventions.md) - How names convert to CLI arguments
-- [Help Generation](help-generation.md) - Documentation extraction
-- [Advanced Patterns](advanced-patterns.md) - Prefixes and singletons
-- [Type System](type-system.md) - Type handling and conversion
+- [CLI Fundamentals](cli-fundamentals) - Basic CLI features
+- [Naming Conventions](naming-conventions) - How names convert to CLI arguments
+- [Help Generation](help-generation) - Documentation extraction
+- [Advanced Patterns](advanced-patterns) - Prefixes and singletons
+- [Type System](type-system) - Type handling and conversion

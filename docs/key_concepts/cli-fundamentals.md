@@ -123,7 +123,7 @@ def train(
 
 ## Union and Class Parameters
 
-See [Union Types](union-types.md) for:
+See [Union Types](union-types) for:
 - Union subcommands (choosing between multiple configurations)
 - Single class parameters
 - Attribute overrides
@@ -131,9 +131,9 @@ See [Union Types](union-types.md) for:
 
 ## Related
 
-- [CLI Patterns](cli-patterns.md) - Advanced patterns (grouped options, testing, edge cases)
-- [Naming Conventions](naming-conventions.md) - Parameter and class name conversion rules
-- [Help Generation](help-generation.md) - Documentation extraction and formatting
-- [Union Types](union-types.md) - Union subcommands and optional parameters
-- [Type System](type-system.md) - Supported types and conversion
-- [ANSI Formatting](ansi-formatting.md) - Terminal colors and formatting
+- [CLI Patterns](cli-patterns) - Advanced patterns (grouped options, testing, edge cases)
+- [Naming Conventions](naming-conventions) - Parameter and class name conversion rules
+- [Help Generation](help-generation) - Documentation extraction and formatting
+- [Union Types](union-types) - Union subcommands and optional parameters
+- [Type System](type-system) - Supported types and conversion
+- [ANSI Formatting](ansi-formatting) - Terminal colors and formatting

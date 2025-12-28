@@ -195,7 +195,7 @@ class Config:
 
 ## Related
 
-- [CLI Fundamentals](cli-fundamentals.md) - Core CLI features
-- [CLI Patterns](cli-patterns.md) - Advanced CLI patterns
-- [Help Generation](help-generation.md) - Documentation extraction
-- [Union Types](union-types.md) - Union subcommands
+- [CLI Fundamentals](cli-fundamentals) - Core CLI features
+- [CLI Patterns](cli-patterns) - Advanced CLI patterns
+- [Help Generation](help-generation) - Documentation extraction
+- [Union Types](union-types) - Union subcommands

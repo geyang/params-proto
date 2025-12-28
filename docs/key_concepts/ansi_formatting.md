@@ -182,7 +182,7 @@ See `ANSI_HELP_CONSIDERATIONS.md` in the repository for roadmap.
 
 ## Related
 
-- [Configuration Basics](configuration_basics.md) - Functions and classes
-- [CLI Generation](cli_generation.md) - How Python becomes CLI
-- [Types Guide](types.md) - Type annotation support
-- [Release Notes](../release_notes.md) - v3.0.0 ANSI features
+- [Configuration Basics](configuration_basics) - Functions and classes
+- [CLI Generation](cli_generation) - How Python becomes CLI
+- [Types Guide](types) - Type annotation support
+- [Release Notes](../release_notes) - v3.0.0 ANSI features

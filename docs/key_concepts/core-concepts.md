@@ -204,7 +204,7 @@ params-proto uses Python's type hints to:
 **Supported types:**
 - Basic: `int`, `float`, `str`, `bool`
 - Collections: `List[T]`, `Dict[K, V]`
-- Optional: `Optional[T]` (see [Union Types](union-types.md) for workaround)
+- Optional: `Optional[T]` (see [Union Types](union-types) for workaround)
 - Dataclasses and custom classes
 - Enums: `Enum` subclasses
 
@@ -212,18 +212,18 @@ params-proto uses Python's type hints to:
 
 ## Next Steps
 
-- **For scripts:** Read [Configuration Patterns](configuration-patterns.md)
-- **For advanced use:** Read [Advanced Patterns](advanced-patterns.md)
-- **For CLI details:** Read [CLI Fundamentals](cli-fundamentals.md)
-- **For type details:** Read [Type System](type-system.md)
+- **For scripts:** Read [Configuration Patterns](configuration-patterns)
+- **For advanced use:** Read [Advanced Patterns](advanced-patterns)
+- **For CLI details:** Read [CLI Fundamentals](cli-fundamentals)
+- **For type details:** Read [Type System](type-system)
 
 ---
 
 ## Related
 
-- [Welcome](welcome.md) - Introduction and quick start
-- [CLI Fundamentals](cli-fundamentals.md) - Basic CLI features
-- [CLI Patterns](cli-patterns.md) - Advanced CLI patterns
-- [Configuration Patterns](configuration-patterns.md) - Functions vs classes in depth
-- [Union Types](union-types.md) - Subcommands and optional parameters
-- [Advanced Patterns](advanced-patterns.md) - Prefixes and composition
+- [Welcome](welcome) - Introduction and quick start
+- [CLI Fundamentals](cli-fundamentals) - Basic CLI features
+- [CLI Patterns](cli-patterns) - Advanced CLI patterns
+- [Configuration Patterns](configuration-patterns) - Functions vs classes in depth
+- [Union Types](union-types) - Subcommands and optional parameters
+- [Advanced Patterns](advanced-patterns) - Prefixes and composition
