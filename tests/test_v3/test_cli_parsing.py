@@ -782,3 +782,80 @@ def test_prefix_override(run_cli):
   # Test 3: Field override using custom prefix with positional class selection
   result = run_cli(script, ["perspective-camera", "--perspective.fov", "90"])
   assert result["stdout"].strip() == "PerspectiveCamera:90.0"
+
+
+def test_optional_str_cli_parsing(run_cli):
+  """Test that Optional[str] is parsed as simple optional parameter, not Union subcommand.
+
+  ISSUE: Currently Optional[str] is incorrectly treated as Union[str, NoneType],
+  requiring --param:str syntax instead of the normal --param value syntax.
+
+  This test demonstrates the issue and documents the expected behavior.
+  """
+  script = dedent("""
+    from typing import Optional
+    from params_proto import proto
+
+    @proto.cli
+    def train(
+        checkpoint: Optional[str] = None,  # Path to checkpoint file
+        learning_rate: float = 0.001,
+    ):
+        print(f"checkpoint={checkpoint},lr={learning_rate}")
+
+    if __name__ == "__main__":
+        train()
+    """)
+
+  # Test 1: Optional[str] with value should work with --param value syntax
+  result = run_cli(script, ["--checkpoint", "model.pt"], expect_error=False)
+  assert result["stdout"].strip() == "checkpoint=model.pt,lr=0.001"
+
+  # Test 2: Optional[str] without value should use None default
+  result = run_cli(script, [], expect_error=False)
+  assert result["stdout"].strip() == "checkpoint=None,lr=0.001"
+
+  # Test 3: Optional[str] with other args
+  result = run_cli(
+    script,
+    ["--checkpoint", "model.pt", "--learning-rate", "0.01"],
+    expect_error=False,
+  )
+  assert result["stdout"].strip() == "checkpoint=model.pt,lr=0.01"
+
+
+def test_optional_int_cli_parsing(run_cli):
+  """Test that Optional[int] is parsed as simple optional parameter, not Union subcommand.
+
+  Similar issue as Optional[str], this should work with normal --param value syntax.
+  """
+  script = dedent("""
+    from typing import Optional
+    from params_proto import proto
+
+    @proto.cli
+    def train(
+        seed: Optional[int] = None,
+        epochs: int = 10,
+    ):
+        print(f"seed={seed},epochs={epochs}")
+
+    if __name__ == "__main__":
+        train()
+    """)
+
+  # Test 1: Optional[int] with value
+  result = run_cli(script, ["--seed", "42"], expect_error=False)
+  assert result["stdout"].strip() == "seed=42,epochs=10"
+
+  # Test 2: Optional[int] without value should use None default
+  result = run_cli(script, [], expect_error=False)
+  assert result["stdout"].strip() == "seed=None,epochs=10"
+
+  # Test 3: Optional[int] with other args
+  result = run_cli(
+    script,
+    ["--seed", "123", "--epochs", "50"],
+    expect_error=False,
+  )
+  assert result["stdout"].strip() == "seed=123,epochs=50"

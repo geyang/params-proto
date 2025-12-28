@@ -447,6 +447,8 @@ Training options:
 
 Union types and dataclasses can be used to create subcommand-like CLIs, where each class represents a different configuration option.
 
+**Quick reference:** See [Union Types](union_types.md) for common patterns, syntax variations, and examples.
+
 ### Basic Union Subcommands
 
 ```python
@@ -597,6 +599,14 @@ python render.py --camera:PerspectiveCamera --output scene.png --verbose
 python render.py perspective-camera --verbose --output scene.png
 ```
 
+### Union vs Optional
+
+**Key distinction:**
+- `Union[ClassA, ClassB]`: Select which class to instantiate (e.g., `--optimizer:Adam`)
+- `Optional[T]`: Simple optional parameter (e.g., `--checkpoint value`)
+
+See [Union Types](union_types.md) for detailed explanation and examples, including the current `Optional[str]` limitation and workaround.
+
 ### Best Practices
 
 **✓ Good: Simple class names**
@@ -719,6 +729,7 @@ Numbers are preserved in CLI arguments.
 
 ## Related
 
+- [Union Types](union_types.md) - Union subcommands and Optional parameters
 - [Configuration Basics](configuration_basics.md) - Defining configs
 - [Type System](types.md) - Type annotation reference
 - [Advanced Patterns](advanced_patterns.md) - Prefixes and subcommands
