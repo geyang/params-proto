@@ -268,15 +268,19 @@ See **[Environment Variables Guide](key_concepts/environment_variables.md)** for
 
 The Quick Start covers the basics. For deeper understanding, see:
 
-- **[Configuration Basics](key_concepts/configuration_basics.md)** - Functions vs classes, when to use each
-- **[Types](key_concepts/types.md)** - Type hints, Union types, and type validation
-- **[Building Your CLI](key_concepts/cli_guide.md)** - How Python names become CLI arguments
-- **[Function Best Practices](key_concepts/function_best_practices.md)** - Solving the parameter referencing problem
+- **[Core Concepts](key_concepts/core-concepts.md)** - The three main decorators (@proto, @proto.cli, @proto.prefix)
+- **[Configuration Patterns](key_concepts/configuration-patterns.md)** - Functions vs classes, when to use each
+- **[CLI Fundamentals](key_concepts/cli-fundamentals.md)** - Basic CLI features and type display
+- **[CLI Patterns](key_concepts/cli-patterns.md)** - Advanced patterns like grouped options and custom program names
+- **[Naming Conventions](key_concepts/naming-conventions.md)** - How Python names convert to CLI arguments
+- **[Help Generation](key_concepts/help-generation.md)** - Automatic help text from comments and docstrings
+- **[Union Types](key_concepts/union-types.md)** - Union types as subcommands and optional parameters
+- **[Type System](key_concepts/type-system.md)** - Complete type hints reference and type validation
 - **[Environment Variables](key_concepts/environment_variables.md)** - Configuration from environment with EnvVar
-- **[Overrides](key_concepts/overrides.md)** - CLI, context managers, YAML configs
-- **[Advanced Patterns](key_concepts/advanced_patterns.md)** - Prefixes and Union-based subcommands
+- **[Parameter Overrides](key_concepts/parameter-overrides.md)** - CLI, context managers, and other override methods
+- **[Advanced Patterns](key_concepts/advanced_patterns.md)** - Prefixes, composition, and complex patterns
 - **[Hyperparameter Sweeps](key_concepts/hyperparameter_sweeps.md)** - Declarative parameter sweeps with Sweep
-- **[Parameter Iterators (piter)](key_concepts/piter.md)** - Lightweight, composable sweeps with operators
+- **[Parameter Iteration](key_concepts/parameter-iteration.md)** - Lightweight, composable sweeps with piter
 - **[ANSI Formatting](key_concepts/ansi_formatting.md)** - Terminal colors and formatting
 - **[Claude Skill](key_concepts/claude_skill.md)** - AI assistance for params-proto development
 
@@ -295,15 +299,20 @@ Release Notes <release_notes>
 :maxdepth: 2
 :caption: Key Concepts
 
-Configuration Basics <key_concepts/configuration_basics>
-Type Annotations <key_concepts/types>
-Building Your CLI <key_concepts/cli_guide>
-Function Best Practices <key_concepts/function_best_practices>
+Welcome <key_concepts/welcome>
+Core Concepts <key_concepts/core-concepts>
+Configuration Patterns <key_concepts/configuration-patterns>
+CLI Fundamentals <key_concepts/cli-fundamentals>
+CLI Patterns <key_concepts/cli-patterns>
+Naming Conventions <key_concepts/naming-conventions>
+Help Generation <key_concepts/help-generation>
+Union Types <key_concepts/union_types>
+Type System <key_concepts/type-system>
 Environment Variables <key_concepts/environment_variables>
-Parameter Overrides <key_concepts/overrides>
+Parameter Overrides <key_concepts/parameter-overrides>
 Advanced Patterns <key_concepts/advanced_patterns>
 Hyperparameter Sweeps <key_concepts/hyperparameter_sweeps>
-Parameter Iterators (piter) <key_concepts/piter>
+Parameter Iteration <key_concepts/parameter-iteration>
 ANSI Formatting <key_concepts/ansi_formatting>
 Claude Skill <key_concepts/claude_skill>
 ```
