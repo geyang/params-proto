@@ -73,7 +73,8 @@ See [Advanced Patterns](advanced-patterns.md) for prefixes, singletons, and comp
    - Classes → [Advanced Patterns](advanced-patterns.md)
    - Union types → [Union Types](union-types.md)
 3. Explore features:
-   - CLI customization → [CLI Fundamentals](cli-fundamentals.md)
+   - CLI basics → [CLI Fundamentals](cli-fundamentals.md)
+   - CLI patterns → [CLI Patterns](cli-patterns.md)
    - Environment variables → [Environment Variables](environment-variables.md)
    - Parameter sweeps → [Hyperparameter Sweeps](hyperparameter-sweeps.md)
 
@@ -82,6 +83,7 @@ See [Advanced Patterns](advanced-patterns.md) for prefixes, singletons, and comp
 - [Core Concepts](core-concepts.md) - Decorators and basic usage
 - [Configuration Patterns](configuration-patterns.md) - Functions vs classes
 - [CLI Fundamentals](cli-fundamentals.md) - Building CLIs
+- [CLI Patterns](cli-patterns.md) - Advanced CLI patterns
 - [Union Types](union-types.md) - Subcommands and optional parameters
 - [Advanced Patterns](advanced-patterns.md) - Prefixes and composition
 - [Type System](type-system.md) - Supported types and conversion
