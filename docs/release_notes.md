@@ -2,6 +2,27 @@
 
 This page contains the release history and changelog for params-proto.
 
+## Version 3.0.0-rc19 (2025-12-28)
+
+### 🧪 Testing
+
+- Added comprehensive test cases for `Optional[str]` and `Optional[int]` CLI parsing
+  - Documents current limitation where `Optional[T]` types don't parse correctly with normal `--param value` syntax
+  - Tests verify expected behavior once the issue is fixed
+
+### 📚 Documentation
+
+- **New**: Created dedicated `Union Types` documentation page (`docs/key_concepts/union_types.md`)
+  - Quick reference with 3 common patterns (Union selection, single class, optional parameters)
+  - Clear distinction between `Union[ClassA, ClassB]` and `Optional[T]`
+  - Detailed examples and syntax variations
+  - Documents `Optional[str]` limitation and workaround
+
+- **Refactored**: Streamlined `cli_guide.md` to reduce verbosity
+  - Moved verbose Union/Optional explanation to dedicated `union_types.md`
+  - Replaced with concise 3-line reference for quick navigation
+  - Maintains clarity while keeping main guide focused
+
 ## Version 3.0.0-rc18 (2025-12-26)
 
 ### 🐛 Bug Fixes
