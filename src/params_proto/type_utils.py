@@ -6,7 +6,7 @@ Provides type conversion and type name extraction for CLI help generation.
 
 import inspect
 from enum import Enum
-from typing import Any, get_origin
+from typing import Any, Union, get_args, get_origin
 
 
 def _convert_type(value: Any, annotation: Any) -> Any:
@@ -63,4 +63,13 @@ def _get_type_name(annotation: Any) -> str:
   elif inspect.isclass(annotation) and issubclass(annotation, Enum):
     return f"{{{','.join(e.name for e in annotation)}}}"
   else:
+    # Check if this is Optional[T] (Union[T, None])
+    origin = get_origin(annotation)
+    if origin is Union:
+      args = get_args(annotation)
+      non_none_types = [arg for arg in args if arg is not type(None)]
+      if len(non_none_types) == 1:
+        # This is Optional[T], recursively get the type name of T
+        return _get_type_name(non_none_types[0])
+
     return "VALUE"

@@ -207,14 +207,14 @@ def test_proto_cli_optional_types():
     print(f"checkpoint={checkpoint}, resume_step={resume_step}")
 
   expected = dedent("""
-  usage: train [-h] [--checkpoint VALUE] [--resume-step VALUE] [--learning-rate FLOAT]
+  usage: train [-h] [--checkpoint STR] [--resume-step INT] [--learning-rate FLOAT]
 
   Train model with optional checkpoint resume.
 
   options:
     -h, --help           show this help message and exit
-    --checkpoint VALUE   Path to checkpoint file
-    --resume-step VALUE  Step to resume from
+    --checkpoint STR     Path to checkpoint file
+    --resume-step INT    Step to resume from
     --learning-rate FLOAT
                          Learning rate (default: 0.001)
   """)

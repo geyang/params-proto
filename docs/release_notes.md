@@ -2,6 +2,18 @@
 
 This page contains the release history and changelog for params-proto.
 
+## Version 3.0.0-rc20 (2025-12-28)
+
+### 🐛 Bug Fixes
+
+- **Optional[T] CLI Parsing**: Fixed `Optional[str]`, `Optional[int]`, and other `Optional[T]` types failing to parse correctly in CLI
+  - These were incorrectly treated as Union subcommands instead of simple optional parameters
+  - Now work with standard `--param value` syntax: `python script.py --checkpoint model.pt`
+  - Fixed in `cli_parse.py`: `_get_union_classes()` now filters out `NoneType` from Union args
+  - Fixed in `cli_parse.py`: Added logic to detect `Optional[T]` patterns (Union with only one non-None type) and treat them as regular optional params
+  - Fixed in `type_utils.py`: `_get_type_name()` now recognizes `Optional[T]` and extracts the correct type name for help text
+  - Improved help output to show `STR`, `INT` instead of generic `VALUE` for Optional types
+
 ## Version 3.0.0-rc19 (2025-12-28)
 
 ### 🧪 Testing
