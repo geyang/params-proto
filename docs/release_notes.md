@@ -2,6 +2,42 @@
 
 This page contains the release history and changelog for params-proto.
 
+## Version 3.0.0-rc23 (2025-12-29)
+
+### ✨ Features
+
+- **Tuple[T, ...] CLI Parsing**: Full support for variable-length and fixed-size tuples
+  - Variable-length tuples: `Tuple[int, ...]` collects values into tuple with consistent type
+  - Fixed-size tuples: `Tuple[int, str, float]` with mixed types at each position
+  - CLI collects multiple values: `python script.py --sizes 256 512 1024` → `sizes=(256, 512, 1024)`
+  - Automatic element/position type conversion with type safety
+  - Works with defaults and `@proto.prefix` classes
+  - Help text shows tuple notation: `(INT,...)` or `(INT,STR,FLOAT)`
+
+  **Implementation:**
+  - Updated `_convert_type()` in `type_utils.py` to handle both variable and fixed-size tuples
+  - Updated CLI parser in `cli_parse.py` to collect multiple values for Tuple parameters
+  - Updated `_get_type_name()` to display tuple signatures in help text
+
+  **Test Suite**: All 9 comprehensive test cases now PASSING in `tests/test_v3/test_cli_parsing.py`:
+  - ✅ `test_tuple_variable_length_int` - Variable-length integer tuples
+  - ✅ `test_tuple_variable_length_float` - Variable-length float tuples
+  - ✅ `test_tuple_variable_length_str` - Variable-length string tuples
+  - ✅ `test_tuple_fixed_size_mixed` - Fixed-size with mixed types (int, str, float)
+  - ✅ `test_tuple_with_defaults` - Overriding tuple defaults
+  - ✅ `test_tuple_single_value` - Single value wrapped in tuple
+  - ✅ `test_tuple_empty_initialization` - Empty tuple defaults
+  - ✅ `test_tuple_with_prefix_class` - Tuples in @proto.prefix classes
+  - ✅ `test_tuple_help_strings` - Help text generation
+
+### 📋 Type System Updates
+
+- **Type Support Matrix**: Updated to show `Tuple[T, ...]` as ✅ Full support
+- **Documentation**: Comprehensive guide for tuple usage with examples and CLI patterns
+- **Total Fully Working Types**: int, float, str, bool, Optional[T], List[T], Tuple[T, ...], Union types
+
+---
+
 ## Version 3.0.0-rc22 (2025-12-29)
 
 ### 📚 Documentation

@@ -246,11 +246,12 @@ def parse_cli_args(wrapper) -> Dict[str, Any]:
           result[orig_name] = True
           i += 1
         else:
-          # Check if this is a List type
+          # Check if this is a List or Tuple type
           origin = get_origin(annotation)
           is_list = origin is list
+          is_tuple = origin is tuple
 
-          if is_list:
+          if is_list or is_tuple:
             # Collect all following values until next flag
             values = []
             i += 1
@@ -291,11 +292,12 @@ def parse_cli_args(wrapper) -> Dict[str, Any]:
           prefix_values[(singleton, param_name)] = True
           i += 1
         else:
-          # Check if this is a List type
+          # Check if this is a List or Tuple type
           origin = get_origin(annotation)
           is_list = origin is list
+          is_tuple = origin is tuple
 
-          if is_list:
+          if is_list or is_tuple:
             # Collect all following values until next flag
             values = []
             i += 1

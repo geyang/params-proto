@@ -6,7 +6,7 @@ Provides type conversion and type name extraction for CLI help generation.
 
 import inspect
 from enum import Enum
-from typing import Any, Union, get_args, get_origin, List
+from typing import Any, Union, get_args, get_origin, List, Tuple
 
 
 def _convert_type(value: Any, annotation: Any) -> Any:
@@ -37,6 +37,38 @@ def _convert_type(value: Any, annotation: Any) -> Any:
     # If value is a single string, wrap it and convert
     else:
       return [_convert_type(value, element_type)]
+
+  # Handle Tuple[T, ...] and Tuple[T1, T2, ...] types
+  if origin is tuple:
+    args = get_args(annotation)
+
+    if not args:
+      # Plain Tuple with no type args
+      if isinstance(value, list):
+        return tuple(value)
+      else:
+        return (value,)
+
+    # Check if this is Tuple[T, ...] (variable-length) or Tuple[T1, T2, ...] (fixed-size)
+    if len(args) == 2 and args[1] is Ellipsis:
+      # Variable-length tuple: Tuple[int, ...]
+      element_type = args[0]
+      if isinstance(value, list):
+        return tuple(_convert_type(item, element_type) for item in value)
+      else:
+        return (_convert_type(value, element_type),)
+    else:
+      # Fixed-size tuple: Tuple[int, str, float]
+      if isinstance(value, list):
+        converted = []
+        for i, item in enumerate(value):
+          # Use corresponding type annotation if available, otherwise treat as string
+          item_type = args[i] if i < len(args) else str
+          converted.append(_convert_type(item, item_type))
+        return tuple(converted)
+      else:
+        # Single value for fixed-size tuple
+        return (_convert_type(value, args[0]),) if args else (value,)
 
   # Handle basic types
   if annotation == int or annotation is int:
@@ -82,6 +114,18 @@ def _get_type_name(annotation: Any) -> str:
       args = get_args(annotation)
       element_type_name = _get_type_name(args[0]) if args else "VALUE"
       return f"[{element_type_name}]"
+    elif origin is tuple:
+      args = get_args(annotation)
+      if not args:
+        return "(VALUE,)"
+      elif len(args) == 2 and args[1] is Ellipsis:
+        # Variable-length tuple: Tuple[int, ...]
+        element_type_name = _get_type_name(args[0])
+        return f"({element_type_name},...)"
+      else:
+        # Fixed-size tuple: Tuple[int, str, float]
+        type_names = [_get_type_name(arg) for arg in args]
+        return f"({','.join(type_names)})"
     elif origin is Union:
       args = get_args(annotation)
       non_none_types = [arg for arg in args if arg is not type(None)]

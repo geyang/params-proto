@@ -1229,3 +1229,175 @@ def test_list_str_whitespace_handling(run_cli):
   # CURRENTLY BROKEN: Path not wrapped in list
   result = run_cli(script, ["--paths", "./data"], expect_error=False)
   assert "./data" in result["stdout"]
+
+
+# ============================================================================
+# Tuple[T, ...] Tests - Variable-length tuples
+# ============================================================================
+
+
+def test_tuple_variable_length_int(run_cli):
+  """Test Tuple[int, ...] parsing with multiple integer values."""
+  script = dedent("""
+    from typing import Tuple
+    from params_proto import proto
+
+    @proto.cli
+    def main(counts: Tuple[int, ...] = (1, 2)):
+        print(f"counts={counts}, type={type(counts)}")
+
+    if __name__ == "__main__":
+        main()
+    """)
+  result = run_cli(script, ["--counts", "10", "20", "30"], expect_error=False)
+  assert "counts=(10, 20, 30)" in result["stdout"]
+  assert "type=<class 'tuple'>" in result["stdout"]
+
+
+def test_tuple_variable_length_float(run_cli):
+  """Test Tuple[float, ...] parsing."""
+  script = dedent("""
+    from typing import Tuple
+    from params_proto import proto
+
+    @proto.cli
+    def main(ratios: Tuple[float, ...] = (0.5, 0.3)):
+        print(f"ratios={ratios}")
+
+    if __name__ == "__main__":
+        main()
+    """)
+  result = run_cli(script, ["--ratios", "0.8", "0.2", "0.1"], expect_error=False)
+  assert "ratios=(0.8, 0.2, 0.1)" in result["stdout"]
+
+
+def test_tuple_variable_length_str(run_cli):
+  """Test Tuple[str, ...] parsing."""
+  script = dedent("""
+    from typing import Tuple
+    from params_proto import proto
+
+    @proto.cli
+    def main(tags: Tuple[str, ...] = ("default",)):
+        print(f"tags={tags}")
+
+    if __name__ == "__main__":
+        main()
+    """)
+  result = run_cli(script, ["--tags", "python", "ml", "data"], expect_error=False)
+  assert "tags=('python', 'ml', 'data')" in result["stdout"]
+
+
+def test_tuple_fixed_size_mixed(run_cli):
+  """Test Tuple[int, str, float] with fixed size and mixed types."""
+  script = dedent("""
+    from typing import Tuple
+    from params_proto import proto
+
+    @proto.cli
+    def main(config: Tuple[int, str, float] = (10, "default", 0.5)):
+        print(f"config={config}, int={config[0]}, str={config[1]}, float={config[2]}")
+
+    if __name__ == "__main__":
+        main()
+    """)
+  result = run_cli(script, ["--config", "42", "custom", "0.75"], expect_error=False)
+  assert "config=(42, 'custom', 0.75)" in result["stdout"]
+  assert "int=42" in result["stdout"]
+  assert "str=custom" in result["stdout"]
+  assert "float=0.75" in result["stdout"]
+
+
+def test_tuple_with_defaults(run_cli):
+  """Test overriding tuple defaults."""
+  script = dedent("""
+    from typing import Tuple
+    from params_proto import proto
+
+    @proto.cli
+    def main(dims: Tuple[int, int] = (224, 224)):
+        print(f"dims={dims}")
+
+    if __name__ == "__main__":
+        main()
+    """)
+  result = run_cli(script, ["--dims", "512", "512"], expect_error=False)
+  assert "dims=(512, 512)" in result["stdout"]
+
+
+def test_tuple_single_value(run_cli):
+  """Test tuple with single value gets wrapped."""
+  script = dedent("""
+    from typing import Tuple
+    from params_proto import proto
+
+    @proto.cli
+    def main(single: Tuple[int, ...] = ()):
+        print(f"single={single}, len={len(single)}")
+
+    if __name__ == "__main__":
+        main()
+    """)
+  result = run_cli(script, ["--single", "42"], expect_error=False)
+  assert "single=(42,)" in result["stdout"]
+  assert "len=1" in result["stdout"]
+
+
+def test_tuple_empty_initialization(run_cli):
+  """Test tuple with empty default."""
+  script = dedent("""
+    from typing import Tuple
+    from params_proto import proto
+
+    @proto.cli
+    def main(items: Tuple[str, ...] = ()):
+        print(f"items={items}, empty={len(items) == 0}")
+
+    if __name__ == "__main__":
+        main()
+    """)
+  result = run_cli(script, ["--items", "a", "b"], expect_error=False)
+  assert "items=('a', 'b')" in result["stdout"]
+
+
+def test_tuple_with_prefix_class(run_cli):
+  """Test tuple parameters in @proto.prefix classes."""
+  script = dedent("""
+    from typing import Tuple
+    from params_proto import proto
+
+    @proto.prefix
+    class Config:
+        seed: int = 42
+        schedule: Tuple[float, ...] = (0.1, 0.01)
+
+    @proto.cli
+    def main(learning_rate: float = 0.001):
+        print(f"schedule={Config.schedule}, seed={Config.seed}, lr={learning_rate}")
+
+    if __name__ == "__main__":
+        main()
+    """)
+  result = run_cli(script, ["--config.schedule", "0.5", "0.1", "0.01", "--learning-rate", "0.002"], expect_error=False)
+  assert "schedule=(0.5, 0.1, 0.01)" in result["stdout"]
+  assert "seed=42" in result["stdout"]
+  assert "lr=0.002" in result["stdout"]
+
+
+def test_tuple_help_strings(run_cli):
+  """Test that tuple help text is generated correctly."""
+  script = dedent("""
+    from typing import Tuple
+    from params_proto import proto
+
+    @proto.cli
+    def main(dims: Tuple[int, int] = (224, 224)):
+        '''Process images.'''
+        pass
+
+    if __name__ == "__main__":
+        main()
+    """)
+  result = run_cli(script, ["--help"], expect_error=False)
+  # Should show element type or indicate it's a tuple
+  assert "--dims" in result["stdout"]

@@ -4,8 +4,7 @@ params-proto v3 supports rich type annotations for parameters, providing type sa
 
 ## Known Type System Issues
 
-⚠️ **The following types have CLI parsing issues in v3.0.0-rc22:**
-- **`Tuple[T, ...]`** - Fixed-size tuples not fully supported
+⚠️ **The following types have CLI parsing issues in v3.0.0-rc23:**
 - **`Path`** - Strings not converted to Path objects
 - **`dict`** - Collection types not implemented for CLI parsing
 - **`Literal[...]` and `Enum`** - Help text works, but no runtime validation/conversion
@@ -392,22 +391,50 @@ python process.py --files x.txt y.txt --dimensions 256 256 --ratios 0.5
 
 ### Tuple Types
 
+Tuple types allow collecting multiple values from the CLI with automatic element type conversion. Both variable-length and fixed-size tuples are supported.
+
 ```python
 from typing import Tuple
 
 @proto.cli
 def train(
-    image_size: Tuple[int, int] = (224, 224),  # Fixed-size tuple
-    crop_size: tuple[int, int] = (112, 112),  # Python 3.9+ syntax
+    # Variable-length tuple: Tuple[T, ...] collects values into a tuple
+    learning_schedule: Tuple[float, ...] = (0.1, 0.01),
+    # Fixed-size tuple: Tuple[T1, T2, T3] has specific type for each position
+    image_size: Tuple[int, int] = (224, 224),
+    # Mixed types in fixed-size tuple
+    config: Tuple[int, str, float] = (10, "default", 0.5),
 ):
     """Training with tuple types."""
-    print(f"Image size: {image_size[0]}x{image_size[1]}")
+    print(f"Learning schedule: {learning_schedule}")  # e.g., (0.5, 0.1, 0.01)
+    print(f"Image size: {image_size[0]}x{image_size[1]}")  # e.g., 256x256
+    print(f"Config: {config}")  # e.g., (42, 'custom', 0.75)
 ```
 
 **CLI usage:**
 ```bash
+# Variable-length tuple - collects all values
+python train.py --learning-schedule 0.5 0.1 0.01
+
+# Fixed-size tuple with specific position types
 python train.py --image-size 256 256
+
+# Mixed type fixed-size tuple
+python train.py --config 42 custom 0.75
+
+# Combine with other arguments
+python train.py --learning-schedule 0.2 0.02 --image-size 512 512
 ```
+
+**Help text notation:**
+- Variable-length: `--param (INT,...)`
+- Fixed-size: `--param (INT,STR,FLOAT)`
+
+**How it works:**
+- Arguments after `--flag` are collected until the next flag or end of arguments
+- Each value is converted to its corresponding type position
+- For `Tuple[T, ...]`, all values get converted to element type T
+- For fixed-size tuples, each value gets the type from its position
 
 ## Path Types
 
@@ -474,7 +501,7 @@ def process(
 | `Literal[...]` | ⚠️ Partial | `{a,b,c}` | Help shows values, but no validation |
 | `Enum` | ⚠️ Partial | `{A,B,C}` | Help shows members, no enum conversion |
 | `List[T]` | ✅ Full | `[INT]` or `[STR]` | Fully working with element type conversion |
-| `Tuple[T, ...]` | ❌ Broken | `VALUE` | **Not implemented for CLI parsing** |
+| `Tuple[T, ...]` | ✅ Full | `(INT,...)` or `(INT,STR,FLOAT)` | Fully working - variable and fixed-size tuples |
 | `Path` | ❌ Broken | `STR` | **Strings not converted to Path objects** |
 | `dict` | ❌ Broken | `VALUE` | **Not implemented** |
 | `Union[Class1, Class2]` | ✅ Full | Subcommand | Works as pseudo-subcommands |
