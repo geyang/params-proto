@@ -4,20 +4,37 @@ This page contains the release history and changelog for params-proto.
 
 ## Version 3.0.0-rc21 (2025-12-29)
 
+### ✨ Features
+
+- **List[T] CLI Parsing**: Full support for `List[str]`, `List[int]`, `List[float]` and other list types
+  - CLI collects multiple values: `python script.py --items a b c` → `items=['a', 'b', 'c']`
+  - Automatic element type conversion: `python script.py --counts 1 2 3` → `counts=[1, 2, 3]`
+  - Works with defaults: `--items x y z` overrides `items: List[str] = ["default"]`
+  - Help text shows element type: `--items [STR]`, `--counts [INT]`, `--ratios [FLOAT]`
+  - Support for List parameters in `@proto.prefix` classes
+
+  **Implementation:**
+  - Updated `_convert_type()` in `type_utils.py` to handle generic List[T] types
+  - Updated CLI parser in `cli_parse.py` to collect multiple CLI arguments for List parameters
+  - Updated `_get_type_name()` to display `[INT]`, `[STR]`, `[FLOAT]` in help text
+
+  **Test Suite**: All 9 comprehensive test cases now PASSING in `tests/test_v3/test_cli_parsing.py`:
+  - ✅ `test_list_str_cli_parsing` - Multiple string values
+  - ✅ `test_list_int_cli_parsing` - Multiple integers with type conversion
+  - ✅ `test_list_float_cli_parsing` - Multiple floats
+  - ✅ `test_list_with_defaults` - Overriding list defaults
+  - ✅ `test_list_with_prefix_class` - List in @proto.prefix classes
+  - ✅ `test_list_empty_initialization` - Empty list defaults
+  - ✅ `test_list_single_vs_multiple_values` - Single value wrapped in list
+  - ✅ `test_list_help_strings` - Help text generation
+  - ✅ `test_list_str_whitespace_handling` - Paths and special characters
+
 ### 📋 Documentation & Known Issues
 
 - **Type System Documentation**: Updated type support matrix to accurately reflect CLI parsing status
-  - ✅ Fully working: int, float, str, bool, Optional[T], Union[Class, Class], dataclass unions
+  - ✅ Fully working: int, float, str, bool, Optional[T], List[T], Union[Class, Class], dataclass unions
   - ⚠️ Partial: Literal[...], Enum (help text works, no runtime conversion)
-  - ❌ Broken: List[T], Tuple[T, ...], Path, dict (collection types)
-
-- **List[T] CLI Parsing Issue**: Identified and documented comprehensive test cases
-  - **Problem**: `List[str]`, `List[int]`, `List[float]` only capture first CLI argument
-  - **Root Cause**: Parser in `cli_parse.py` consumes single value per flag; type converter in `type_utils.py` has no List handling
-  - **Test Suite**: Added 9 comprehensive test cases in `tests/test_v3/test_cli_parsing.py` (lines 864-1233)
-    - Tests cover single values, multiple values, defaults, prefix classes, help generation
-    - All tests currently FAIL to document expected vs actual behavior
-    - Ready for implementation fix
+  - ❌ Broken: Tuple[T, ...], Path, dict (collection types)
 
 - **Path Type Issue**: Documented that Path type annotation is not converted from strings
   - Help text shows correctly, but CLI strings are not wrapped in Path objects
@@ -28,23 +45,7 @@ This page contains the release history and changelog for params-proto.
   - Clarified that Union types are a core feature for multi-way dispatching
 
 **Migration Notes:**
-- Workaround for List parameters: Use `str` with documented defaults
 - Workaround for Path parameters: Accept string and convert in function body
-
-### 📊 Test Coverage
-
-- Created comprehensive test suite for List[T] parsing in `tests/test_v3/test_cli_parsing.py` (lines 864-1233):
-  - ❌ `test_list_str_cli_parsing` - FAILING
-  - ❌ `test_list_int_cli_parsing` - FAILING
-  - ❌ `test_list_float_cli_parsing` - FAILING
-  - ❌ `test_list_with_defaults` - FAILING
-  - ❌ `test_list_with_prefix_class` - FAILING
-  - ❌ `test_list_empty_initialization` - FAILING
-  - ❌ `test_list_single_vs_multiple_values` - FAILING
-  - ❌ `test_list_str_whitespace_handling` - FAILING
-  - ✅ `test_list_help_strings` - PASSING (help generation works correctly)
-
-  **Status**: 8 tests FAIL to document expected vs actual behavior. Ready for implementation fix in `type_utils.py` and `cli_parse.py`.
 
 ---
 

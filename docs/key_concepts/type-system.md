@@ -5,8 +5,7 @@ params-proto v3 supports rich type annotations for parameters, providing type sa
 ## Known Type System Issues
 
 ⚠️ **The following types have CLI parsing issues in v3.0.0-rc21:**
-- **`List[T]`** - Only captures first value, does not wrap values in list
-- **`Tuple[T, ...]`** - Same issues as List[T]
+- **`Tuple[T, ...]`** - Fixed-size tuples not fully supported
 - **`Path`** - Strings not converted to Path objects
 - **`dict`** - Collection types not implemented for CLI parsing
 - **`Literal[...]` and `Enum`** - Help text works, but no runtime validation/conversion
@@ -345,6 +344,8 @@ python train.py --optimizer SGD --device CPU
 
 ### List Types
 
+List types allow collecting multiple values from the CLI. Each element is converted to the specified type.
+
 ```python
 from typing import List
 
@@ -352,17 +353,42 @@ from typing import List
 def process(
     files: List[str] = ["input.txt"],  # List of strings
     dimensions: List[int] = [128, 256],  # List of integers
+    ratios: List[float] = [0.5, 0.3],  # List of floats
 ):
     """Process multiple files."""
-    for file in files:
-        print(f"Processing {file}")
+    print(f"Files: {files}")  # e.g., ['a.txt', 'b.txt', 'c.txt']
+    print(f"Dimensions: {dimensions}")  # e.g., [512, 1024]
+    print(f"Ratios: {ratios}")  # e.g., [0.8, 0.2]
 ```
 
 **CLI usage:**
 ```bash
+# Multiple string values
 python process.py --files a.txt b.txt c.txt
+
+# Multiple integer values (type-converted)
 python process.py --dimensions 512 1024
+
+# Multiple float values
+python process.py --ratios 0.8 0.2
+
+# Combine with other arguments
+python process.py --files x.txt y.txt --dimensions 256 256 --ratios 0.5
 ```
+
+**Help text shows list notation:**
+```{ansi-block}
+:string_escape:
+
+--files [STR]            List of input files \x1b[36m(default:\x1b[0m \x1b[1m\x1b[36m['input.txt']\x1b[0m\x1b[36m)\x1b[0m
+--dimensions [INT]       Dimensions to process \x1b[36m(default:\x1b[0m \x1b[1m\x1b[36m[128, 256]\x1b[0m\x1b[36m)\x1b[0m
+--ratios [FLOAT]         Aspect ratios \x1b[36m(default:\x1b[0m \x1b[1m\x1b[36m[0.5, 0.3]\x1b[0m\x1b[36m)\x1b[0m
+```
+
+**How it works:**
+- Arguments after `--flag` are collected until the next flag or end of arguments
+- Each value is converted to the element type (e.g., `"256"` → `256` for `List[int]`)
+- The result is always a list, even with a single value
 
 ### Tuple Types
 
@@ -447,8 +473,8 @@ def process(
 | `str \| None` (Optional) | ✅ Full | `STR` | Correctly unwraps to inner type |
 | `Literal[...]` | ⚠️ Partial | `{a,b,c}` | Help shows values, but no validation |
 | `Enum` | ⚠️ Partial | `{A,B,C}` | Help shows members, no enum conversion |
-| `List[T]` | ❌ Broken | `VALUE` | **Only first value captured; no list wrapping** |
-| `Tuple[T, ...]` | ❌ Broken | `VALUE` | **Same issues as List[T]** |
+| `List[T]` | ✅ Full | `[INT]` or `[STR]` | Fully working with element type conversion |
+| `Tuple[T, ...]` | ❌ Broken | `VALUE` | **Not implemented for CLI parsing** |
 | `Path` | ❌ Broken | `STR` | **Strings not converted to Path objects** |
 | `dict` | ❌ Broken | `VALUE` | **Not implemented** |
 | `Union[Class1, Class2]` | ✅ Full | Subcommand | Works as pseudo-subcommands |

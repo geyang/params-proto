@@ -1096,10 +1096,9 @@ def test_list_with_prefix_class(run_cli):
   result = run_cli(script, ["--seed", "99"], expect_error=False)
   assert result["stdout"].strip() == "layer_sizes=[256, 128],activations=['relu', 'relu'],seed=99"
 
-  # Test 2: Overriding List in prefix class
-  # CURRENTLY BROKEN: Only first value captured for List types
+  # Test 2: Overriding List in prefix class with multiple values
   result = run_cli(script, ["--model.layer-sizes", "512", "256", "128"], expect_error=False)
-  assert result["stdout"].strip() == "layer_sizes=[512, 256, 128],activations=['relu', 'relu'],seed=99"
+  assert result["stdout"].strip() == "layer_sizes=[512, 256, 128],activations=['relu', 'relu'],seed=42"
 
   # Test 3: Overriding both List parameters in prefix
   # CURRENTLY BROKEN: Multiple values not captured for List types

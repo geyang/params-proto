@@ -6,7 +6,7 @@ Simple custom parser - no argparse dependency.
 """
 
 import sys
-from typing import Any, Dict, Union, get_args, get_origin
+from typing import Any, Dict, Union, get_args, get_origin, List
 
 from params_proto.type_utils import _convert_type
 
@@ -246,18 +246,40 @@ def parse_cli_args(wrapper) -> Dict[str, Any]:
           result[orig_name] = True
           i += 1
         else:
-          # Get next argument as value
-          if i + 1 >= len(args):
-            raise SystemExit(f"error: argument --{key} requires a value")
+          # Check if this is a List type
+          origin = get_origin(annotation)
+          is_list = origin is list
 
-          value_str = args[i + 1]
-          try:
-            value = _convert_type(value_str, annotation)
-          except (ValueError, TypeError):
-            raise SystemExit(f"error: invalid value for --{key}: {value_str}")
+          if is_list:
+            # Collect all following values until next flag
+            values = []
+            i += 1
+            while i < len(args) and not args[i].startswith("--"):
+              values.append(args[i])
+              i += 1
 
-          result[orig_name] = value
-          i += 2
+            if not values:
+              raise SystemExit(f"error: argument --{key} requires at least one value")
+
+            try:
+              value = _convert_type(values, annotation)
+            except (ValueError, TypeError) as e:
+              raise SystemExit(f"error: invalid value for --{key}: {e}")
+
+            result[orig_name] = value
+          else:
+            # Get next argument as single value
+            if i + 1 >= len(args):
+              raise SystemExit(f"error: argument --{key} requires a value")
+
+            value_str = args[i + 1]
+            try:
+              value = _convert_type(value_str, annotation)
+            except (ValueError, TypeError):
+              raise SystemExit(f"error: invalid value for --{key}: {value_str}")
+
+            result[orig_name] = value
+            i += 2
         continue
 
       # Check if it's a prefix parameter
@@ -269,18 +291,40 @@ def parse_cli_args(wrapper) -> Dict[str, Any]:
           prefix_values[(singleton, param_name)] = True
           i += 1
         else:
-          # Get next argument as value
-          if i + 1 >= len(args):
-            raise SystemExit(f"error: argument --{key} requires a value")
+          # Check if this is a List type
+          origin = get_origin(annotation)
+          is_list = origin is list
 
-          value_str = args[i + 1]
-          try:
-            value = _convert_type(value_str, annotation)
-          except (ValueError, TypeError):
-            raise SystemExit(f"error: invalid value for --{key}: {value_str}")
+          if is_list:
+            # Collect all following values until next flag
+            values = []
+            i += 1
+            while i < len(args) and not args[i].startswith("--"):
+              values.append(args[i])
+              i += 1
 
-          prefix_values[(singleton, param_name)] = value
-          i += 2
+            if not values:
+              raise SystemExit(f"error: argument --{key} requires at least one value")
+
+            try:
+              value = _convert_type(values, annotation)
+            except (ValueError, TypeError) as e:
+              raise SystemExit(f"error: invalid value for --{key}: {e}")
+
+            prefix_values[(singleton, param_name)] = value
+          else:
+            # Get next argument as single value
+            if i + 1 >= len(args):
+              raise SystemExit(f"error: argument --{key} requires a value")
+
+            value_str = args[i + 1]
+            try:
+              value = _convert_type(value_str, annotation)
+            except (ValueError, TypeError):
+              raise SystemExit(f"error: invalid value for --{key}: {value_str}")
+
+            prefix_values[(singleton, param_name)] = value
+            i += 2
         continue
 
       # Unknown argument
