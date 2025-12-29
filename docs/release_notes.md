@@ -33,15 +33,18 @@ This page contains the release history and changelog for params-proto.
 
 ### 📊 Test Coverage
 
-- Created comprehensive test suite for List[T] parsing:
-  - `test_list_str_cli_parsing`
-  - `test_list_int_cli_parsing`
-  - `test_list_float_cli_parsing`
-  - `test_list_with_defaults`
-  - `test_list_with_prefix_class`
-  - `test_list_empty_initialization`
-  - `test_list_single_vs_multiple_values`
-  - `test_list_help_strings` ✅ PASSING (help generation works)
+- Created comprehensive test suite for List[T] parsing in `tests/test_v3/test_cli_parsing.py` (lines 864-1233):
+  - ❌ `test_list_str_cli_parsing` - FAILING
+  - ❌ `test_list_int_cli_parsing` - FAILING
+  - ❌ `test_list_float_cli_parsing` - FAILING
+  - ❌ `test_list_with_defaults` - FAILING
+  - ❌ `test_list_with_prefix_class` - FAILING
+  - ❌ `test_list_empty_initialization` - FAILING
+  - ❌ `test_list_single_vs_multiple_values` - FAILING
+  - ❌ `test_list_str_whitespace_handling` - FAILING
+  - ✅ `test_list_help_strings` - PASSING (help generation works correctly)
+
+  **Status**: 8 tests FAIL to document expected vs actual behavior. Ready for implementation fix in `type_utils.py` and `cli_parse.py`.
 
 ---
 
