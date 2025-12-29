@@ -4,7 +4,7 @@ params-proto v3 supports rich type annotations for parameters, providing type sa
 
 ## Known Type System Issues
 
-⚠️ **The following types have CLI parsing issues in v3.0.0-rc21:**
+⚠️ **The following types have CLI parsing issues in v3.0.0-rc22:**
 - **`Tuple[T, ...]`** - Fixed-size tuples not fully supported
 - **`Path`** - Strings not converted to Path objects
 - **`dict`** - Collection types not implemented for CLI parsing
