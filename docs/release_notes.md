@@ -2,6 +2,19 @@
 
 This page contains the release history and changelog for params-proto.
 
+## Version 3.0.0-rc22 (2025-12-29)
+
+### 📚 Documentation
+
+- **List[T] CLI Parsing Documentation**: Comprehensive guide for using list types
+  - Updated `docs/key_concepts/type-system.md` with practical examples
+  - Added section showing CLI usage patterns: `--items a b c` → list of values
+  - Help text generation examples showing `[STR]`, `[INT]`, `[FLOAT]` notation
+  - Explanation of how multiple values are collected until next flag
+  - Type support matrix updated to show List[T] as ✅ Full support
+
+---
+
 ## Version 3.0.0-rc21 (2025-12-29)
 
 ### ✨ Features
