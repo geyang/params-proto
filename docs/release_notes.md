@@ -2,6 +2,49 @@
 
 This page contains the release history and changelog for params-proto.
 
+## Version 3.0.0-rc21 (2025-12-29)
+
+### 📋 Documentation & Known Issues
+
+- **Type System Documentation**: Updated type support matrix to accurately reflect CLI parsing status
+  - ✅ Fully working: int, float, str, bool, Optional[T], Union[Class, Class], dataclass unions
+  - ⚠️ Partial: Literal[...], Enum (help text works, no runtime conversion)
+  - ❌ Broken: List[T], Tuple[T, ...], Path, dict (collection types)
+
+- **List[T] CLI Parsing Issue**: Identified and documented comprehensive test cases
+  - **Problem**: `List[str]`, `List[int]`, `List[float]` only capture first CLI argument
+  - **Root Cause**: Parser in `cli_parse.py` consumes single value per flag; type converter in `type_utils.py` has no List handling
+  - **Test Suite**: Added 9 comprehensive test cases in `tests/test_v3/test_cli_parsing.py` (lines 864-1233)
+    - Tests cover single values, multiple values, defaults, prefix classes, help generation
+    - All tests currently FAIL to document expected vs actual behavior
+    - Ready for implementation fix
+
+- **Path Type Issue**: Documented that Path type annotation is not converted from strings
+  - Help text shows correctly, but CLI strings are not wrapped in Path objects
+
+- **Enhanced Union Types Documentation**:
+  - Added "Why Union Types Matter" section in union_types.md
+  - Reorganized examples to show CLI usage first, then implementation
+  - Clarified that Union types are a core feature for multi-way dispatching
+
+**Migration Notes:**
+- Workaround for List parameters: Use `str` with documented defaults
+- Workaround for Path parameters: Accept string and convert in function body
+
+### 📊 Test Coverage
+
+- Created comprehensive test suite for List[T] parsing:
+  - `test_list_str_cli_parsing`
+  - `test_list_int_cli_parsing`
+  - `test_list_float_cli_parsing`
+  - `test_list_with_defaults`
+  - `test_list_with_prefix_class`
+  - `test_list_empty_initialization`
+  - `test_list_single_vs_multiple_values`
+  - `test_list_help_strings` ✅ PASSING (help generation works)
+
+---
+
 ## Version 3.0.0-rc20 (2025-12-28)
 
 ### 🐛 Bug Fixes

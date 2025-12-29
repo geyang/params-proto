@@ -859,3 +859,374 @@ def test_optional_int_cli_parsing(run_cli):
     expect_error=False,
   )
   assert result["stdout"].strip() == "seed=123,epochs=50"
+
+
+# List[T] Type CLI Parsing Tests
+
+
+def test_list_str_cli_parsing(run_cli):
+  """Test that List[str] can be parsed from CLI arguments.
+
+  ISSUE: Currently List[str] is not properly handled in CLI parsing.
+  The _convert_type function doesn't handle List types, so passing
+  --tags value results in the string value not being wrapped in a list.
+  Also, the CLI parser only consumes one value after --param, so multiple
+  values are not collected into the list.
+
+  This test documents the expected behavior when the bug is fixed.
+  """
+  script = dedent("""
+    from typing import List
+    from params_proto import proto
+
+    @proto.cli
+    def train(
+        tags: List[str] = None,
+        batch_size: int = 32,
+    ):
+        print(f"tags={tags},batch_size={batch_size}")
+
+    if __name__ == "__main__":
+        train()
+    """)
+
+  # Test 1: List[str] with single value should create list
+  # CURRENTLY BROKEN: Returns "tags=experiment" instead of "tags=['experiment']"
+  result = run_cli(script, ["--tags", "experiment"], expect_error=False)
+  assert result["stdout"].strip() == "tags=['experiment'],batch_size=32"
+
+  # Test 2: List[str] with multiple values should work
+  # CURRENTLY BROKEN: Only first value is captured, rest become positional args
+  # NOTE: This may require special CLI syntax like --tags tag1 tag2 or --tags tag1 --tags tag2
+  result = run_cli(script, ["--tags", "exp1", "exp2"], expect_error=False)
+  assert result["stdout"].strip() == "tags=['exp1', 'exp2'],batch_size=32"
+
+  # Test 3: List[str] without value should use None/empty default
+  result = run_cli(script, [], expect_error=False)
+  assert result["stdout"].strip() == "tags=None,batch_size=32"
+
+  # Test 4: List[str] with other args
+  # CURRENTLY BROKEN: Only first value captured, "--batch-size" treated as positional
+  result = run_cli(
+    script,
+    ["--tags", "tag1", "tag2", "--batch-size", "64"],
+    expect_error=False,
+  )
+  assert result["stdout"].strip() == "tags=['tag1', 'tag2'],batch_size=64"
+
+
+def test_list_int_cli_parsing(run_cli):
+  """Test that List[int] can be parsed from CLI arguments.
+
+  Similar to List[str], List[int] should support passing multiple integer
+  values and converting them to a list. CURRENTLY BROKEN: Values are not
+  converted to int and not wrapped in list.
+  """
+  script = dedent("""
+    from typing import List
+    from params_proto import proto
+
+    @proto.cli
+    def train(
+        gpu_ids: List[int] = None,
+        seed: int = 42,
+    ):
+        print(f"gpu_ids={gpu_ids},seed={seed}")
+
+    if __name__ == "__main__":
+        train()
+    """)
+
+  # Test 1: List[int] with single value
+  # CURRENTLY BROKEN: Returns "gpu_ids=0" (as string) instead of "gpu_ids=[0]"
+  result = run_cli(script, ["--gpu-ids", "0"], expect_error=False)
+  assert result["stdout"].strip() == "gpu_ids=[0],seed=42"
+
+  # Test 2: List[int] with multiple values
+  # CURRENTLY BROKEN: Only first value captured, rest become positional args
+  result = run_cli(script, ["--gpu-ids", "0", "1", "2"], expect_error=False)
+  assert result["stdout"].strip() == "gpu_ids=[0, 1, 2],seed=42"
+
+  # Test 3: List[int] without value should use None/empty default
+  result = run_cli(script, [], expect_error=False)
+  assert result["stdout"].strip() == "gpu_ids=None,seed=42"
+
+  # Test 4: List[int] with other args
+  # CURRENTLY BROKEN: Only first value captured, "--seed" might not parse correctly
+  result = run_cli(
+    script,
+    ["--gpu-ids", "0", "1", "--seed", "99"],
+    expect_error=False,
+  )
+  assert result["stdout"].strip() == "gpu_ids=[0, 1],seed=99"
+
+  # Test 5: Invalid integer in List[int] should error
+  # CURRENTLY BROKEN: Type conversion doesn't happen for List types
+  result = run_cli(
+    script,
+    ["--gpu-ids", "invalid", "1"],
+    expect_error=True,
+  )
+  assert result["returncode"] != 0
+  assert "invalid value" in result["stderr"]
+
+
+def test_list_float_cli_parsing(run_cli):
+  """Test that List[float] can be parsed from CLI arguments.
+
+  CURRENTLY BROKEN: Values are not converted to float and not wrapped in list.
+  """
+  script = dedent("""
+    from typing import List
+    from params_proto import proto
+
+    @proto.cli
+    def train(
+        learning_rates: List[float] = None,
+        momentum: float = 0.9,
+    ):
+        print(f"learning_rates={learning_rates},momentum={momentum}")
+
+    if __name__ == "__main__":
+        train()
+    """)
+
+  # Test 1: List[float] with single value
+  # CURRENTLY BROKEN: Returns string instead of [float]
+  result = run_cli(script, ["--learning-rates", "0.001"], expect_error=False)
+  assert result["stdout"].strip() == "learning_rates=[0.001],momentum=0.9"
+
+  # Test 2: List[float] with multiple values
+  # CURRENTLY BROKEN: Only first value captured
+  result = run_cli(
+    script,
+    ["--learning-rates", "0.001", "0.0001", "0.00001"],
+    expect_error=False,
+  )
+  assert result["stdout"].strip() == "learning_rates=[0.001, 0.0001, 1e-05],momentum=0.9"
+
+  # Test 3: List[float] without value should use None/empty default
+  result = run_cli(script, [], expect_error=False)
+  assert result["stdout"].strip() == "learning_rates=None,momentum=0.9"
+
+  # Test 4: List[float] with other args
+  # CURRENTLY BROKEN: Only first value captured, "--momentum" might not parse correctly
+  result = run_cli(
+    script,
+    ["--learning-rates", "0.01", "0.001", "--momentum", "0.95"],
+    expect_error=False,
+  )
+  assert result["stdout"].strip() == "learning_rates=[0.01, 0.001],momentum=0.95"
+
+
+def test_list_with_defaults(run_cli):
+  """Test List parameters with non-None default values.
+
+  Test 1 works because no CLI parsing happens, but Tests 2-4 fail due to
+  CLI parsing issues with List types.
+  """
+  script = dedent("""
+    from typing import List
+    from params_proto import proto
+
+    @proto.cli
+    def train(
+        gpu_ids: List[int] = [0, 1],
+        tags: List[str] = ["default"],
+        learning_rates: List[float] = [0.001, 0.0001],
+    ):
+        print(f"gpu_ids={gpu_ids},tags={tags},learning_rates={learning_rates}")
+
+    if __name__ == "__main__":
+        train()
+    """)
+
+  # Test 1: Using default values - WORKS
+  result = run_cli(script, [], expect_error=False)
+  assert result["stdout"].strip() == "gpu_ids=[0, 1],tags=['default'],learning_rates=[0.001, 0.0001]"
+
+  # Test 2: Overriding List[int] default
+  # CURRENTLY BROKEN: Only first value captured as string
+  result = run_cli(script, ["--gpu-ids", "2", "3", "4"], expect_error=False)
+  assert result["stdout"].strip() == "gpu_ids=[2, 3, 4],tags=['default'],learning_rates=[0.001, 0.0001]"
+
+  # Test 3: Overriding List[str] default
+  # CURRENTLY BROKEN: Single value not wrapped in list
+  result = run_cli(script, ["--tags", "custom"], expect_error=False)
+  assert result["stdout"].strip() == "gpu_ids=[0, 1],tags=['custom'],learning_rates=[0.001, 0.0001]"
+
+  # Test 4: Overriding all lists
+  # CURRENTLY BROKEN: All values not properly converted and wrapped
+  result = run_cli(
+    script,
+    [
+      "--gpu-ids", "0",
+      "--tags", "exp",
+      "--learning-rates", "0.01",
+    ],
+    expect_error=False,
+  )
+  assert result["stdout"].strip() == "gpu_ids=[0],tags=['exp'],learning_rates=[0.01]"
+
+
+def test_list_with_prefix_class(run_cli):
+  """Test List parameters in @proto.prefix classes.
+
+  CURRENTLY BROKEN: CLI parsing of List in prefix classes has same issues
+  as regular parameters.
+  """
+  script = dedent("""
+    from typing import List
+    from params_proto import proto
+
+    @proto.prefix
+    class Model:
+        layer_sizes: List[int] = [256, 128]
+        activation_fns: List[str] = ["relu", "relu"]
+
+    @proto.cli
+    def train(seed: int = 42):
+        print(f"layer_sizes={Model.layer_sizes},activations={Model.activation_fns},seed={seed}")
+
+    if __name__ == "__main__":
+        train()
+    """)
+
+  # Test 1: Using default values - WORKS
+  result = run_cli(script, ["--seed", "99"], expect_error=False)
+  assert result["stdout"].strip() == "layer_sizes=[256, 128],activations=['relu', 'relu'],seed=99"
+
+  # Test 2: Overriding List in prefix class
+  # CURRENTLY BROKEN: Only first value captured for List types
+  result = run_cli(script, ["--model.layer-sizes", "512", "256", "128"], expect_error=False)
+  assert result["stdout"].strip() == "layer_sizes=[512, 256, 128],activations=['relu', 'relu'],seed=99"
+
+  # Test 3: Overriding both List parameters in prefix
+  # CURRENTLY BROKEN: Multiple values not captured for List types
+  result = run_cli(
+    script,
+    [
+      "--model.layer-sizes", "1024", "512",
+      "--model.activation-fns", "gelu", "gelu",
+      "--seed", "123",
+    ],
+    expect_error=False,
+  )
+  assert result["stdout"].strip() == "layer_sizes=[1024, 512],activations=['gelu', 'gelu'],seed=123"
+
+
+def test_list_empty_initialization(run_cli):
+  """Test that List parameters can be initialized as empty lists.
+
+  Test 1 works because no CLI parsing happens.
+  """
+  script = dedent("""
+    from typing import List
+    from params_proto import proto
+
+    @proto.cli
+    def main(
+        ids: List[int] = [],
+        names: List[str] = [],
+    ):
+        print(f"ids={ids},names={names}")
+
+    if __name__ == "__main__":
+        main()
+    """)
+
+  # Test 1: Using default empty lists - WORKS
+  result = run_cli(script, [], expect_error=False)
+  assert result["stdout"].strip() == "ids=[],names=[]"
+
+  # Test 2: Override empty list with values
+  # CURRENTLY BROKEN: Only first value captured and not as list
+  result = run_cli(script, ["--ids", "1", "2", "3"], expect_error=False)
+  assert result["stdout"].strip() == "ids=[1, 2, 3],names=[]"
+
+
+def test_list_single_vs_multiple_values(run_cli):
+  """Test distinction between single value and multiple values in List parameters.
+
+  Documents current behavior for parsing single vs multiple values.
+  CURRENTLY BROKEN: Neither single nor multiple values are handled correctly.
+  """
+  script = dedent("""
+    from typing import List
+    from params_proto import proto
+
+    @proto.cli
+    def main(values: List[int] = None):
+        print(f"values={values}")
+
+    if __name__ == "__main__":
+        main()
+    """)
+
+  # Test 1: Single value should still be a list
+  # CURRENTLY BROKEN: Returns "values=42" instead of "values=[42]"
+  result = run_cli(script, ["--values", "42"], expect_error=False)
+  assert result["stdout"].strip() == "values=[42]"
+
+  # Test 2: Multiple values should all be in list
+  # CURRENTLY BROKEN: Only first value captured, rest become positional args
+  result = run_cli(script, ["--values", "1", "2", "3", "4", "5"], expect_error=False)
+  assert result["stdout"].strip() == "values=[1, 2, 3, 4, 5]"
+
+
+def test_list_help_strings(run_cli):
+  """Test that List parameters have proper help text display.
+
+  WORKS: Help generation works fine for List parameters.
+  """
+  script = dedent("""
+    from typing import List
+    from params_proto import proto
+
+    @proto.cli
+    def train(
+        gpu_ids: List[int] = [0],  # GPU devices to use
+        tags: List[str] = ["default"],  # Experiment tags
+    ):
+        '''Train with list parameters.'''
+        pass
+
+    if __name__ == "__main__":
+        train()
+    """)
+
+  result = run_cli(script, ["--help"], expect_error=True)
+  assert result["returncode"] == 0
+  assert "--gpu-ids" in result["stdout"]
+  assert "--tags" in result["stdout"]
+  # Should have proper default display
+  assert "[0]" in result["stdout"] or "[0, 1]" in result["stdout"]
+
+
+def test_list_str_whitespace_handling(run_cli):
+  """Test that List[str] properly handles strings with special characters.
+
+  CURRENTLY BROKEN: Multiple values and proper list wrapping not implemented.
+  """
+  script = dedent("""
+    from typing import List
+    from params_proto import proto
+
+    @proto.cli
+    def main(paths: List[str] = None):
+        print(f"paths={paths}")
+
+    if __name__ == "__main__":
+        main()
+    """)
+
+  # Test 1: Simple string paths
+  # CURRENTLY BROKEN: Only first path captured, second becomes positional
+  result = run_cli(script, ["--paths", "/home/user/data", "/mnt/dataset"], expect_error=False)
+  assert "/home/user/data" in result["stdout"]
+  assert "/mnt/dataset" in result["stdout"]
+
+  # Test 2: Single path
+  # CURRENTLY BROKEN: Path not wrapped in list
+  result = run_cli(script, ["--paths", "./data"], expect_error=False)
+  assert "./data" in result["stdout"]

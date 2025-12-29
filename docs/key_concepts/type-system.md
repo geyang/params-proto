@@ -2,6 +2,17 @@
 
 params-proto v3 supports rich type annotations for parameters, providing type safety and automatic CLI help generation.
 
+## Known Type System Issues
+
+⚠️ **The following types have CLI parsing issues in v3.0.0-rc21:**
+- **`List[T]`** - Only captures first value, does not wrap values in list
+- **`Tuple[T, ...]`** - Same issues as List[T]
+- **`Path`** - Strings not converted to Path objects
+- **`dict`** - Collection types not implemented for CLI parsing
+- **`Literal[...]` and `Enum`** - Help text works, but no runtime validation/conversion
+
+These are documented in the [Type Support Matrix](#type-support-matrix) below. **Workarounds:** use `str` with documented defaults, or track the issue status.
+
 ## Required Parameters and Callable Types
 
 **Key Design Principle:** For required parameters (those without default values), params-proto **always calls the type hint as a constructor**.
@@ -426,21 +437,22 @@ def process(
 
 ## Type Support Matrix
 
-| Type | Supported | CLI Help | Example |
-|------|-----------|----------|---------|
-| `int` | ✅ | `INT` | `count: int = 10` |
-| `float` | ✅ | `FLOAT` | `lr: float = 0.001` |
-| `str` | ✅ | `STR` | `name: str = "default"` |
-| `bool` | ✅ | (flag) | `debug: bool = False` |
-| `int \| float` | ✅ | `VALUE` | `lr: int \| float = 0.001` |
-| `str \| None` | ✅ | `STR` | `path: str \| None = None` |
-| `Literal[...]` | ✅ | `{a,b,c}` | `mode: Literal["a", "b"]` |
-| `Enum` | ✅ | `{A,B,C}` | `opt: Optimizer = Optimizer.ADAM` |
-| `List[T]` | ✅ | `VALUE` | `files: List[str] = []` |
-| `Tuple[T, ...]` | ✅ | `VALUE` | `size: Tuple[int, int]` |
-| `Path` | ✅ | `STR` | `dir: Path = Path(".")` |
-| `dict` | ⚠️ | `VALUE` | Limited support |
-| Custom classes | ❌ | - | Not supported |
+| Type | CLI Support | Help Display | Notes |
+|------|-------------|--------------|-------|
+| `int` | ✅ Full | `INT` | Fully working |
+| `float` | ✅ Full | `FLOAT` | Fully working |
+| `str` | ✅ Full | `STR` | Fully working |
+| `bool` | ✅ Full | (flag) | Supports `--flag` and `--no-flag` |
+| `int \| float` | ✅ Full | `VALUE` | Ambiguous unions work |
+| `str \| None` (Optional) | ✅ Full | `STR` | Correctly unwraps to inner type |
+| `Literal[...]` | ⚠️ Partial | `{a,b,c}` | Help shows values, but no validation |
+| `Enum` | ⚠️ Partial | `{A,B,C}` | Help shows members, no enum conversion |
+| `List[T]` | ❌ Broken | `VALUE` | **Only first value captured; no list wrapping** |
+| `Tuple[T, ...]` | ❌ Broken | `VALUE` | **Same issues as List[T]** |
+| `Path` | ❌ Broken | `STR` | **Strings not converted to Path objects** |
+| `dict` | ❌ Broken | `VALUE` | **Not implemented** |
+| `Union[Class1, Class2]` | ✅ Full | Subcommand | Works as pseudo-subcommands |
+| Custom classes | ❌ Broken | - | Must be dataclasses with Union context |
 
 ## Type Validation
 
