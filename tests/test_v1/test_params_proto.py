@@ -139,17 +139,11 @@ def test_from_command_line():
     some_arg = Proto(0, aliases=["-s"])
 
   print(G.__parser.format_help())
-  assert (
-    G.__parser.format_help()
-    == dedent(""" 
-        usage: _jb_pytest_runner.py [-h] [--some-arg SOME_ARG]
-        
-        options:
-          -h, --help            show this help message and exit
-          --some-arg SOME_ARG, -s SOME_ARG
-                                N/A
-        """).lstrip()
-  )
+  help_output = G.__parser.format_help()
+  # Check for important parts without depending on the exact program name
+  assert "[-h] [--some-arg SOME_ARG]" in help_output
+  assert "--some-arg SOME_ARG, -s SOME_ARG" in help_output
+  assert "-h, --help" in help_output
 
 
 def test_function_partial():

@@ -237,15 +237,15 @@ def test_proto_cli_list_types():
     print(f"gpu_ids={gpu_ids}")
 
   expected = dedent("""
-  usage: train [-h] [--gpu-ids VALUE] [--data-dirs VALUE] [--learning-rates VALUE]
+  usage: train [-h] [--gpu-ids [INT]] [--data-dirs [STR]] [--learning-rates [FLOAT]]
 
   Train model with list-based configuration.
 
   options:
     -h, --help           show this help message and exit
-    --gpu-ids VALUE      GPU device IDs to use (default: [0, 1])
-    --data-dirs VALUE    Directories containing training data (default: ['./data'])
-    --learning-rates VALUE
+    --gpu-ids [INT]      GPU device IDs to use (default: [0, 1])
+    --data-dirs [STR]    Directories containing training data (default: ['./data'])
+    --learning-rates [FLOAT]
                          Number of training learning rates (default: [0.001, 0.0001])
   """)
   assert train.__help_str__ == expected, "help string is not correct"
@@ -267,15 +267,18 @@ def test_proto_cli_literal_types():
     print(f"activation={activation}, optimizer={optimizer}")
 
   expected = dedent("""
-  usage: train [-h] [--activation VALUE] [--optimizer VALUE] [--precision VALUE]
+  usage: train [-h] [--activation {'relu','gelu','tanh'}] [--optimizer {'adam','sgd','adamw'}] [--precision {'fp32','fp16','bf16'}]
 
   Train model with fixed choice parameters.
 
   options:
     -h, --help           show this help message and exit
-    --activation VALUE   Activation function (default: relu)
-    --optimizer VALUE    Optimizer algorithm (default: adam)
-    --precision VALUE    Precision (default: fp32)
+    --activation {'relu','gelu','tanh'}
+                         Activation function (default: relu)
+    --optimizer {'adam','sgd','adamw'}
+                         Optimizer algorithm (default: adam)
+    --precision {'fp32','fp16','bf16'}
+                         Precision (default: fp32)
   """)
   assert train.__help_str__ == expected, "help string is not correct"
 
@@ -300,15 +303,18 @@ def test_proto_cli_tuple_types():
     print(f"image_size={image_size}")
 
   expected = dedent("""
-  usage: train [-h] [--image-size VALUE] [--norm-mean VALUE] [--window-size VALUE]
+  usage: train [-h] [--image-size (INT,INT)] [--norm-mean (FLOAT,FLOAT,FLOAT)] [--window-size (INT,INT)]
 
   Train model with fixed-length tuple configuration.
 
   options:
     -h, --help           show this help message and exit
-    --image-size VALUE   Image height and width (default: (224, 224))
-    --norm-mean VALUE    Norm mean (default: (0.485, 0.456, 0.406))
-    --window-size VALUE  Window size (default: (7, 7))
+    --image-size (INT,INT)
+                         Image height and width (default: (224, 224))
+    --norm-mean (FLOAT,FLOAT,FLOAT)
+                         Norm mean (default: (0.485, 0.456, 0.406))
+    --window-size (INT,INT)
+                         Window size (default: (7, 7))
   """)
   assert train.__help_str__ == expected, "help string is not correct"
 
@@ -375,16 +381,16 @@ def test_proto_cli_path_types():
     print(f"output_dir={output_dir}")
 
   expected = dedent("""
-  usage: train [-h] [--output-dir VALUE] [--checkpoint-path VALUE] [--data-root VALUE]
+  usage: train [-h] [--output-dir PATH] [--checkpoint-path PATH] [--data-root PATH]
 
   Train model with Path-based file system configuration.
 
   options:
     -h, --help           show this help message and exit
-    --output-dir VALUE   Output directory for results (default: outputs)
-    --checkpoint-path VALUE
+    --output-dir PATH    Output directory for results (default: outputs)
+    --checkpoint-path PATH
                          Path to checkpoint file (default: checkpoints/model.pt)
-    --data-root VALUE    Data root (default: /data)
+    --data-root PATH     Data root (default: /data)
   """)
   assert train.__help_str__ == expected, "help string is not correct"
 
