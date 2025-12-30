@@ -2,6 +2,72 @@
 
 This page contains the release history and changelog for params-proto.
 
+## Version 3.0.0-rc24 (2025-12-29)
+
+### ✨ Features
+
+- **Literal[...] Type Support**: Full validation of allowed values
+  - Restricts parameters to specific set of allowed values
+  - Works with strings, numbers, and mixed types
+  - Case-sensitive validation with clear error messages
+  - Example: `Literal["adam", "sgd", "rmsprop"]`
+
+- **Enum Type Conversion**: Automatic conversion to enum members
+  - Case-insensitive CLI matching for user convenience
+  - Supports `auto()` and custom value enums
+  - Member name displayed in help text
+  - Example: `Optimizer.ADAM` from `--optimizer adam`
+
+- **Path Type Instantiation**: Automatic `pathlib.Path` creation
+  - Strings converted to Path objects automatically
+  - Works with relative and absolute paths
+  - Ready to use with pathlib methods
+  - Part of general callable type instantiation pattern
+
+- **dict Type Parsing**: Safe parsing using `ast.literal_eval`
+  - Supports nested structures and mixed types
+  - No code execution risk - only evaluates literals
+  - Works with both single and double quotes
+  - Example: `'{"lr": 0.01, "batch_size": 32}'`
+
+### 🎯 General Callable Type Instantiation
+
+Implemented unified approach for custom types:
+- Any callable type annotation is automatically instantiated with string value
+- `Path(value)` for paths
+- Custom classes with string constructors
+- dataclasses and other callables
+
+### 📚 Documentation
+
+- Comprehensive sections for Literal, Enum, Path, dict types
+- Security note on `ast.literal_eval` for dict parsing
+- CLI usage examples for all new types
+- Updated Type Support Matrix showing all types as ✅ Full
+
+### 📊 Test Coverage
+
+Added 17 comprehensive tests in `test_advanced_types.py`:
+- ✅ Literal validation (strings, numbers, mixed)
+- ✅ Enum conversion (auto() and custom values)
+- ✅ Path instantiation (relative and absolute)
+- ✅ dict parsing (simple, nested, mixed types)
+- ✅ Combined usage of multiple advanced types
+- ✅ Help text generation for all types
+- All existing 48 CLI parsing tests still passing (65 total)
+
+### 🔄 Type System Complete
+
+**Now fully supporting 13 type categories:**
+- Primitive: int, float, str, bool
+- Special: Optional[T], Union types
+- Collections: List[T], Tuple[T, ...], dict
+- Validation: Literal[...], Enum
+- Paths: pathlib.Path
+- Custom: Any callable type
+
+---
+
 ## Version 3.0.0-rc23 (2025-12-29)
 
 ### ✨ Features

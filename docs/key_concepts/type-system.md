@@ -4,12 +4,13 @@ params-proto v3 supports rich type annotations for parameters, providing type sa
 
 ## Known Type System Issues
 
-⚠️ **The following types have CLI parsing issues in v3.0.0-rc23:**
-- **`Path`** - Strings not converted to Path objects
-- **`dict`** - Collection types not implemented for CLI parsing
-- **`Literal[...]` and `Enum`** - Help text works, but no runtime validation/conversion
+✅ **All major types are now fully supported in v3.0.0-rc24!**
 
-These are documented in the [Type Support Matrix](#type-support-matrix) below. **Workarounds:** use `str` with documented defaults, or track the issue status.
+Previously broken types now working:
+- **`Literal[...]`** - Full validation of allowed values
+- **`Enum`** - Conversion to enum members (case-insensitive matching)
+- **`Path`** - Automatic instantiation via `pathlib.Path()`
+- **`dict`** - Safe parsing using `ast.literal_eval`
 
 ## Required Parameters and Callable Types
 
@@ -268,37 +269,52 @@ python train.py --lr 1  # int (also valid)
 
 ## Literal Types
 
-### Restricted Value Sets
+Literal types restrict parameters to a specific set of allowed values with runtime validation.
 
 ```python
 from typing import Literal
 
 @proto.cli
 def train(
-    optimizer: Literal["adam", "sgd", "rmsprop"] = "adam",  # Only these values
-    device: Literal["cuda", "cpu", "mps"] = "cuda",  # Hardware selection
+    # String literals
+    optimizer: Literal["adam", "sgd", "rmsprop"] = "adam",
+    device: Literal["cuda", "cpu", "mps"] = "cuda",
+    # Numeric literals
+    precision: Literal[16, 32, 64] = 32,
+    # Mixed literals
+    mode: Literal["auto", 1, 2, 3] = "auto",
 ):
     """Training with literal types."""
-    print(f"Using {optimizer} on {device}")
+    print(f"Using {optimizer} on {device}, precision={precision}")
 ```
 
 **CLI usage:**
 ```bash
+# Valid values are accepted
 python train.py --optimizer sgd --device cpu
-# python train.py --optimizer invalid  # Would be an error
+
+# Invalid values are rejected with clear error
+python train.py --optimizer invalid
+# error: value must be one of ('adam', 'sgd', 'rmsprop'), got 'invalid'
+
+# Numeric literals work too
+python train.py --precision 16
 ```
 
-**Help text shows options:**
-```{ansi-block}
-:string_escape:
-
---optimizer {adam,sgd,rmsprop}
-                     Optimizer \x1b[36m(default:\x1b[0m \x1b[1m\x1b[36madam\x1b[0m\x1b[36m)\x1b[0m
+**Help text shows allowed values:**
 ```
+--optimizer {adam,sgd,rmsprop}    Optimizer (default: adam)
+--precision {16,32,64}             Precision (default: 32)
+```
+
+**Key features:**
+- Validates input against allowed values
+- Works with strings, numbers, or mixed types
+- Clear error messages showing valid options
 
 ## Enum Types
 
-### Using Python Enums
+Enums are converted to enum members with automatic case-insensitive name matching.
 
 ```python
 from enum import Enum, auto
@@ -318,26 +334,39 @@ class Device(Enum):
 
 @proto.cli
 def train(
-    optimizer: Optimizer = Optimizer.ADAM,  # Enum parameter
-    device: Device = Device.CUDA,  # Enum with custom values
+    optimizer: Optimizer = Optimizer.ADAM,   # Enum with auto()
+    device: Device = Device.CUDA,             # Enum with custom values
 ):
     """Training with enum types."""
-    print(f"Optimizer: {optimizer.name}")  # ADAM
-    print(f"Device: {device.value}")  # cuda
+    print(f"Optimizer: {optimizer.name}")     # ADAM
+    print(f"Optimizer value: {optimizer.value}")  # 1
+    print(f"Device: {device.name}")            # CUDA
+    print(f"Device value: {device.value}")     # cuda
 ```
 
 **CLI usage:**
 ```bash
+# Exact case matching
 python train.py --optimizer SGD --device CPU
+
+# Case-insensitive matching (CLI convenience)
+python train.py --optimizer adam --device cuda
+
+# Mixed case also works
+python train.py --optimizer Sgd --device Mps
 ```
 
-**Help text:**
-```{ansi-block}
-:string_escape:
-
---optimizer {ADAM,SGD,RMSPROP}
-                     Optimizer \x1b[36m(default:\x1b[0m \x1b[1m\x1b[36mADAM\x1b[0m\x1b[36m)\x1b[0m
+**Help text shows member names:**
 ```
+--optimizer {ADAM,SGD,RMSPROP}    Optimizer (default: ADAM)
+--device {CUDA,CPU,MPS}            Hardware device (default: CUDA)
+```
+
+**Key features:**
+- Converts CLI strings to enum members
+- Case-insensitive name matching for user convenience
+- Shows available options in help text
+- Works with both `auto()` and custom values
 
 ## Collection Types
 
@@ -438,29 +467,100 @@ python train.py --learning-schedule 0.2 0.02 --image-size 512 512
 
 ## Path Types
 
-### pathlib.Path
+`pathlib.Path` objects are automatically instantiated from string arguments.
 
 ```python
 from pathlib import Path
+from params_proto import proto
 
 @proto.cli
 def process(
-    input_dir: Path = Path("./data"),  # Path parameter
-    output_file: Path = Path("output.txt"),  # File path
+    input_dir: Path = Path("./data"),      # Directory path
+    output_file: Path = Path("output.txt"), # File path
+    config: Path = Path.home() / ".config", # Home-relative path
 ):
     """Process files with Path types."""
     print(f"Reading from: {input_dir}")
     print(f"Writing to: {output_file}")
+    print(f"Config at: {config}")
+    # Paths are ready to use with pathlib methods
+    input_dir.mkdir(parents=True, exist_ok=True)
 ```
 
 **CLI usage:**
 ```bash
-python process.py --input-dir /path/to/data --output-file results.txt
+# Relative paths
+python process.py --input-dir ./data --output-file results.txt
+
+# Absolute paths
+python process.py --input-dir /var/data --output-file /tmp/results.txt
+
+# Paths with special characters
+python process.py --input-dir ~/Documents/project --output-file ./output/final.txt
 ```
 
-**Automatic conversion:**
-- Strings are converted to `Path` objects
-- Path validation happens at runtime (if you check)
+**Key features:**
+- Strings automatically converted to Path objects
+- Works with relative and absolute paths
+- Ready to use with pathlib methods (`mkdir()`, `exists()`, etc.)
+- Help text shows `PATH` type
+
+## Dictionary Types
+
+Dictionary types are parsed safely using Python's `ast.literal_eval` - no code execution risk.
+
+```python
+from typing import Dict
+from params_proto import proto
+
+@proto.cli
+def config(
+    # Generic dict (any keys/values)
+    params: Dict = None,
+    # Typed dict (documentation)
+    settings: Dict[str, int] = None,
+    # Complex nested structures
+    model_config: Dict[str, float] = None,
+):
+    """Configure with dictionaries."""
+    print(f"params: {params}")
+    print(f"settings: {settings}")
+    if model_config:
+        for key, value in model_config.items():
+            print(f"  {key}: {value}")
+```
+
+**CLI usage:**
+```bash
+# Simple dict with strings and numbers
+python config.py --params '{"lr": 0.01, "batch_size": 32}'
+
+# Nested structures
+python config.py --settings '{"depth": 3, "width": 128, "dropout": 0}'
+
+# Complex dict with various types
+python config.py --model-config '{
+    "learning_rate": 0.001,
+    "hidden_sizes": [256, 128, 64],
+    "activation": "relu",
+    "use_batch_norm": true
+}'
+
+# Dict with lists and nested dicts
+python config.py --params '{"data": {"train": 0.8, "val": 0.1, "test": 0.1}, "tags": ["ml", "v2"]}'
+```
+
+**Security note:**
+- Uses `ast.literal_eval` which only evaluates Python literal structures
+- Safe for untrusted input - will never execute arbitrary code
+- Supports: strings, numbers, lists, dicts, tuples, booleans, None
+
+**Key features:**
+- Safe parsing with `ast.literal_eval`
+- Supports nested structures and mixed types
+- Works with both single and double quotes: `{'a': 1}` or `{"a": 1}`
+- Help text shows dict type: `{STR:INT}` or `{KEY:VALUE}`
+- No code execution - purely data literal evaluation
 
 ## Complex Types
 
@@ -498,12 +598,12 @@ def process(
 | `bool` | ✅ Full | (flag) | Supports `--flag` and `--no-flag` |
 | `int \| float` | ✅ Full | `VALUE` | Ambiguous unions work |
 | `str \| None` (Optional) | ✅ Full | `STR` | Correctly unwraps to inner type |
-| `Literal[...]` | ⚠️ Partial | `{a,b,c}` | Help shows values, but no validation |
-| `Enum` | ⚠️ Partial | `{A,B,C}` | Help shows members, no enum conversion |
+| `Literal[...]` | ✅ Full | `{a,b,c}` | Full validation of allowed values |
+| `Enum` | ✅ Full | `{A,B,C}` | Enum member conversion (case-insensitive) |
 | `List[T]` | ✅ Full | `[INT]` or `[STR]` | Fully working with element type conversion |
 | `Tuple[T, ...]` | ✅ Full | `(INT,...)` or `(INT,STR,FLOAT)` | Fully working - variable and fixed-size tuples |
-| `Path` | ❌ Broken | `STR` | **Strings not converted to Path objects** |
-| `dict` | ❌ Broken | `VALUE` | **Not implemented** |
+| `Path` | ✅ Full | `PATH` | Automatic conversion to Path objects |
+| `dict` | ✅ Full | `{STR:INT}` | Safe parsing with ast.literal_eval |
 | `Union[Class1, Class2]` | ✅ Full | Subcommand | Works as pseudo-subcommands |
 | Custom classes | ❌ Broken | - | Must be dataclasses with Union context |
 

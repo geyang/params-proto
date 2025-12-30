@@ -6,7 +6,9 @@ Simple custom parser - no argparse dependency.
 """
 
 import sys
-from typing import Any, Dict, Union, get_args, get_origin, List
+from enum import Enum
+from pathlib import Path
+from typing import Any, Dict, Union, get_args, get_origin, List, Literal
 
 from params_proto.type_utils import _convert_type
 
@@ -126,6 +128,10 @@ def parse_cli_args(wrapper) -> Dict[str, Any]:
 
     # Check if this is a single class type (dataclass, etc.)
     # Treat as a "union" with one option to enable same syntax
+    # But exclude types that have their own handling (Enum, Literal, etc.)
+    origin = get_origin(annotation)
+    is_enum_type = isinstance(annotation, type) and issubclass(annotation, Enum) if isinstance(annotation, type) else False
+
     if isinstance(annotation, type) and annotation not in {
       int,
       str,
@@ -135,7 +141,8 @@ def parse_cli_args(wrapper) -> Dict[str, Any]:
       dict,
       tuple,
       set,
-    }:
+      Path,
+    } and not is_enum_type and origin is not Literal:
       union_params[kebab_name] = (param_name, [annotation])
       if param_info.get("required", False):
         required_params.append(param_name)
