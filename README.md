@@ -77,7 +77,7 @@ uv run python scratch/demo_v3.py 42
 ## Installation
 
 ```bash
-pip install params-proto==3.0.0-rc7
+pip install params-proto==3.0.0-rc25
 ```
 
 ## Key Features
