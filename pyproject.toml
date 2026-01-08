@@ -1,6 +1,6 @@
 [project]
 name = "params-proto"
-version = "3.0.0-rc24"
+version = "3.0.0-rc25"
 description = "Modern Hyper Parameter Management for Machine Learning"
 authors = [
     { name = "Ge Yang" }

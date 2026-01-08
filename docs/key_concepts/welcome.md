@@ -90,7 +90,7 @@ See [Advanced Patterns](advanced-patterns) for prefixes, singletons, and composi
 - [Environment Variables](environment-variables) - EnvVar integration
 - [Parameter Overrides](parameter-overrides) - Multiple override methods
 - [Hyperparameter Sweeps](hyperparameter-sweeps) - Systematic exploration
-- [Parameter Iteration](parameter-iteration) - Lightweight sweeps with piter
+- [Parameter Iteration](parameter-iteration) - Lightweight sweeps with `piter @ {...}` syntax
 
 ## Features
 

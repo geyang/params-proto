@@ -543,7 +543,7 @@ def test_sweep_mod_operator_with_piter():
   with sweep.product:
     Config.batch_size = [32, 64, 128]
 
-  with_lr = sweep % piter({"lr": 0.001, "seed": 200})
+  with_lr = sweep % (piter @ {"lr": 0.001, "seed": 200})
 
   config_list = list(with_lr)
   assert len(config_list) == 3
@@ -575,10 +575,10 @@ def test_piter_type_errors():
 
   # Non-string keys
   with pytest.raises(TypeError, match="must be strings"):
-    piter({123: [1, 2, 3]})
+    piter @ {123: [1, 2, 3]}
 
   # Invalid * operand
-  configs = piter({"lr": [0.001, 0.01]})
+  configs = piter @ {"lr": [0.001, 0.01]}
   with pytest.raises(TypeError, match="Cannot multiply"):
     configs * [1, 2, 3]
 
@@ -621,7 +621,7 @@ def test_sweep_operators_return_piter():
     Config.lr = [0.001, 0.01]
 
   # Test * operator
-  result = sweep * piter({"batch_size": [32, 64]})
+  result = sweep * (piter @ {"batch_size": [32, 64]})
   assert isinstance(result, ParameterIterator)
   assert len(list(result)) == 4
 

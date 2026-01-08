@@ -8,7 +8,7 @@ description: Cheat sheet for params-proto patterns and syntax
 ## Installation
 
 ```bash
-pip install params-proto==3.0.0-rc24
+pip install params-proto==3.0.0-rc25
 ```
 
 ## Decorators
@@ -157,6 +157,35 @@ python train.py --model.name vit --training.lr 0.0001
 ```
 
 ## Hyperparameter Sweeps
+
+### piter (Recommended)
+
+```python
+from params_proto.hyper import piter
+
+# Zip (default): pairs values element-wise
+configs = piter @ {"lr": [0.001, 0.01], "batch_size": [32, 64]}
+# 2 configs: (0.001, 32), (0.01, 64)
+
+# Cartesian product with * (only first needs piter @)
+configs = piter @ {"lr": [0.001, 0.01]} * {"batch_size": [32, 64]}
+# 4 configs: all combinations
+
+# Chained products
+configs = piter @ {"lr": [0.001, 0.01]} * {"batch_size": [32, 64]} * {"model": ["resnet", "vit"]}
+# 8 configs (2 × 2 × 2)
+
+# Override with fixed values
+configs = piter @ {"lr": [0.001, 0.01]} * {"batch_size": [32, 64]} % {"seed": 42}
+
+# Repeat for multiple trials
+configs = (piter @ {"lr": [0.001, 0.01]}) ** 3  # 2 configs × 3 trials
+
+for config in configs:
+    train(**config)
+```
+
+### Sweep (Class-based)
 
 ```python
 from params_proto import proto, Sweep

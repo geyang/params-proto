@@ -139,6 +139,38 @@ python main.py export --format torchscript
 
 ## Hyperparameter Sweep
 
+### Using piter (Recommended)
+
+```python
+from params_proto import proto
+from params_proto.hyper import piter
+
+@proto.cli
+def train(
+    lr: float = 0.001,
+    batch_size: int = 32,
+    model: str = "resnet50",
+    seed: int = 42,
+):
+    """Train with given hyperparameters."""
+    print(f"Training {model} with lr={lr}, batch={batch_size}, seed={seed}")
+    return {"accuracy": 0.95, "loss": 0.1}
+
+# Grid search with piter @ syntax (only first needs piter @)
+configs = (
+    piter @ {"lr": [0.001, 0.01]}
+    * {"batch_size": [32, 64]}
+    * {"model": ["resnet50", "vit"]}
+) % {"seed": 42}
+
+results = []
+for config in configs:
+    metrics = train(**config)
+    results.append({**config, **metrics})
+```
+
+### Using Sweep (Class-based)
+
 ```python
 from params_proto import proto, Sweep
 
@@ -151,7 +183,6 @@ def train(
 ):
     """Train with given hyperparameters."""
     print(f"Training {model} with lr={lr}, batch={batch_size}, seed={seed}")
-    # Return metrics for logging
     return {"accuracy": 0.95, "loss": 0.1}
 
 # Run sweep

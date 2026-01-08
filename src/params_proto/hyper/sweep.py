@@ -62,14 +62,16 @@ class ParameterIterator:
 
   def __mul__(self, other):
     """
-    Cartesian product with another ParameterIterator.
+    Cartesian product with another ParameterIterator or dict.
 
     Example:
-        piter1 = piter({Config.lr: [0.001, 0.01]})
-        piter2 = piter({Config.batch_size: [32, 64]})
-        combined = piter1 * piter2  # 4 combinations
+        piter @ {"lr": [0.001, 0.01]} * {"batch_size": [32, 64]}
+        # Creates 4 combinations
     """
-    if not isinstance(other, ParameterIterator):
+    # Auto-wrap dicts as ParameterIterator
+    if isinstance(other, dict):
+      other = piter._create_iterator(other)
+    elif not isinstance(other, ParameterIterator):
       raise TypeError(f"Cannot multiply ParameterIterator with {type(other)}")
 
     # Materialize other to a list so we can iterate multiple times
@@ -142,57 +144,81 @@ class ParameterIterator:
     return len(self.list)
 
 
-def piter(spec):
+class PiterFactory:
   """
-  Create a parameter iterator from a specification dict.
+  Factory for creating parameter iterators.
 
-  Args:
-      spec: Dict mapping parameter names (strings) to values or lists of values.
-            Keys should be parameter names, optionally with prefix (e.g., "config.lr").
-            Values can be single values or lists/iterables.
+  Supports both function-call syntax and @ operator syntax:
+      piter({"lr": [0.001, 0.01]})      # function call
+      piter @ {"lr": [0.001, 0.01]}     # @ operator
 
-  Returns:
-      ParameterIterator that zips parameter lists element-wise.
-
-  Example:
-      # Element-wise zip (default behavior)
-      piter({"lr": [0.001, 0.01], "batch_size": [32, 64]})
-      # Creates 2 configs: (0.001, 32), (0.01, 64)
-
-      # Fixed value
-      piter({"seed": 200})
-      # Creates 1 config with seed=200
-
-      # For Cartesian product, use * operator:
-      piter({"lr": [0.001, 0.01]}) * piter({"batch_size": [32, 64]})
-      # Creates 4 configs (2 × 2)
-
-      # With prefixes for multiple proto classes
-      piter({"model.depth": [18, 50], "training.lr": [0.001, 0.01]})
-      # Creates 2 configs (zipped)
+  The @ operator enables clean chaining:
+      piter @ {"lr": [0.001, 0.01]} * piter @ {"batch_size": [32, 64]}
   """
-  # Convert values to lists if needed
-  params = {}
-  for key, values in spec.items():
-    if not isinstance(key, str):
-      raise TypeError(f"Parameter keys must be strings, got {type(key)}")
-    param_values = values if isinstance(values, (list, tuple, range)) else [values]
-    params[key] = param_values
 
-  # Create iterator by zipping parameter lists
-  def zip_iter():
-    if not params:
-      return
+  def __call__(self, spec):
+    """Create parameter iterator (function-call syntax)."""
+    return self._create_iterator(spec)
 
-    keys = list(params.keys())
-    value_lists = [params[k] for k in keys]
+  def __matmul__(self, spec):
+    """Create parameter iterator (@ operator syntax)."""
+    return self._create_iterator(spec)
 
-    # Zip parameter lists element-wise
-    for combination in zip(*value_lists):
-      config = dict(zip(keys, combination))
-      yield config
+  def _create_iterator(self, spec):
+    """
+    Create a parameter iterator from a specification dict.
 
-  return ParameterIterator(zip_iter())
+    Args:
+        spec: Dict mapping parameter names (strings) to values or lists of values.
+              Keys should be parameter names, optionally with prefix (e.g., "config.lr").
+              Values can be single values or lists/iterables.
+
+    Returns:
+        ParameterIterator that zips parameter lists element-wise.
+
+    Example:
+        # Element-wise zip (default behavior)
+        piter({"lr": [0.001, 0.01], "batch_size": [32, 64]})
+        # Creates 2 configs: (0.001, 32), (0.01, 64)
+
+        # Fixed value
+        piter({"seed": 200})
+        # Creates 1 config with seed=200
+
+        # For Cartesian product, use * operator:
+        piter @ {"lr": [0.001, 0.01]} * piter @ {"batch_size": [32, 64]}
+        # Creates 4 configs (2 × 2)
+
+        # With prefixes for multiple proto classes
+        piter({"model.depth": [18, 50], "training.lr": [0.001, 0.01]})
+        # Creates 2 configs (zipped)
+    """
+    # Convert values to lists if needed
+    params = {}
+    for key, values in spec.items():
+      if not isinstance(key, str):
+        raise TypeError(f"Parameter keys must be strings, got {type(key)}")
+      param_values = values if isinstance(values, (list, tuple, range)) else [values]
+      params[key] = param_values
+
+    # Create iterator by zipping parameter lists
+    def zip_iter():
+      if not params:
+        return
+
+      keys = list(params.keys())
+      value_lists = [params[k] for k in keys]
+
+      # Zip parameter lists element-wise
+      for combination in zip(*value_lists):
+        config = dict(zip(keys, combination))
+        yield config
+
+    return ParameterIterator(zip_iter())
+
+
+# Singleton instance for use as both function and @ operator
+piter = PiterFactory()
 
 
 def dot_join(*keys):

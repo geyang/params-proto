@@ -283,7 +283,7 @@ The Quick Start covers the basics. For deeper understanding, see:
 - **[Parameter Overrides](key_concepts/parameter-overrides.md)** - CLI, context managers, and other override methods
 - **[Advanced Patterns: Prefixes & Composition](key_concepts/advanced_patterns.md)** - Global singleton configs with @proto.prefix, namespaced parameters, and complex composition
 - **[Hyperparameter Sweeps](key_concepts/hyperparameter_sweeps.md)** - Declarative parameter sweeps with Sweep
-- **[Parameter Iteration](key_concepts/parameter-iteration.md)** - Lightweight, composable sweeps with piter
+- **[Parameter Iteration](key_concepts/parameter-iteration.md)** - Lightweight, composable sweeps with `piter @ {...}` syntax
 - **[ANSI Formatting](key_concepts/ansi_formatting.md)** - Terminal colors and formatting
 - **[Claude Skill](key_concepts/claude_skill.md)** - AI assistance for params-proto development
 

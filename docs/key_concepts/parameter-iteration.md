@@ -1,6 +1,54 @@
 # Parameter Iterators (piter)
 
-The `piter()` function provides a lightweight, composable way to create parameter sweeps using simple dictionaries and operators. Unlike the `Sweep` class which requires `@proto` decorated classes, `piter` works with plain dictionaries and supports lazy evaluation for memory efficiency.
+The `piter` operator provides a lightweight, composable way to create parameter sweeps using simple dictionaries and operators. Unlike the `Sweep` class which requires `@proto` decorated classes, `piter` works with plain dictionaries and supports lazy evaluation for memory efficiency.
+
+## Syntax: `piter @ {...}`
+
+params-proto uses the `@` operator for clean, readable parameter iteration:
+
+```python
+# Preferred syntax (v3.0.0+)
+configs = piter @ {"lr": [0.001, 0.01], "batch_size": [32, 64]}
+
+# Legacy syntax (still supported for backward compatibility)
+configs = piter({"lr": [0.001, 0.01], "batch_size": [32, 64]})
+```
+
+Both syntaxes are fully functional, but `@` is preferred for cleaner, more readable code.
+
+## Operators Quick Reference
+
+| Operator | Name | Description | Example | Result |
+|----------|------|-------------|---------|--------|
+| `@` | Create | Create iterator from dict | `piter @ {"lr": [0.001, 0.01]}` | 2 configs |
+| `*` | Product | Cartesian product | `piter @ {"lr": [0.001, 0.01]} * {"bs": [32, 64]}` | 4 configs (2×2) |
+| `%` | Override | Add fixed params to all | `configs % {"seed": 42}` | Same count, +seed |
+| `**` | Repeat | Repeat each config n times | `configs ** 3` | 3× count |
+
+### Operator Precedence
+
+`@` and `*` have **the same precedence** (both are multiplicative), evaluated **left-to-right**:
+
+```python
+# This works - evaluated as ((piter @ {...}) * {...}) * {...}
+piter @ {"lr": [0.001, 0.01]} * {"bs": [32, 64]} * {"seed": [1, 2]}
+
+# Parentheses needed for % and ** in complex expressions
+(piter @ {"lr": [0.001, 0.01]} * {"bs": [32, 64]}) % {"device": "cuda"}
+(piter @ {"lr": [0.001, 0.01]}) ** 3
+```
+
+**Precedence order** (high to low): `**` (power) > `@` `*` (same level) > `%` (modulo)
+
+```python
+# These are equivalent:
+piter @ {"lr": [0.001, 0.01]} * {"bs": [32, 64]} % {"seed": 42}
+((piter @ {"lr": [0.001, 0.01]}) * {"bs": [32, 64]}) % {"seed": 42}
+
+# Power binds tighter than product:
+piter @ {"lr": [0.001, 0.01]} ** 3 * {"bs": [32, 64]}  # Error! ** binds first
+(piter @ {"lr": [0.001, 0.01]}) ** 3 * {"bs": [32, 64]}  # Correct: 6 * 2 = 12 configs
+```
 
 ## Quick Start
 
@@ -8,7 +56,7 @@ The `piter()` function provides a lightweight, composable way to create paramete
 from params_proto.hyper import piter
 
 # Create a parameter sweep from a dictionary (zips by default)
-configs = piter({"lr": [0.001, 0.01], "batch_size": [32, 64]})
+configs = piter @ {"lr": [0.001, 0.01], "batch_size": [32, 64]}
 
 # Iterate over zipped configurations (2 configs)
 for config in configs:
@@ -16,8 +64,8 @@ for config in configs:
     # {'lr': 0.001, 'batch_size': 32}
     # {'lr': 0.01, 'batch_size': 64}
 
-# For Cartesian product, use the * operator
-configs = piter({"lr": [0.001, 0.01]}) * piter({"batch_size": [32, 64]})
+# For Cartesian product, use the * operator (only first needs piter @)
+configs = piter @ {"lr": [0.001, 0.01]} * {"batch_size": [32, 64]}
 # This creates 4 configs: all combinations
 ```
 
@@ -34,25 +82,25 @@ configs = piter({"lr": [0.001, 0.01]}) * piter({"batch_size": [32, 64]})
 
 ```python
 # Lists of values are zipped element-wise (default behavior)
-configs = piter({
+configs = piter @ {
     "lr": [0.001, 0.01, 0.1],
     "batch_size": [32, 64, 128]
-})
+}
 # Produces 3 configs (zipped): (0.001, 32), (0.01, 64), (0.1, 128)
 
 # Single values
-fixed = piter({"seed": 42, "epochs": 100})
+fixed = piter @ {"seed": 42, "epochs": 100}
 # Produces 1 config
 
-# For Cartesian product, use * operator
-configs = piter({"lr": [0.001, 0.01, 0.1]}) * piter({"batch_size": [32, 64]})
+# For Cartesian product, use * operator (only first needs piter @)
+configs = piter @ {"lr": [0.001, 0.01, 0.1]} * {"batch_size": [32, 64]}
 # Produces 6 configs (3 × 2)
 
 # With prefixes for multiple parameter groups (zipped)
-configs = piter({
+configs = piter @ {
     "model.depth": [18, 50],
     "training.lr": [0.001, 0.01]
-})
+}
 # Produces 2 configs (zipped)
 ```
 
@@ -76,13 +124,11 @@ num_configs = len(configs)
 
 ### Cartesian Product (`*`)
 
-Combine two parameter iterators to create all possible combinations:
+Combine parameter iterators to create all possible combinations. When chaining multiple dicts, only the first needs `piter @`:
 
 ```python
-piter1 = piter({"lr": [0.001, 0.01]})
-piter2 = piter({"batch_size": [32, 64]})
-
-combined = piter1 * piter2
+# Preferred: chain with * operator (only first needs piter @)
+combined = piter @ {"lr": [0.001, 0.01]} * {"batch_size": [32, 64]}
 
 list(combined)
 # [
@@ -91,6 +137,11 @@ list(combined)
 #   {'lr': 0.01, 'batch_size': 32},
 #   {'lr': 0.01, 'batch_size': 64}
 # ]
+
+# Also works: separate piter @ for each (legacy style)
+piter1 = piter @ {"lr": [0.001, 0.01]}
+piter2 = piter @ {"batch_size": [32, 64]}
+combined = piter1 * piter2  # Same result
 ```
 
 **Use case**: Exploring all combinations of independent hyperparameters.
@@ -101,7 +152,7 @@ Apply fixed parameters to all configurations:
 
 ```python
 # Create configs with Cartesian product
-configs = piter({"lr": [0.001, 0.01]}) * piter({"batch_size": [32, 64]})
+configs = piter @ {"lr": [0.001, 0.01]} * {"batch_size": [32, 64]}
 
 # Override with a dict
 with_seed = configs % {"seed": 42, "device": "cuda"}
@@ -115,7 +166,7 @@ list(with_seed)
 # ]
 
 # Override with another piter (uses first config)
-with_defaults = configs % piter({"seed": 42, "device": "cuda"})
+with_defaults = configs % (piter @ {"seed": 42, "device": "cuda"})
 ```
 
 **Use case**: Adding fixed parameters (seed, device, logging config) to all experiments.
@@ -125,7 +176,7 @@ with_defaults = configs % piter({"seed": 42, "device": "cuda"})
 Repeat each configuration n times:
 
 ```python
-configs = piter({"lr": [0.001, 0.01]})
+configs = piter @ {"lr": [0.001, 0.01]}
 
 repeated = configs ** 3
 
@@ -147,11 +198,11 @@ list(repeated)
 ### Pattern 1: Grid Search with Fixed Seed
 
 ```python
-# Grid search over hyperparameters (use * for Cartesian product)
+# Grid search over hyperparameters (chain with * for Cartesian product)
 grid = (
-    piter({"lr": [0.001, 0.01, 0.1]}) *
-    piter({"batch_size": [32, 64, 128]}) *
-    piter({"weight_decay": [0.0, 0.0001, 0.001]})
+    piter @ {"lr": [0.001, 0.01, 0.1]}
+    * {"batch_size": [32, 64, 128]}
+    * {"weight_decay": [0.0, 0.0001, 0.001]}
 )
 
 # Add fixed seed to all configs
@@ -164,7 +215,7 @@ experiments = grid % {"seed": 42}
 
 ```python
 # Define hyperparameter search space (Cartesian product)
-configs = piter({"lr": [0.001, 0.01]}) * piter({"batch_size": [32, 64]})
+configs = piter @ {"lr": [0.001, 0.01]} * {"batch_size": [32, 64]}
 
 # Run 5 trials per config with different seeds
 trials = configs ** 5
@@ -176,10 +227,10 @@ trials = configs ** 5
 
 ```python
 # Model architecture variations
-models = piter({"model.type": ["resnet18", "resnet50", "vit"]})
+models = piter @ {"model.type": ["resnet18", "resnet50", "vit"]}
 
-# Training hyperparameters (use * for Cartesian product)
-training = piter({"training.lr": [0.001, 0.01]}) * piter({"training.batch_size": [32, 64]})
+# Training hyperparameters (chain with * for Cartesian product)
+training = piter @ {"training.lr": [0.001, 0.01]} * {"training.batch_size": [32, 64]}
 
 # All combinations
 experiments = models * training
@@ -190,11 +241,11 @@ experiments = models * training
 ### Pattern 4: Chained Composition
 
 ```python
-# Build complex sweep by chaining operators
+# Build complex sweep by chaining operators (only first needs piter @)
 experiments = ((
-    piter({"model": ["resnet", "vit"]}) *
-    piter({"lr": [0.001, 0.01]}) *
-    piter({"batch_size": [32, 64]})
+    piter @ {"model": ["resnet", "vit"]}
+    * {"lr": [0.001, 0.01]}
+    * {"batch_size": [32, 64]}
 ) % {"seed": 42, "device": "cuda"}) ** 3
 
 # 24 total runs (2 × 2 × 2 = 8 configs, 3 trials each)
@@ -224,7 +275,7 @@ with_seed = sweep % {"seed": 42}
 repeated = sweep ** 3
 
 # Can also mix Sweep with piter
-combined = sweep * piter({"optimizer": ["adam", "sgd"]})
+combined = sweep * (piter @ {"optimizer": ["adam", "sgd"]})
 ```
 
 ## Comparison: piter vs Sweep
@@ -232,7 +283,7 @@ combined = sweep * piter({"optimizer": ["adam", "sgd"]})
 | Feature | `piter` | `Sweep` |
 |---------|---------|---------|
 | **Input** | Plain dictionaries | `@proto` decorated classes |
-| **Syntax** | `piter({"lr": [0.001, 0.01]})` | `with sweep.product: Config.lr = [0.001, 0.01]` |
+| **Syntax** | `piter @ {"lr": [0.001, 0.01]}` | `with sweep.product: Config.lr = [0.001, 0.01]` |
 | **Default behavior** | Zip (element-wise) | Context-dependent (`.product`, `.zip`, etc.) |
 | **Operators** | `*` (product), `%` (override), `**` (repeat) | Context managers (`.product`, `.zip`, `.set`) |
 | **Lazy** | Yes | No (materializes in context) |
@@ -246,14 +297,14 @@ combined = sweep * piter({"optimizer": ["adam", "sgd"]})
 
 ```python
 # Good: Clear parameter names with prefixes
-piter({
+piter @ {
     "model.depth": [18, 50],
     "training.lr": [0.001, 0.01],
     "training.optimizer": ["adam", "sgd"]
-})
+}
 
 # Avoid: Ambiguous names
-piter({"d": [18, 50], "l": [0.001, 0.01]})
+piter @ {"d": [18, 50], "l": [0.001, 0.01]}
 ```
 
 ### 2. Materialize only when necessary
@@ -272,19 +323,19 @@ for config in all_configs:
 ### 3. Use operators for clarity
 
 ```python
-# Good: Use * for Cartesian product
-grid = piter({"lr": [0.001, 0.01]}) * piter({"batch_size": [32, 64]})
+# Good: Use * for Cartesian product (only first needs piter @)
+grid = piter @ {"lr": [0.001, 0.01]} * {"batch_size": [32, 64]}
 # 4 configs: all combinations
 
 # Good: Use zip (default) for related parameters
-paired = piter({"lr": [0.001, 0.01], "weight_decay": [0.0001, 0.001]})
+paired = piter @ {"lr": [0.001, 0.01], "weight_decay": [0.0001, 0.001]}
 # 2 configs: (0.001, 0.0001) and (0.01, 0.001)
 
 # Good: Use % for fixed values
-with_defaults = piter({"lr": [0.001, 0.01]}) % {"seed": 42, "device": "cuda"}
+with_defaults = (piter @ {"lr": [0.001, 0.01]}) % {"seed": 42, "device": "cuda"}
 
 # Avoid: Mixing independent parameters in single dict (implicit zip)
-mixed = piter({"lr": [0.001, 0.01], "batch_size": [32, 64]})
+mixed = piter @ {"lr": [0.001, 0.01], "batch_size": [32, 64]}
 # Only 2 configs (zipped), might not be what you want for grid search
 ```
 
@@ -302,8 +353,8 @@ class Config:
 
 # Use piter for sweep definition (Cartesian product for grid search)
 sweep_configs = (
-    piter({"lr": [0.001, 0.01, 0.1]}) *
-    piter({"batch_size": [32, 64]})
+    piter @ {"lr": [0.001, 0.01, 0.1]}
+    * {"batch_size": [32, 64]}
 ) % {"seed": 42}
 
 # Apply to typed config
@@ -318,12 +369,12 @@ for overrides in sweep_configs:
 
 ```python
 # Different learning rates for different optimizers
-adam_configs = piter({"optimizer": "adam"}) * piter({"lr": [0.0001, 0.001, 0.01]})
+adam_configs = piter @ {"optimizer": "adam"} * {"lr": [0.0001, 0.001, 0.01]}
 
 sgd_configs = (
-    piter({"optimizer": "sgd"}) *
-    piter({"lr": [0.01, 0.1, 1.0]}) *
-    piter({"momentum": [0.9, 0.95]})
+    piter @ {"optimizer": "sgd"}
+    * {"lr": [0.01, 0.1, 1.0]}
+    * {"momentum": [0.9, 0.95]}
 )
 
 # Combine into single sweep (use list concatenation)
@@ -335,12 +386,12 @@ all_configs = adam_configs.to_list() + sgd_configs.to_list()
 
 ```python
 # Coarse grid
-coarse = piter({"lr": [0.001, 0.01, 0.1]})
+coarse = piter @ {"lr": [0.001, 0.01, 0.1]}
 
 # For each coarse lr, fine-tune batch size
 fine_tuned = []
 for coarse_config in coarse:
-    fine = piter({"batch_size": [16, 32, 64, 128]}) % coarse_config
+    fine = (piter @ {"batch_size": [16, 32, 64, 128]}) % coarse_config
     fine_tuned.extend(fine.to_list())
 
 # 12 total configs (3 lr × 4 batch_size)
@@ -350,19 +401,19 @@ for coarse_config in coarse:
 
 ```python
 # Dataset variations
-datasets = piter({"data.name": ["cifar10", "cifar100", "imagenet"]})
+datasets = piter @ {"data.name": ["cifar10", "cifar100", "imagenet"]}
 
 # Model architectures per dataset
-cifar_models = piter({"model.type": ["resnet18", "resnet34"]})
-imagenet_models = piter({"model.type": ["resnet50", "resnet101"]})
+cifar_models = piter @ {"model.type": ["resnet18", "resnet34"]}
+imagenet_models = piter @ {"model.type": ["resnet50", "resnet101"]}
 
 # Training configs
-training = piter({"training.lr": [0.001, 0.01]})
+training = piter @ {"training.lr": [0.001, 0.01]}
 
 # Compose based on dataset
-cifar10_exps = piter({"data.name": "cifar10"}) * cifar_models * training
-cifar100_exps = piter({"data.name": "cifar100"}) * cifar_models * training
-imagenet_exps = piter({"data.name": "imagenet"}) * imagenet_models * training
+cifar10_exps = piter @ {"data.name": "cifar10"} * cifar_models * training
+cifar100_exps = piter @ {"data.name": "cifar100"} * cifar_models * training
+imagenet_exps = piter @ {"data.name": "imagenet"} * imagenet_models * training
 
 # Combine all
 all_experiments = (
@@ -374,9 +425,18 @@ all_experiments = (
 
 ## API Reference
 
-### `piter(spec: dict) -> ParameterIterator`
+### `piter @ spec` or `piter(spec: dict) -> ParameterIterator`
 
 Create a parameter iterator from a specification dictionary.
+
+**Syntax:**
+```python
+# Preferred (v3.0.0+)
+configs = piter @ {"lr": [0.001, 0.01]}
+
+# Legacy (still supported)
+configs = piter({"lr": [0.001, 0.01]})
+```
 
 **Args:**
 - `spec`: Dict mapping parameter names (strings) to values or lists of values
@@ -384,7 +444,10 @@ Create a parameter iterator from a specification dictionary.
 **Returns:**
 - `ParameterIterator` that zips parameter lists element-wise
 
-**Note:** For Cartesian product, use the `*` operator to combine multiple `piter` instances.
+**Note:** For Cartesian product, use the `*` operator to chain multiple dicts. Only the first needs `piter @`:
+```python
+configs = piter @ {"lr": [0.001, 0.01]} * {"batch_size": [32, 64]}
+```
 
 ### `ParameterIterator` Methods
 

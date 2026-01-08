@@ -2,6 +2,23 @@
 
 This page contains the release history and changelog for params-proto.
 
+## Version 3.0.0-rc25 (2025-01-08)
+
+### ✨ Features
+
+- **New `piter @` Operator Syntax**: Cleaner, more readable parameter iteration
+  - Use `piter @ {"lr": [0.001, 0.01]}` instead of `piter({"lr": [0.001, 0.01]})`
+  - Chain with `*` without repeating `piter`: `piter @ {"lr": [0.001, 0.01]} * {"batch_size": [32, 64]}`
+  - Legacy function-call syntax still supported for backward compatibility
+
+### 📚 Documentation
+
+- Added Operators Quick Reference table to parameter-iteration docs
+- Added Operator Precedence section with examples
+- Updated all code examples to use the new `@` syntax
+
+---
+
 ## Version 3.0.0-rc24 (2025-12-29)
 
 ### ✨ Features

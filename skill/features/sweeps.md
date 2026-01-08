@@ -1,13 +1,115 @@
 ---
 title: Hyperparameter Sweeps
-description: Systematic hyperparameter exploration with Sweep
+description: Systematic hyperparameter exploration with Sweep and piter
 ---
 
 # Hyperparameter Sweeps
 
-params-proto provides `Sweep` for systematic hyperparameter exploration.
+params-proto provides two approaches for systematic hyperparameter exploration:
+- **`piter`** - Lightweight, composable parameter iterator (recommended)
+- **`Sweep`** - Class-based sweeps with `@proto` integration
 
-## Basic Usage
+## piter - Parameter Iterator (Recommended)
+
+The `piter` function creates parameter sweeps from plain dictionaries using a clean `@` syntax.
+
+### Basic Usage
+
+```python
+from params_proto.hyper import piter
+
+# Create a parameter sweep (zips values by default)
+configs = piter @ {"lr": [0.001, 0.01], "batch_size": [32, 64]}
+
+for config in configs:
+    print(config)
+    # {'lr': 0.001, 'batch_size': 32}
+    # {'lr': 0.01, 'batch_size': 64}
+```
+
+### Cartesian Product with `*`
+
+Use `*` to create all combinations. Only the first dict needs `piter @`:
+
+```python
+# Grid search: 4 configs (2 × 2)
+configs = piter @ {"lr": [0.001, 0.01]} * {"batch_size": [32, 64]}
+
+for config in configs:
+    print(config)
+    # {'lr': 0.001, 'batch_size': 32}
+    # {'lr': 0.001, 'batch_size': 64}
+    # {'lr': 0.01, 'batch_size': 32}
+    # {'lr': 0.01, 'batch_size': 64}
+```
+
+### Chaining Multiple Products
+
+```python
+# 3-way product: 8 configs (2 × 2 × 2)
+configs = piter @ {"lr": [0.001, 0.01]} * {"batch_size": [32, 64]} * {"model": ["resnet", "vit"]}
+
+for config in configs:
+    train(**config)
+```
+
+### Override with `%`
+
+Apply fixed parameters to all configurations:
+
+```python
+# Add seed to all configs
+configs = piter @ {"lr": [0.001, 0.01]} * {"batch_size": [32, 64]} % {"seed": 42}
+
+# All 4 configs have seed=42
+```
+
+### Repeat with `**`
+
+Run multiple trials per config:
+
+```python
+# 2 configs × 3 trials = 6 runs
+configs = (piter @ {"lr": [0.001, 0.01]}) ** 3
+```
+
+### Complex Composition
+
+```python
+# Grid search with fixed seed and 3 trials
+experiments = (
+    piter @ {"lr": [0.001, 0.01, 0.1]}
+    * {"batch_size": [32, 64]}
+    * {"model": ["resnet", "vit"]}
+) % {"seed": 42} ** 3
+
+# 12 configs × 3 trials = 36 runs
+for config in experiments:
+    train(**config)
+```
+
+### With @proto.cli
+
+```python
+from params_proto import proto
+from params_proto.hyper import piter
+
+@proto.cli
+def train(lr: float = 0.001, batch_size: int = 32, seed: int = 42):
+    print(f"Training: lr={lr}, batch={batch_size}, seed={seed}")
+
+# Run sweep
+for config in piter @ {"lr": [0.001, 0.01]} * {"batch_size": [32, 64]}:
+    train(**config)
+```
+
+---
+
+## Sweep - Class-Based Sweeps
+
+For integration with `@proto` decorated classes, use `Sweep`.
+
+### Basic Usage
 
 ```python
 from params_proto import proto, Sweep
@@ -20,7 +122,7 @@ def train(lr: float = 0.001, batch_size: int = 32):
 sweep = Sweep(train)
 ```
 
-## Grid Search (Product)
+### Grid Search (Product)
 
 ```python
 sweep = Sweep(train).product(
@@ -33,7 +135,7 @@ for config in sweep:
     train(**config)
 ```
 
-## Zip (Paired Values)
+### Zip (Paired Values)
 
 ```python
 sweep = Sweep(train).zip(
@@ -47,7 +149,7 @@ for config in sweep:
     train(**config)
 ```
 
-## Combined Sweeps
+### Combined Sweeps
 
 ```python
 sweep = Sweep(train).product(
@@ -61,7 +163,7 @@ sweep = Sweep(train).product(
 # lr varies independently, batch_size and epochs are paired
 ```
 
-## Chain (Sequential)
+### Chain (Sequential)
 
 ```python
 sweep = Sweep(train).chain(
@@ -71,7 +173,7 @@ sweep = Sweep(train).chain(
 )
 ```
 
-## Set (Fixed Values)
+### Set (Fixed Values)
 
 ```python
 sweep = Sweep(train).set(
@@ -81,7 +183,7 @@ sweep = Sweep(train).set(
 )
 ```
 
-## With @proto.prefix
+### With @proto.prefix
 
 ```python
 @proto.prefix
@@ -104,42 +206,7 @@ for config in sweep:
         main()
 ```
 
-## Iteration
-
-```python
-# As iterator
-for config in sweep:
-    train(**config)
-
-# As list
-configs = list(sweep)
-print(f"Total: {len(configs)} configurations")
-
-# With index
-for i, config in enumerate(sweep):
-    print(f"Config {i}: {config}")
-```
-
-## Saving and Loading
-
-```python
-# Save to file
-sweep.save("sweep.yaml")
-
-# Load from file
-sweep = Sweep.load("sweep.yaml")
-```
-
-## DataFrame Export
-
-```python
-import pandas as pd
-
-df = sweep.to_dataframe()
-print(df)
-```
-
-## Operators
+### Sweep Operators
 
 ```python
 # Multiplication = product
@@ -152,54 +219,34 @@ sweep = Sweep(train) ** 3  # 3 repetitions
 sweep = Sweep(train) % {"epochs": 100}
 ```
 
-## Common Patterns
-
-### Learning Rate Search
+### Saving and Loading
 
 ```python
-sweep = Sweep(train).product(
-    lr=[1e-5, 1e-4, 1e-3, 1e-2, 1e-1],
-)
+# Save to file
+sweep.save("sweep.yaml")
+
+# Load from file
+sweep = Sweep.load("sweep.yaml")
 ```
 
-### Architecture Search
+---
 
-```python
-sweep = Sweep(train).product(
-    model=["resnet18", "resnet50", "vit"],
-    dropout=[0.1, 0.3, 0.5],
-)
-```
+## Comparison: piter vs Sweep
 
-### Random Seeds
-
-```python
-sweep = Sweep(train).product(
-    seed=[42, 123, 456, 789, 1337],
-).set(
-    lr=0.001,
-    batch_size=32,
-)
-```
-
-### Ablation Study
-
-```python
-# Baseline
-baseline = {"lr": 0.001, "batch_size": 32, "augment": False}
-
-sweep = Sweep(train).chain(
-    baseline,
-    {**baseline, "augment": True},
-    {**baseline, "lr": 0.01},
-    {**baseline, "batch_size": 64},
-)
-```
+| Feature | `piter` | `Sweep` |
+|---------|---------|---------|
+| **Syntax** | `piter @ {"lr": [0.001, 0.01]}` | `Sweep(train).product(lr=[...])` |
+| **Cartesian product** | `piter @ {...} * {...}` | `.product(...)` |
+| **Input** | Plain dictionaries | `@proto` decorated classes |
+| **Lazy evaluation** | Yes | No |
+| **Type checking** | No | Yes (via `@proto`) |
+| **Use case** | Quick sweeps, scripting | Production configs, type safety |
 
 ## Best Practices
 
-1. **Start small** - Test with few values first
-2. **Use meaningful ranges** - Based on domain knowledge
-3. **Track results** - Log metrics for each config
-4. **Parallelize** - Run configs in parallel when possible
-5. **Save sweeps** - For reproducibility
+1. **Use `piter @` for quick experiments** - Clean syntax, easy composition
+2. **Use `Sweep` for production** - Type safety, proto integration
+3. **Start small** - Test with few values first
+4. **Use meaningful ranges** - Based on domain knowledge
+5. **Track results** - Log metrics for each config
+6. **Save sweeps** - For reproducibility
