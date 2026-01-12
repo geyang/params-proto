@@ -2,6 +2,23 @@
 
 This page contains the release history and changelog for params-proto.
 
+## Version 3.0.0-rc26 (2025-01-11)
+
+### ✨ Features
+
+- **Automatic Type Inference for Untyped Attributes**: Class attributes without explicit type annotations are now automatically inferred
+  - `name = "hello"` is treated as `name: str = "hello"`
+  - `count = 42` is treated as `count: int = 42`
+  - `data = None` is treated as `data: Any = None` (generic type)
+  - Untyped attributes now appear in `vars(self)` inside `__post_init__`
+  - Explicit type annotations are always preserved
+
+### 🐛 Bug Fixes
+
+- Untyped class attributes now correctly appear in `vars(self)` during `__post_init__`
+
+---
+
 ## Version 3.0.0-rc25 (2025-01-08)
 
 ### ✨ Features

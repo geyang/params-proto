@@ -666,3 +666,43 @@ def test_proto_prefix_envvar_instantiation_with_fallback():
   # Verify the fallback value is used
   assert c.host == "default-host", f"Expected 'default-host', got {c.host}"
   assert Config.host == "default-host", f"Expected 'default-host', got {Config.host}"
+
+
+def test_server_vuer_inheritance_with_envvar():
+  """Test that Vuer inherits EnvVar fields from Server base class.
+
+  This demonstrates a real-world pattern where a base Server class defines
+  environment variable configuration, and derived classes like Vuer inherit
+  these fields automatically.
+  """
+  import os
+
+  from params_proto import EnvVar, proto
+
+  # Set environment variables BEFORE class definition
+  os.environ["SERVER_HOST"] = "192.168.1.100"
+  os.environ["SERVER_PORT"] = "8888"
+
+  try:
+    # Base Server class with EnvVar fields (not decorated)
+    class Server:
+      host: str = EnvVar @ "SERVER_HOST" | "localhost"
+      port: int = EnvVar @ "SERVER_PORT" | 8012
+
+    # Vuer inherits from Server and adds its own fields
+    @proto.prefix
+    class Vuer(Server):
+      debug: bool = False
+
+    # Verify that setting os.environ populates Vuer.<attr_name>
+    assert Vuer.host == "192.168.1.100", f"Expected '192.168.1.100', got {Vuer.host}"
+    assert Vuer.port == 8888, f"Expected 8888, got {Vuer.port}"
+    assert Vuer.debug is False, f"Expected False, got {Vuer.debug}"
+
+    # Verify types are correctly converted
+    assert isinstance(Vuer.host, str), f"host should be str, got {type(Vuer.host)}"
+    assert isinstance(Vuer.port, int), f"port should be int, got {type(Vuer.port)}"
+
+  finally:
+    os.environ.pop("SERVER_HOST", None)
+    os.environ.pop("SERVER_PORT", None)

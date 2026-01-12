@@ -555,3 +555,236 @@ def test_tuples():
     --augment-scales 0.5 0.75 1.0 1.25 1.5 \\
     --gpu-ids 0 1
   """
+
+
+def test_post_init_available_params():
+  """Test what parameters are available inside __post_init__."""
+  captured = {}
+
+  @proto
+  class Config:
+    lr: float = 0.001
+    batch_size: int = 32
+    name: str = "test"
+
+    def __post_init__(self):
+      # Capture everything available in __post_init__
+      captured["self_type"] = type(self).__name__
+      captured["self_attrs"] = {k: v for k, v in vars(self).items() if not k.startswith("_")}
+      captured["has_lr"] = hasattr(self, "lr")
+      captured["has_batch_size"] = hasattr(self, "batch_size")
+      captured["has_name"] = hasattr(self, "name")
+      captured["lr_value"] = self.lr
+      captured["batch_size_value"] = self.batch_size
+      captured["name_value"] = self.name
+
+  # Create instance with defaults
+  c = Config()
+
+  print("\n=== __post_init__ available params (defaults) ===")
+  for k, v in captured.items():
+    print(f"  {k}: {v}")
+
+  assert captured["has_lr"] is True
+  assert captured["has_batch_size"] is True
+  assert captured["has_name"] is True
+  assert captured["lr_value"] == 0.001
+  assert captured["batch_size_value"] == 32
+  assert captured["name_value"] == "test"
+
+  # Test with overridden values
+  captured.clear()
+  c2 = Config(lr=0.1, batch_size=64, name="override")
+
+  print("\n=== __post_init__ available params (overridden) ===")
+  for k, v in captured.items():
+    print(f"  {k}: {v}")
+
+  assert captured["lr_value"] == 0.1
+  assert captured["batch_size_value"] == 64
+  assert captured["name_value"] == "override"
+
+
+def test_post_init_available_params_prefix():
+  """Test what parameters are available inside __post_init__ for @proto.prefix."""
+  captured = {}
+
+  @proto.prefix
+  class Config:
+    lr: float = 0.001
+    batch_size: int = 32
+    name: str = "test"
+
+    def __post_init__(self):
+      # Capture everything available in __post_init__
+      captured["self_type"] = type(self).__name__
+      captured["self_class"] = self.__class__.__name__
+      captured["self_attrs"] = {k: v for k, v in vars(self).items() if not k.startswith("_")}
+      captured["has_lr"] = hasattr(self, "lr")
+      captured["has_batch_size"] = hasattr(self, "batch_size")
+      captured["has_name"] = hasattr(self, "name")
+      captured["lr_value"] = self.lr
+      captured["batch_size_value"] = self.batch_size
+      captured["name_value"] = self.name
+      # Check class-level access
+      captured["class_lr"] = Config.lr
+      captured["class_batch_size"] = Config.batch_size
+
+  # Create instance with defaults
+  c = Config()
+
+  print("\n=== @proto.prefix __post_init__ available params (defaults) ===")
+  for k, v in captured.items():
+    print(f"  {k}: {v}")
+
+  assert captured["has_lr"] is True
+  assert captured["lr_value"] == 0.001
+  assert captured["batch_size_value"] == 32
+
+  # Test with class-level override before instantiation
+  captured.clear()
+  Config.lr = 0.05
+  c2 = Config()
+
+  print("\n=== @proto.prefix __post_init__ after Config.lr = 0.05 ===")
+  for k, v in captured.items():
+    print(f"  {k}: {v}")
+
+  assert captured["lr_value"] == 0.05
+  assert captured["class_lr"] == 0.05
+
+  # Test with instance kwargs override
+  captured.clear()
+  c3 = Config(lr=0.99, name="instance_override")
+
+  print("\n=== @proto.prefix __post_init__ with Config(lr=0.99) ===")
+  for k, v in captured.items():
+    print(f"  {k}: {v}")
+
+
+def test_post_init_vars_self():
+  """Test vars(self) inside __post_init__."""
+
+  @proto.prefix
+  class Config:
+    lr: float = 0.001
+    batch_size: int = 32
+    name: str = "test"
+
+    def __post_init__(self):
+      data = vars(self)
+
+      print("\n=== vars(self) inside __post_init__ ===")
+      for k, v in data.items():
+        print(f"{k:>30}: {v}")
+
+  Config()
+
+  # Also test with @proto (non-prefix)
+  @proto
+  class Config2:
+    lr: float = 0.001
+    batch_size: int = 32
+    name: str = "test"
+
+    def __post_init__(self):
+      data = vars(self)
+
+      print("\n=== vars(self) inside __post_init__ (@proto) ===")
+      for k, v in data.items():
+        print(f"{k:>30}: {v}")
+
+  Config2()
+
+
+def test_post_init_untyped_attrs():
+  """Test that untyped attributes appear in vars(self) inside __post_init__.
+
+  Untyped class attributes like `name = "hello"` should be automatically
+  inferred as typed attributes (e.g., `name: str = "hello"`) and appear
+  in vars(self) during __post_init__.
+  """
+  captured_prefix = {}
+  captured_proto = {}
+
+  @proto.prefix
+  class Config:
+    lr: float = 0.001
+    batch_size: int = 32
+    untyped_attr = "no type annotation"  # No type annotation - inferred as str
+    another_untyped = 42  # No type annotation - inferred as int
+
+    def __post_init__(self):
+      captured_prefix["vars"] = dict(vars(self))
+      captured_prefix["untyped_attr"] = self.untyped_attr
+      captured_prefix["another_untyped"] = self.another_untyped
+
+  Config()
+
+  # Verify untyped attributes are in vars(self)
+  assert "untyped_attr" in captured_prefix["vars"], "untyped_attr should appear in vars(self)"
+  assert "another_untyped" in captured_prefix["vars"], "another_untyped should appear in vars(self)"
+  assert captured_prefix["untyped_attr"] == "no type annotation"
+  assert captured_prefix["another_untyped"] == 42
+
+  # Verify types are correctly inferred in annotations
+  assert Config.__proto_annotations__["untyped_attr"] == str
+  assert Config.__proto_annotations__["another_untyped"] == int
+
+  @proto
+  class Config2:
+    lr: float = 0.001
+    batch_size: int = 32
+    untyped_attr = "no type annotation"  # No type annotation
+    another_untyped = 42  # No type annotation
+
+    def __post_init__(self):
+      captured_proto["vars"] = dict(vars(self))
+      captured_proto["untyped_attr"] = self.untyped_attr
+      captured_proto["another_untyped"] = self.another_untyped
+
+  Config2()
+
+  # Verify untyped attributes are in vars(self) for @proto too
+  assert "untyped_attr" in captured_proto["vars"], "untyped_attr should appear in vars(self)"
+  assert "another_untyped" in captured_proto["vars"], "another_untyped should appear in vars(self)"
+  assert captured_proto["untyped_attr"] == "no type annotation"
+  assert captured_proto["another_untyped"] == 42
+
+  # Verify types are correctly inferred for @proto too
+  assert Config2.__proto_annotations__["untyped_attr"] == str
+  assert Config2.__proto_annotations__["another_untyped"] == int
+
+
+def test_post_init_untyped_none_defaults():
+  """Test that untyped attributes with None default use Any type."""
+  from typing import Any
+
+  captured = {}
+
+  @proto
+  class Config:
+    lr: float = 0.001
+    untyped_none = None  # No type, None default -> Any
+    untyped_str = "hello"  # No type, str default -> str
+    typed_none: str = None  # Explicit type, None default -> str (keeps explicit type)
+
+    def __post_init__(self):
+      captured["vars"] = dict(vars(self))
+
+  c = Config()
+
+  # All should appear in vars(self)
+  assert "untyped_none" in captured["vars"]
+  assert "untyped_str" in captured["vars"]
+  assert "typed_none" in captured["vars"]
+
+  # Check inferred types
+  assert Config.__proto_annotations__["untyped_none"] == Any, "None default should infer as Any"
+  assert Config.__proto_annotations__["untyped_str"] == str, "str default should infer as str"
+  assert Config.__proto_annotations__["typed_none"] == str, "Explicit type should be preserved"
+
+  print("\n=== Untyped None defaults ===")
+  print(f"  untyped_none type: {Config.__proto_annotations__['untyped_none']}")
+  print(f"  untyped_str type: {Config.__proto_annotations__['untyped_str']}")
+  print(f"  typed_none type: {Config.__proto_annotations__['typed_none']}")
