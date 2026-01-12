@@ -2,7 +2,7 @@
 
 This page contains the release history and changelog for params-proto.
 
-## Version 3.0.0-rc27 (2025-01-12)
+## Version 3.0.0 (2025-01-12)
 
 ### ✨ Features
 
