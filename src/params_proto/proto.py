@@ -755,6 +755,30 @@ def proto(
         klass_annotations = getattr(klass, "__annotations__", {})
         annotations.update(klass_annotations)
 
+      # Infer types for untyped class attributes from their default values
+      # This allows `untyped_attr = "hello"` to be treated as `untyped_attr: str = "hello"`
+      # For None defaults, use Any since NoneType isn't useful as a type hint
+      from typing import Any
+
+      for klass in reversed(obj.__mro__):
+        if klass is object:
+          continue
+        for name, value in vars(klass).items():
+          # Skip if already annotated, private/dunder, or is a method/descriptor
+          if name in annotations:
+            continue
+          if name.startswith("_"):
+            continue
+          if callable(value) and not (hasattr(value, "__class__") and value.__class__.__name__ == "_EnvVar"):
+            continue
+          if isinstance(value, (classmethod, staticmethod, property)):
+            continue
+          # Infer type from the default value, use Any for None
+          if value is None:
+            annotations[name] = Any
+          else:
+            annotations[name] = type(value)
+
       for name in annotations.keys():
         if hasattr(obj, name):
           value = getattr(obj, name)
