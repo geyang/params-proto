@@ -706,3 +706,116 @@ def test_server_vuer_inheritance_with_envvar():
   finally:
     os.environ.pop("SERVER_HOST", None)
     os.environ.pop("SERVER_PORT", None)
+
+
+def test_envvar_or_operation():
+  """Test EnvVar OR operation with multiple environment variable names."""
+  import os
+
+  from params_proto import EnvVar, proto
+
+  # Clean up any existing env vars
+  for var in ["PRIMARY_KEY", "SECONDARY_KEY", "TERTIARY_KEY"]:
+    os.environ.pop(var, None)
+
+  try:
+    # Test 1: No env vars set - should use default
+    @proto
+    class Config1:
+      api_key: str = EnvVar @ "PRIMARY_KEY" @ "SECONDARY_KEY" | "default_key"
+
+    c1 = Config1()
+    assert c1.api_key == "default_key", f"Expected 'default_key', got {c1.api_key}"
+
+    # Test 2: First env var set - should use it
+    os.environ["PRIMARY_KEY"] = "primary_value"
+
+    @proto
+    class Config2:
+      api_key: str = EnvVar @ "PRIMARY_KEY" @ "SECONDARY_KEY" | "default_key"
+
+    c2 = Config2()
+    assert c2.api_key == "primary_value", f"Expected 'primary_value', got {c2.api_key}"
+
+    # Test 3: Only second env var set - should use it
+    os.environ.pop("PRIMARY_KEY", None)
+    os.environ["SECONDARY_KEY"] = "secondary_value"
+
+    @proto
+    class Config3:
+      api_key: str = EnvVar @ "PRIMARY_KEY" @ "SECONDARY_KEY" | "default_key"
+
+    c3 = Config3()
+    assert c3.api_key == "secondary_value", f"Expected 'secondary_value', got {c3.api_key}"
+
+    # Test 4: Both set - should use first (primary)
+    os.environ["PRIMARY_KEY"] = "primary_value"
+    os.environ["SECONDARY_KEY"] = "secondary_value"
+
+    @proto
+    class Config4:
+      api_key: str = EnvVar @ "PRIMARY_KEY" @ "SECONDARY_KEY" | "default_key"
+
+    c4 = Config4()
+    assert c4.api_key == "primary_value", f"Expected 'primary_value', got {c4.api_key}"
+
+    # Test 5: Function call syntax with multiple env vars
+    os.environ.pop("PRIMARY_KEY", None)
+    os.environ["TERTIARY_KEY"] = "tertiary_value"
+
+    @proto
+    class Config5:
+      api_key: str = EnvVar("PRIMARY_KEY", "SECONDARY_KEY", "TERTIARY_KEY", default="default_key")
+
+    c5 = Config5()
+    assert c5.api_key == "secondary_value", f"Expected 'secondary_value', got {c5.api_key}"
+
+    # Test 6: Three chained @ operators
+    os.environ.pop("SECONDARY_KEY", None)
+
+    @proto
+    class Config6:
+      api_key: str = EnvVar @ "PRIMARY_KEY" @ "SECONDARY_KEY" @ "TERTIARY_KEY" | "default_key"
+
+    c6 = Config6()
+    assert c6.api_key == "tertiary_value", f"Expected 'tertiary_value', got {c6.api_key}"
+
+  finally:
+    for var in ["PRIMARY_KEY", "SECONDARY_KEY", "TERTIARY_KEY"]:
+      os.environ.pop(var, None)
+
+
+def test_envvar_lazy_loading():
+  """Test that EnvVar loads lazily and can be invalidated."""
+  import os
+
+  from params_proto import EnvVar
+
+  # Clean up
+  os.environ.pop("LAZY_TEST_VAR", None)
+
+  try:
+    # Create EnvVar without env var set
+    ev = EnvVar @ "LAZY_TEST_VAR" | "default"
+
+    # First call - should return default
+    assert ev.get() == "default", f"Expected 'default', got {ev.get()}"
+
+    # Set env var after EnvVar was created
+    os.environ["LAZY_TEST_VAR"] = "lazy_value"
+
+    # Cached value should still be default (lazy loading)
+    assert ev.get() == "default", f"Expected cached 'default', got {ev.get()}"
+
+    # Invalidate cache
+    ev.invalidate_cache()
+
+    # Now should read the new value
+    assert ev.get() == "lazy_value", f"Expected 'lazy_value', got {ev.get()}"
+
+    # Test non-lazy mode
+    os.environ["LAZY_TEST_VAR"] = "updated_value"
+    assert ev.get(lazy=False) == "updated_value", f"Expected 'updated_value', got {ev.get(lazy=False)}"
+
+  finally:
+    os.environ.pop("LAZY_TEST_VAR", None)

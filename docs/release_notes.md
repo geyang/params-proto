@@ -2,7 +2,7 @@
 
 This page contains the release history and changelog for params-proto.
 
-## Version 3.0.0-rc26 (2025-01-11)
+## Version 3.0.0-rc27 (2025-01-12)
 
 ### ✨ Features
 
@@ -13,9 +13,20 @@ This page contains the release history and changelog for params-proto.
   - Untyped attributes now appear in `vars(self)` inside `__post_init__`
   - Explicit type annotations are always preserved
 
+- **EnvVar OR Operation**: Try multiple environment variable names in order
+  - `EnvVar @ "PRIMARY" @ "FALLBACK" | default` - tries PRIMARY first, then FALLBACK
+  - Function syntax: `EnvVar("PRIMARY", "FALLBACK", default="value")`
+  - Returns first env var that is set, or default if none are set
+
+- **EnvVar Lazy Loading**: Environment variables are cached after first read
+  - `ev.get()` caches result for subsequent calls
+  - `ev.get(lazy=False)` forces re-read from environment
+  - `ev.invalidate_cache()` clears cached value
+
 ### 🐛 Bug Fixes
 
 - Untyped class attributes now correctly appear in `vars(self)` during `__post_init__`
+- Consolidated duplicate `_EnvVar` class definitions
 
 ---
 

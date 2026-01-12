@@ -8,7 +8,7 @@ description: Cheat sheet for params-proto patterns and syntax
 ## Installation
 
 ```bash
-pip install params-proto==3.0.0-rc26
+pip install params-proto==3.0.0-rc27
 ```
 
 ## Decorators
@@ -85,6 +85,8 @@ def train(
     lr: float = EnvVar @ "LEARNING_RATE" | 0.001,  # Env var with default
     api_key: str = EnvVar @ "API_KEY",  # Required env var
     host: str = EnvVar @ "HOST" | "localhost",
+    # OR operation: try multiple env vars in order
+    token: str = EnvVar @ "API_TOKEN" @ "AUTH_TOKEN" | "default",
 ): ...
 ```
 
