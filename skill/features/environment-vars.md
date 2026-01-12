@@ -30,6 +30,25 @@ EnvVar @ "ENV_VAR_NAME" | default_value
 - `|` provides a fallback default value
 - Without `|`, the env var is required
 
+## OR Operation (Multiple Env Vars)
+
+Try multiple environment variable names in order:
+
+```python
+@proto.cli
+def deploy(
+    # Try API_KEY first, then SECRET_KEY, then use default
+    api_key: str = EnvVar @ "API_KEY" @ "SECRET_KEY" | "default",
+
+    # Function call syntax
+    token: str = EnvVar("AUTH_TOKEN", "ACCESS_TOKEN", default="none"),
+): ...
+```
+
+Returns the first env var that is set, or the default if none are set.
+
+**Note:** Use `|` (pipe) not `or` for defaults. The `or` keyword doesn't work because it evaluates truthiness instead of calling `__or__`.
+
 ## Type Conversion
 
 Values are automatically converted based on type hint:
