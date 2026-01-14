@@ -33,7 +33,7 @@ classifiers = [
 
 dependencies = [
     "waterbear>=2.6.8",
-    "argparse",
+    "argparse; python_version < '2.7'",  # Built into Python 2.7+ and all Python 3.x
     "argcomplete",
     "expandvars",
     "termcolor",
