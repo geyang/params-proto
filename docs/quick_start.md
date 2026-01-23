@@ -12,19 +12,16 @@ Or with uv:
 uv add params-proto=={VERSION}
 ```
 
-## For AI Assistants
+## Using with Claude Code
 
-We provide a Claude skill for params-proto. To use it, either type in Claude Code:
+params-proto includes a plugin that helps Claude write better configs and CLIs. Install it:
 
+```bash
+/plugin marketplace add geyang/params-proto
+/plugin install params-proto@params-proto
 ```
-# add https://raw.githubusercontent.com/geyang/params-proto/main/skill/index.md as a skill
-```
 
-Or add this import to your project's `CLAUDE.md` file:
-
-```markdown
-@import https://raw.githubusercontent.com/geyang/params-proto/main/skill/index.md
-```
+The plugin provides a skill that automatically activates when you're working with params-proto code.
 
 ## Your First Proto Function CLI
 

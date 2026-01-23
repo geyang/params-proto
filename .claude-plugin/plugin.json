@@ -1,0 +1,14 @@
+{
+  "name": "params-proto",
+  "description": "Declarative hyperparameter management for ML experiments with automatic CLI generation, environment variables, and parameter sweeps",
+  "version": "3.0.0",
+  "author": {
+    "name": "Ge Yang",
+    "url": "https://github.com/geyang"
+  },
+  "homepage": "https://params-proto.readthedocs.io",
+  "repository": "https://github.com/geyang/params-proto",
+  "license": "MIT",
+  "keywords": ["ml", "hyperparameters", "cli", "configuration", "machine-learning"],
+  "skills": "./skills/"
+}
