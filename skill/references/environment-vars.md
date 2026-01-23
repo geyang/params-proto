@@ -1,11 +1,18 @@
----
-title: Environment Variables
-description: Read configuration from environment variables with EnvVar
----
+# Environment Variables Reference
 
-# Environment Variables
+## Table of Contents
 
-params-proto supports reading configuration from environment variables.
+- [Basic Usage](#basic-usage)
+- [Syntax](#syntax)
+- [OR Operation](#or-operation-multiple-env-vars)
+- [Type Conversion](#type-conversion)
+- [Required Environment Variables](#required-environment-variables)
+- [Template Expansion](#template-expansion)
+- [Priority Order](#priority-order)
+- [Inheritance](#inheritance)
+- [Common Patterns](#common-patterns)
+
+---
 
 ## Basic Usage
 
@@ -20,6 +27,8 @@ def train(
 ): ...
 ```
 
+---
+
 ## Syntax
 
 ```python
@@ -29,6 +38,10 @@ EnvVar @ "ENV_VAR_NAME" | default_value
 - `@` specifies the environment variable name
 - `|` provides a fallback default value
 - Without `|`, the env var is required
+
+**Note:** Use `|` (pipe) not `or` for defaults. The `or` keyword doesn't work because it evaluates truthiness.
+
+---
 
 ## OR Operation (Multiple Env Vars)
 
@@ -47,7 +60,7 @@ def deploy(
 
 Returns the first env var that is set, or the default if none are set.
 
-**Note:** Use `|` (pipe) not `or` for defaults. The `or` keyword doesn't work because it evaluates truthiness instead of calling `__or__`.
+---
 
 ## Type Conversion
 
@@ -62,9 +75,15 @@ def train(
 ): ...
 ```
 
-Boolean conversion:
-- True: `"true"`, `"1"`, `"yes"`, `"on"` (case-insensitive)
-- False: `"false"`, `"0"`, `"no"`, `"off"`
+### Boolean Conversion
+
+| True values | False values |
+|-------------|--------------|
+| `"true"`, `"1"`, `"yes"`, `"on"` | `"false"`, `"0"`, `"no"`, `"off"` |
+
+Case-insensitive.
+
+---
 
 ## Required Environment Variables
 
@@ -77,40 +96,7 @@ def deploy(
 
 Missing required env var raises error at import time.
 
-## With @proto.prefix
-
-```python
-@proto.prefix
-class Config:
-    host: str = EnvVar @ "HOST" | "localhost"
-    port: int = EnvVar @ "PORT" | 8080
-    debug: bool = EnvVar @ "DEBUG" | False
-```
-
-## With Inheritance
-
-EnvVar fields are inherited and type-converted correctly:
-
-```python
-class BaseConfig:
-    host: str = EnvVar @ "HOST" | "localhost"
-    port: int = EnvVar @ "PORT" | 8080
-    debug: bool = EnvVar @ "DEBUG" | False
-
-@proto.prefix
-class AppConfig(BaseConfig):
-    timeout: int = EnvVar @ "TIMEOUT" | 30
-    api_key: str = EnvVar @ "API_KEY"
-```
-
-```bash
-HOST=10.0.0.1 PORT=3000 DEBUG=true TIMEOUT=60 API_KEY=secret python app.py
-```
-
-Both inherited and child EnvVar fields:
-- Resolve from environment variables
-- Convert to the correct type (str, int, bool, float)
-- Use fallback defaults when env var is not set
+---
 
 ## Template Expansion
 
@@ -128,9 +114,9 @@ PROTOCOL=https HOST=example.com PORT=443 python connect.py
 # url = "https://example.com:443/api"
 ```
 
-Supported syntax:
-- `$VAR`
-- `${VAR}`
+Supported syntax: `$VAR` and `${VAR}`
+
+---
 
 ## Priority Order
 
@@ -141,9 +127,7 @@ Supported syntax:
 
 ```python
 @proto.cli
-def train(
-    lr: float = EnvVar @ "LR" | 0.001,
-): ...
+def train(lr: float = EnvVar @ "LR" | 0.001): ...
 ```
 
 ```bash
@@ -156,13 +140,31 @@ LR=0.01 python train.py --lr 0.1
 # lr = 0.1
 ```
 
-## In Help Text
+---
 
-Environment variables appear in help:
+## Inheritance
 
+EnvVar fields are inherited and type-converted correctly:
+
+```python
+class BaseConfig:
+    host: str = EnvVar @ "HOST" | "localhost"
+    port: int = EnvVar @ "PORT" | 8080
+    debug: bool = EnvVar @ "DEBUG" | False
+
+@proto.prefix
+class AppConfig(BaseConfig):
+    timeout: int = EnvVar @ "TIMEOUT" | 30
 ```
---lr FLOAT    Learning rate (default: $LEARNING_RATE or 0.001)
+
+```bash
+HOST=10.0.0.1 PORT=3000 DEBUG=true python app.py
+# AppConfig.host = "10.0.0.1" (str)
+# AppConfig.port = 3000 (int)
+# AppConfig.debug = True (bool)
 ```
+
+---
 
 ## Common Patterns
 
@@ -174,7 +176,7 @@ class Database:
     host: str = EnvVar @ "DB_HOST" | "localhost"
     port: int = EnvVar @ "DB_PORT" | 5432
     user: str = EnvVar @ "DB_USER" | "postgres"
-    password: str = EnvVar @ "DB_PASSWORD"  # Required, no default
+    password: str = EnvVar @ "DB_PASSWORD"  # Required
     name: str = EnvVar @ "DB_NAME" | "myapp"
 ```
 
@@ -197,10 +199,21 @@ class Features:
     log_level: str = EnvVar @ "LOG_LEVEL" | "INFO"
 ```
 
+---
+
+## Help Text Display
+
+Environment variables appear in help:
+
+```
+--lr FLOAT    Learning rate (default: $LEARNING_RATE or 0.001)
+```
+
+---
+
 ## Best Practices
 
 1. **Use uppercase for env vars** - `LEARNING_RATE` not `learning_rate`
 2. **Provide defaults for optional** - `EnvVar @ "VAR" | default`
-3. **Document required vars** - In comments or README
-4. **Use prefixes for grouping** - `DB_HOST`, `DB_PORT`, `API_KEY`
-5. **Don't commit secrets** - Use `.env` files, not code defaults
+3. **Use prefixes for grouping** - `DB_HOST`, `DB_PORT`, `API_KEY`
+4. **Don't commit secrets** - Use `.env` files, not code defaults
