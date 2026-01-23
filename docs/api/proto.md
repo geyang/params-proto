@@ -315,6 +315,33 @@ See **[Environment Variables Guide](../key_concepts/environment_variables.md)** 
 
 Decorated objects get special attributes:
 
+### `_dict` property
+
+Returns a clean dict of current parameter values (defaults merged with overrides):
+
+```python
+@proto.prefix
+class Config:
+    lr: float = 0.001
+    batch_size: int = 32
+
+Config.lr = 0.01  # Override
+
+Config._dict      # → {'lr': 0.01, 'batch_size': 32}
+dict(Config)      # → {'lr': 0.01, 'batch_size': 32}
+```
+
+Works for both `@proto`/`@proto.prefix` classes and `@proto.cli`/`@proto.prefix` functions:
+
+```python
+@proto.prefix
+def train(lr: float = 0.001, epochs: int = 100):
+    pass
+
+train._dict       # → {'lr': 0.001, 'epochs': 100}
+dict(train)       # → {'lr': 0.001, 'epochs': 100}
+```
+
 ### `__help_str__`
 
 Available on `@proto.cli` decorated functions:

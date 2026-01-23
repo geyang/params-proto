@@ -2,6 +2,22 @@
 
 This page contains the release history and changelog for params-proto.
 
+## Version 3.1.0 (2025-01-23)
+
+### ✨ Features
+
+- **`_dict` Property and `dict()` Support**: Get a clean dict of parameter values from proto classes and functions
+  - `Config._dict` returns `{'lr': 0.001, 'batch_size': 32}` (defaults merged with overrides)
+  - `dict(Config)` works identically via `__iter__` support
+  - Works for both `@proto`/`@proto.prefix` classes and `@proto.cli`/`@proto.prefix` functions
+
+### 📚 Documentation
+
+- Added `_dict` property documentation to API reference
+- Updated Claude skill references with clean dict examples
+
+---
+
 ## Version 3.0.0 (2025-01-12)
 
 ### ✨ Features

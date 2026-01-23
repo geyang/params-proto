@@ -164,6 +164,21 @@ with proto.bind(Training, lr=0.01):
 proto.bind(**{"training.lr": 0.01, "model.name": "vit"})
 ```
 
+### Getting a Clean Dict
+
+```python
+@proto.prefix
+class Config:
+    lr: float = 0.001
+    batch_size: int = 32
+
+Config.lr = 0.01  # Override
+
+# Two equivalent ways to get parameter values
+Config._dict      # → {'lr': 0.01, 'batch_size': 32}
+dict(Config)      # → {'lr': 0.01, 'batch_size': 32}
+```
+
 ### Custom Prefix Name
 
 ```python
@@ -223,6 +238,23 @@ class TrainConfig(BaseConfig):
 
 c = TrainConfig()
 vars(c)  # {'lr': 0.001, 'batch_size': 32, 'epochs': 100}
+```
+
+### Getting a Clean Dict
+
+```python
+@proto
+class Config:
+    lr: float = 0.001
+    batch_size: int = 32
+
+# Class-level: get defaults + overrides
+Config._dict      # → {'lr': 0.001, 'batch_size': 32}
+dict(Config)      # → {'lr': 0.001, 'batch_size': 32}
+
+# Instance-level: use vars()
+c = Config(lr=0.01)
+vars(c)           # → {'lr': 0.01, 'batch_size': 32}
 ```
 
 ### @proto vs @proto.prefix
