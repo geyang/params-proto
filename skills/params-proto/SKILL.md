@@ -10,14 +10,14 @@ description: |
   (6) Work with Union types for subcommand-like CLI patterns
 ---
 
-# params-proto v3.0.0
+# params-proto v3.1.0
 
 Declarative hyperparameter management for ML experiments with automatic CLI generation.
 
 ## Installation
 
 ```bash
-pip install params-proto==3.0.0
+pip install params-proto==3.1.0
 ```
 
 ## Three Decorators
@@ -166,6 +166,13 @@ def train(
 3. Context manager (`with proto.bind(Config, lr=0.01): ...`)
 4. Environment variables
 5. Default values
+
+## Getting a Clean Dict
+
+```python
+Config._dict      # → {'lr': 0.001, 'batch_size': 32}
+dict(Config)      # → same (works for classes and functions)
+```
 
 ## Reference Files
 
