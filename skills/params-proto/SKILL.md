@@ -171,7 +171,7 @@ def train(
 
 For detailed documentation, see:
 
-- [cli-and-types.md](references/cli-and-types.md) - @proto.cli, @proto.prefix, type system
-- [environment-vars.md](references/environment-vars.md) - EnvVar with templates and inheritance
-- [sweeps.md](references/sweeps.md) - piter and Sweep for hyperparameter search
-- [patterns.md](references/patterns.md) - Common ML patterns and examples
+- [cli-and-types.md](https://raw.githubusercontent.com/geyang/params-proto/main/skills/params-proto/references/cli-and-types.md) - @proto.cli, @proto.prefix, type system
+- [environment-vars.md](https://raw.githubusercontent.com/geyang/params-proto/main/skills/params-proto/references/environment-vars.md) - EnvVar with templates and inheritance
+- [sweeps.md](https://raw.githubusercontent.com/geyang/params-proto/main/skills/params-proto/references/sweeps.md) - piter and Sweep for hyperparameter search
+- [patterns.md](https://raw.githubusercontent.com/geyang/params-proto/main/skills/params-proto/references/patterns.md) - Common ML patterns and examples
