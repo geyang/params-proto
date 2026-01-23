@@ -1,9 +1,19 @@
----
-title: Common Patterns
-description: Real-world examples and patterns for params-proto
----
+# Common Patterns Reference
 
-# Common Patterns
+## Table of Contents
+
+- [Simple Training Script](#simple-training-script)
+- [Multi-Namespace ML Config](#multi-namespace-ml-config)
+- [Environment-Based Config](#environment-based-config)
+- [Union Types (Subcommand Pattern)](#union-types-subcommand-pattern)
+- [Hyperparameter Sweep](#hyperparameter-sweep)
+- [Context Manager Overrides](#context-manager-overrides)
+- [Reusable Config Class](#reusable-config-class)
+- [CLI with Validation](#cli-with-validation)
+- [Testing Pattern](#testing-pattern)
+- [Inheritance](#inheritance)
+
+---
 
 ## Simple Training Script
 
@@ -23,6 +33,8 @@ def train(
 if __name__ == "__main__":
     train()
 ```
+
+---
 
 ## Multi-Namespace ML Config
 
@@ -64,6 +76,12 @@ if __name__ == "__main__":
     main()
 ```
 
+```bash
+python train.py --model.name vit --training.lr 0.01 --data.batch-size 64
+```
+
+---
+
 ## Environment-Based Config
 
 ```python
@@ -92,7 +110,9 @@ def serve(
     print(f"Serving on port {port}")
 ```
 
-## Union Types (Subcommand-like)
+---
+
+## Union Types (Subcommand Pattern)
 
 ```python
 from dataclasses import dataclass
@@ -137,6 +157,8 @@ python main.py evaluate --checkpoint best.pt
 python main.py export --format torchscript
 ```
 
+---
+
 ## Hyperparameter Sweep
 
 ### Using piter (Recommended)
@@ -156,7 +178,7 @@ def train(
     print(f"Training {model} with lr={lr}, batch={batch_size}, seed={seed}")
     return {"accuracy": 0.95, "loss": 0.1}
 
-# Grid search with piter @ syntax (only first needs piter @)
+# Grid search with piter @ syntax
 configs = (
     piter @ {"lr": [0.001, 0.01]}
     * {"batch_size": [32, 64]}
@@ -181,11 +203,8 @@ def train(
     model: str = "resnet50",
     seed: int = 42,
 ):
-    """Train with given hyperparameters."""
-    print(f"Training {model} with lr={lr}, batch={batch_size}, seed={seed}")
-    return {"accuracy": 0.95, "loss": 0.1}
+    return {"accuracy": 0.95}
 
-# Run sweep
 sweep = Sweep(train).product(
     lr=[0.001, 0.01],
     batch_size=[32, 64],
@@ -194,11 +213,11 @@ sweep = Sweep(train).product(
     seed=42,
 )
 
-results = []
 for config in sweep:
-    metrics = train(**config)
-    results.append({**config, **metrics})
+    train(**config)
 ```
+
+---
 
 ## Context Manager Overrides
 
@@ -224,6 +243,8 @@ with proto.bind(Config, lr=0.01, debug=True):
 train()  # lr=0.001, debug=False
 ```
 
+---
+
 ## Reusable Config Class
 
 ```python
@@ -240,10 +261,11 @@ class OptimizerConfig:
 adam_config = OptimizerConfig(name="adam", lr=0.001)
 sgd_config = OptimizerConfig(name="sgd", lr=0.01)
 
-# Use in training
 def train(optimizer_config: OptimizerConfig):
     print(f"Using {optimizer_config.name} with lr={optimizer_config.lr}")
 ```
+
+---
 
 ## CLI with Validation
 
@@ -263,7 +285,6 @@ def train(
     precision: Precision = Precision.FP32,  # Training precision
 ):
     """Train with validation."""
-    # Validate
     if not 0 < lr < 1:
         raise ValueError(f"lr must be in (0, 1), got {lr}")
     if batch_size & (batch_size - 1) != 0:
@@ -274,6 +295,8 @@ def train(
 if __name__ == "__main__":
     train()
 ```
+
+---
 
 ## Testing Pattern
 
@@ -294,4 +317,59 @@ def test_train():
 def test_help():
     assert "--lr FLOAT" in train.__help_str__
     assert "(default: 0.001)" in train.__help_str__
+```
+
+---
+
+## Inheritance
+
+### Basic Inheritance
+
+```python
+class BaseConfig:
+    lr: float = 0.001
+    batch_size: int = 32
+
+@proto
+class TrainConfig(BaseConfig):
+    epochs: int = 100
+
+c = TrainConfig()
+vars(c)  # {'lr': 0.001, 'batch_size': 32, 'epochs': 100}
+```
+
+### Inheritance with EnvVar
+
+```python
+class BaseConfig:
+    host: str = EnvVar @ "HOST" | "localhost"
+    port: int = EnvVar @ "PORT" | 8080
+
+@proto.prefix
+class AppConfig(BaseConfig):
+    debug: bool = EnvVar @ "DEBUG" | False
+```
+
+```bash
+HOST=10.0.0.1 PORT=3000 DEBUG=true python app.py
+# AppConfig.host = "10.0.0.1" (str)
+# AppConfig.port = 3000 (int)
+# AppConfig.debug = True (bool)
+```
+
+### Post-Init Hook
+
+```python
+@proto
+class Config:
+    lr: float = 0.01
+    total: int = None
+
+    def __post_init__(self):
+        if self.lr > 1:
+            raise ValueError("lr too high")
+        self.total = int(self.lr * 1000)
+
+c = Config(lr=0.5)
+print(c.total)  # 500
 ```
