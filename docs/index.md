@@ -17,6 +17,13 @@ uv add params-proto=={VERSION}  # or
 pip install params-proto=={VERSION}
 ```
 
+**Using with Claude Code?** Install the params-proto plugin for better AI assistance:
+
+```bash
+/plugin marketplace add geyang/params-proto
+/plugin install params-proto@params-proto
+```
+
 Now you can convert this function into a CLI program:
 
 ```python
@@ -285,7 +292,6 @@ The Quick Start covers the basics. For deeper understanding, see:
 - **[Hyperparameter Sweeps](key_concepts/hyperparameter_sweeps.md)** - Declarative parameter sweeps with Sweep
 - **[Parameter Iteration](key_concepts/parameter-iteration.md)** - Lightweight, composable sweeps with `piter @ {...}` syntax
 - **[ANSI Formatting](key_concepts/ansi_formatting.md)** - Terminal colors and formatting
-- **[Claude Skill](key_concepts/claude_skill.md)** - AI assistance for params-proto development
 
 ## Documentation Contents
 
@@ -317,7 +323,6 @@ Advanced Patterns: Prefixes & Composition <key_concepts/advanced_patterns>
 Hyperparameter Sweeps <key_concepts/hyperparameter_sweeps>
 Parameter Iteration <key_concepts/parameter-iteration>
 ANSI Formatting <key_concepts/ansi_formatting>
-Claude Skill <key_concepts/claude_skill>
 ```
 
 ```{toctree}

@@ -1,0 +1,15 @@
+{
+  "name": "params-proto",
+  "owner": {
+    "name": "Ge Yang",
+    "email": "yangge1987@gmail.com"
+  },
+  "plugins": [
+    {
+      "name": "params-proto",
+      "source": ".",
+      "description": "Declarative hyperparameter management for ML experiments with automatic CLI generation",
+      "version": "3.0.0"
+    }
+  ]
+}
