@@ -250,6 +250,15 @@ class ProtoWrapper:
     """Return the prefix for this wrapper (function name for CLI wrappers)."""
     return _pascal_to_kebab(self._name) if self._is_prefix else None
 
+  @property
+  def _dict(self):
+    """Return a clean dict of current parameter values (defaults + overrides)."""
+    return {**self._defaults, **self._overrides}
+
+  def __iter__(self):
+    """Allow dict(proto_func) to produce a clean parameter dict."""
+    return iter(self._dict.items())
+
   def _update(self, __d: dict = None, **kwargs):
     """Update overrides from dict or kwargs."""
     # Ensure _overrides exists
@@ -494,6 +503,17 @@ class ptype(type):
   def _prefix(cls):
     """Return the proto prefix for this class."""
     return type.__getattribute__(cls, "__proto_prefix__")
+
+  @property
+  def _dict(cls):
+    """Return a clean dict of current parameter values (defaults + overrides)."""
+    defaults = type.__getattribute__(cls, "__proto_defaults__")
+    overrides = type.__getattribute__(cls, "__proto_overrides__")
+    return {**defaults, **overrides}
+
+  def __iter__(cls):
+    """Allow dict(ConfigClass) to produce a clean parameter dict."""
+    return iter(cls._dict.items())
 
   def _enable_sweep_mode(cls, callback):
     """Enter sweep mode with a callback for recording values."""

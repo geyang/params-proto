@@ -7,7 +7,7 @@
   "plugins": [
     {
       "name": "params-proto",
-      "source": ".",
+      "source": "..",
       "description": "Declarative hyperparameter management for ML experiments with automatic CLI generation",
       "version": "3.0.0"
     }
