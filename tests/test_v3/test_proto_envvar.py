@@ -445,11 +445,11 @@ def test_proto_envvar_class_with_type_conversion():
     del os.environ["RATIO"]
 
 
-def test_envvar_get_with_dtype():
-  """Test EnvVar.get() applies dtype conversion correctly.
+def test_envvar_dtype_conversion():
+  """Test EnvVar applies dtype conversion correctly via descriptor.
 
-  This tests the direct .get() method, not via @proto decoration.
-  Previously, dtype was stored but not applied in .get().
+  Tests that dtype parameter works for type conversion when accessed
+  as a class attribute (via __get__ descriptor).
   """
   import os
 
@@ -463,37 +463,51 @@ def test_envvar_get_with_dtype():
 
   try:
     # Test int conversion
-    port = EnvVar("PORT", dtype=int, default=8012).get()
-    assert port == 9000, f"Expected 9000, got {port}"
-    assert isinstance(port, int), f"Expected int, got {type(port)}"
+    class IntConfig:
+      port = EnvVar("PORT", dtype=int, default=8012)
+
+    assert IntConfig.port == 9000, f"Expected 9000, got {IntConfig.port}"
+    assert isinstance(IntConfig.port, int), f"Expected int, got {type(IntConfig.port)}"
 
     # Test float conversion
-    threshold = EnvVar("THRESHOLD", dtype=float, default=0.5).get()
-    assert threshold == 0.75, f"Expected 0.75, got {threshold}"
-    assert isinstance(threshold, float), f"Expected float, got {type(threshold)}"
+    class FloatConfig:
+      threshold = EnvVar("THRESHOLD", dtype=float, default=0.5)
+
+    assert FloatConfig.threshold == 0.75, f"Expected 0.75, got {FloatConfig.threshold}"
+    assert isinstance(FloatConfig.threshold, float), f"Expected float, got {type(FloatConfig.threshold)}"
 
     # Test bool conversion - "true"
-    debug = EnvVar("DEBUG", dtype=bool, default=False).get()
-    assert debug is True, f"Expected True, got {debug}"
-    assert isinstance(debug, bool), f"Expected bool, got {type(debug)}"
+    class BoolConfig:
+      debug = EnvVar("DEBUG", dtype=bool, default=False)
+
+    assert BoolConfig.debug is True, f"Expected True, got {BoolConfig.debug}"
+    assert isinstance(BoolConfig.debug, bool), f"Expected bool, got {type(BoolConfig.debug)}"
 
     # Test bool conversion - "1"
-    enabled = EnvVar("ENABLED", dtype=bool, default=False).get()
-    assert enabled is True, f"Expected True, got {enabled}"
+    class EnabledConfig:
+      enabled = EnvVar("ENABLED", dtype=bool, default=False)
+
+    assert EnabledConfig.enabled is True, f"Expected True, got {EnabledConfig.enabled}"
 
     # Test bool conversion - "false"
-    disabled = EnvVar("DISABLED", dtype=bool, default=True).get()
-    assert disabled is False, f"Expected False, got {disabled}"
+    class DisabledConfig:
+      disabled = EnvVar("DISABLED", dtype=bool, default=True)
+
+    assert DisabledConfig.disabled is False, f"Expected False, got {DisabledConfig.disabled}"
 
     # Test default value when env var not set
-    missing = EnvVar("MISSING_VAR", dtype=int, default=42).get()
-    assert missing == 42, f"Expected 42 (default), got {missing}"
-    assert isinstance(missing, int), f"Expected int, got {type(missing)}"
+    class MissingConfig:
+      missing = EnvVar("MISSING_VAR", dtype=int, default=42)
+
+    assert MissingConfig.missing == 42, f"Expected 42 (default), got {MissingConfig.missing}"
+    assert isinstance(MissingConfig.missing, int), f"Expected int, got {type(MissingConfig.missing)}"
 
     # Test without dtype - should return string
-    port_str = EnvVar("PORT", default="8012").get()
-    assert port_str == "9000", f"Expected '9000', got {port_str}"
-    assert isinstance(port_str, str), f"Expected str, got {type(port_str)}"
+    class StrConfig:
+      port_str = EnvVar("PORT", default="8012")
+
+    assert StrConfig.port_str == "9000", f"Expected '9000', got {StrConfig.port_str}"
+    assert isinstance(StrConfig.port_str, str), f"Expected str, got {type(StrConfig.port_str)}"
 
   finally:
     del os.environ["PORT"]
@@ -503,8 +517,8 @@ def test_envvar_get_with_dtype():
     del os.environ["DISABLED"]
 
 
-def test_envvar_get_with_dtype_template():
-  """Test EnvVar.get() applies dtype with template syntax."""
+def test_envvar_dtype_with_template():
+  """Test EnvVar applies dtype with template syntax."""
   import os
 
   from params_proto import EnvVar
@@ -513,9 +527,11 @@ def test_envvar_get_with_dtype_template():
 
   try:
     # Test with $ prefix template
-    count = EnvVar("$COUNT", dtype=int, default=0).get()
-    assert count == 100, f"Expected 100, got {count}"
-    assert isinstance(count, int), f"Expected int, got {type(count)}"
+    class TemplateConfig:
+      count = EnvVar("$COUNT", dtype=int, default=0)
+
+    assert TemplateConfig.count == 100, f"Expected 100, got {TemplateConfig.count}"
+    assert isinstance(TemplateConfig.count, int), f"Expected int, got {type(TemplateConfig.count)}"
 
   finally:
     del os.environ["COUNT"]
@@ -795,27 +811,117 @@ def test_envvar_lazy_loading():
   os.environ.pop("LAZY_TEST_VAR", None)
 
   try:
-    # Create EnvVar without env var set
-    ev = EnvVar @ "LAZY_TEST_VAR" | "default"
+    # Create class with EnvVar without env var set
+    class LazyConfig:
+      value = EnvVar @ "LAZY_TEST_VAR" | "default"
 
-    # First call - should return default
-    assert ev.get() == "default", f"Expected 'default', got {ev.get()}"
+    # First access - should return default
+    assert LazyConfig.value == "default", f"Expected 'default', got {LazyConfig.value}"
 
-    # Set env var after EnvVar was created
+    # Set env var after class was defined
     os.environ["LAZY_TEST_VAR"] = "lazy_value"
 
     # Cached value should still be default (lazy loading)
-    assert ev.get() == "default", f"Expected cached 'default', got {ev.get()}"
+    assert LazyConfig.value == "default", f"Expected cached 'default', got {LazyConfig.value}"
 
-    # Invalidate cache
-    ev.invalidate_cache()
+    # Invalidate cache via class __dict__
+    LazyConfig.__dict__["value"].invalidate_cache()
 
     # Now should read the new value
-    assert ev.get() == "lazy_value", f"Expected 'lazy_value', got {ev.get()}"
+    assert LazyConfig.value == "lazy_value", f"Expected 'lazy_value', got {LazyConfig.value}"
 
-    # Test non-lazy mode
+    # Test invalidate and re-read with updated value
     os.environ["LAZY_TEST_VAR"] = "updated_value"
-    assert ev.get(lazy=False) == "updated_value", f"Expected 'updated_value', got {ev.get(lazy=False)}"
+    LazyConfig.__dict__["value"].invalidate_cache()
+    assert LazyConfig.value == "updated_value", f"Expected 'updated_value', got {LazyConfig.value}"
 
   finally:
     os.environ.pop("LAZY_TEST_VAR", None)
+
+
+def test_envvar_descriptor_in_plain_class():
+  """Test EnvVar auto-resolves in plain classes (without @proto decorator).
+
+  This is a critical feature for users who want to use EnvVar in classes
+  that are not decorated with @proto, such as:
+
+      class VuerClient:
+          URI: str = EnvVar @ "VUER_CLIENT_URI" | "ws://localhost:8012"
+
+  Without the descriptor protocol, accessing VuerClient.URI would return
+  an _EnvVar object instead of the resolved value.
+  """
+  import os
+
+  from params_proto import EnvVar
+
+  # Clean up
+  os.environ.pop("PLAIN_CLASS_VAR", None)
+  os.environ.pop("PLAIN_CLASS_PORT", None)
+
+  try:
+    # Test 1: Plain class with EnvVar and default (env var NOT set)
+    class PlainConfig:
+      uri: str = EnvVar @ "PLAIN_CLASS_VAR" | "ws://localhost:8012"
+      port: int = EnvVar @ "PLAIN_CLASS_PORT" | 8080
+
+    # Accessing class attribute should return resolved value, not _EnvVar
+    assert PlainConfig.uri == "ws://localhost:8012", f"Expected default, got {PlainConfig.uri}"
+    assert isinstance(PlainConfig.uri, str), f"Expected str, got {type(PlainConfig.uri)}"
+
+    # Note: Without @proto, type conversion doesn't happen
+    # (the int annotation is not processed)
+    assert PlainConfig.port == 8080, f"Expected 8080, got {PlainConfig.port}"
+
+    # Test 2: With env var set
+    os.environ["PLAIN_CLASS_VAR"] = "ws://192.168.1.1:9000"
+
+    class PlainConfig2:
+      uri: str = EnvVar @ "PLAIN_CLASS_VAR" | "ws://localhost:8012"
+
+    assert PlainConfig2.uri == "ws://192.168.1.1:9000", f"Expected env value, got {PlainConfig2.uri}"
+
+    # Test 3: Instance access also works
+    c = PlainConfig2()
+    assert c.uri == "ws://192.168.1.1:9000", f"Expected env value on instance, got {c.uri}"
+
+  finally:
+    os.environ.pop("PLAIN_CLASS_VAR", None)
+    os.environ.pop("PLAIN_CLASS_PORT", None)
+
+
+def test_envvar_descriptor_websocket_max_size():
+  """Test EnvVar works for websocket max size pattern (the bug report case).
+
+  This tests the exact pattern that caused the original bug:
+      WEBSOCKET_MAX_SIZE: int = EnvVar @ "WEBSOCKET_MAX_SIZE" | 2**28
+
+  The issue was that accessing WEBSOCKET_MAX_SIZE returned an _EnvVar object
+  instead of the int value, causing: AttributeError: '_EnvVar' object has no attribute 'decode'
+  """
+  import os
+
+  from params_proto import EnvVar
+
+  os.environ.pop("WEBSOCKET_MAX_SIZE", None)
+
+  try:
+    class VuerClient:
+      URI: str = EnvVar @ "VUER_CLIENT_URI" | "ws://localhost:8012"
+      WEBSOCKET_MAX_SIZE: int = EnvVar @ "WEBSOCKET_MAX_SIZE" | 2**28
+
+    # Both should resolve to values, not _EnvVar objects
+    assert VuerClient.URI == "ws://localhost:8012", f"Expected default URI, got {VuerClient.URI}"
+    assert VuerClient.WEBSOCKET_MAX_SIZE == 2**28, f"Expected 2**28, got {VuerClient.WEBSOCKET_MAX_SIZE}"
+
+    # Verify types
+    assert isinstance(VuerClient.URI, str), f"URI should be str, got {type(VuerClient.URI)}"
+    assert isinstance(VuerClient.WEBSOCKET_MAX_SIZE, int), f"WEBSOCKET_MAX_SIZE should be int, got {type(VuerClient.WEBSOCKET_MAX_SIZE)}"
+
+    # The value should be usable (the original bug was .decode() failing)
+    # This simulates websocket operations that need to check max size
+    assert VuerClient.WEBSOCKET_MAX_SIZE > 0
+
+  finally:
+    os.environ.pop("WEBSOCKET_MAX_SIZE", None)
+    os.environ.pop("VUER_CLIENT_URI", None)

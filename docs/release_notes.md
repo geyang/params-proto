@@ -2,6 +2,24 @@
 
 This page contains the release history and changelog for params-proto.
 
+## Version 3.1.1 (2025-01-25)
+
+### 🐛 Bug Fixes
+
+- **EnvVar Descriptor Protocol**: EnvVar now works in plain classes without `@proto` decorator
+  - Previously `EnvVar @ "VAR" | default` returned `_EnvVar` object in plain classes
+  - Now auto-resolves via `__get__` descriptor when accessed as class attribute
+  - Fixes: `AttributeError: '_EnvVar' object has no attribute 'decode'`
+
+### ♻️ API Changes
+
+- **Removed `.get()` method**: Use class attribute access instead
+  - Old: `EnvVar("PORT", dtype=int).get()`
+  - New: `class C: port = EnvVar("PORT", dtype=int)` then `C.port`
+  - Use `invalidate_cache()` to force re-read from environment
+
+---
+
 ## Version 3.1.0 (2025-01-23)
 
 ### ✨ Features
@@ -34,10 +52,9 @@ This page contains the release history and changelog for params-proto.
   - Function syntax: `EnvVar("PRIMARY", "FALLBACK", default="value")`
   - Returns first env var that is set, or default if none are set
 
-- **EnvVar Lazy Loading**: Environment variables are cached after first read
-  - `ev.get()` caches result for subsequent calls
-  - `ev.get(lazy=False)` forces re-read from environment
-  - `ev.invalidate_cache()` clears cached value
+- **EnvVar Lazy Loading**: Environment variables are cached after first access
+  - Values cached after first access via descriptor
+  - `invalidate_cache()` clears cached value for re-read
 
 ### 🐛 Bug Fixes
 

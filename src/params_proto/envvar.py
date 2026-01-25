@@ -153,24 +153,44 @@ class _EnvVar:
       return os.environ[name], True
     return None, False
 
-  def get(self, *, lazy: bool = True) -> Any:
-    """
-    Get the value from environment variable(s).
+  def invalidate_cache(self):
+    """Clear the cached value, forcing re-read from environment on next access."""
+    self._cached_value = None
+    self._is_cached = False
 
-    When multiple templates are specified (OR operation), tries each in order
-    and returns the first one that is set in the environment.
+  def __get__(self, obj, objtype=None):
+    """
+    Descriptor protocol: auto-resolve EnvVar when accessed as a class attribute.
+
+    This enables EnvVar to work in plain classes (not decorated with @ParamsProto):
+
+        class MyConfig:
+            api_key: str = EnvVar @ "API_KEY" | "default"
+
+        # Accessing MyConfig.api_key returns the resolved value, not the _EnvVar object
+        print(MyConfig.api_key)  # "default" or value of $API_KEY
+
+    Values are cached after first resolution. Use invalidate_cache() to force re-read:
+
+        envvar = MyConfig.__dict__['api_key']  # Get the _EnvVar object
+        envvar.invalidate_cache()
+        print(MyConfig.api_key)  # Re-reads from environment
 
     Args:
-        lazy: If True (default), cache the result for subsequent calls.
-              Set to False to always re-read from environment.
+        obj: Instance (None if accessed on class)
+        objtype: The class being accessed
 
     Returns:
-        Value from environment or default, converted to dtype if specified
+        The resolved environment variable value
     """
     from params_proto.type_utils import _convert_type
 
-    # Return cached value if lazy loading is enabled and we have a cached value
-    if lazy and self._is_cached:
+    # Don't resolve the singleton EnvVar instance itself (has no templates)
+    if not self.templates:
+      return self
+
+    # Return cached value if available
+    if self._is_cached:
       return self._cached_value
 
     # No templates means return default
@@ -192,17 +212,11 @@ class _EnvVar:
     if result is not None and self.dtype is not None:
       result = _convert_type(result, self.dtype)
 
-    # Cache the result for lazy loading
-    if lazy:
-      self._cached_value = result
-      self._is_cached = True
+    # Cache the result
+    self._cached_value = result
+    self._is_cached = True
 
     return result
-
-  def invalidate_cache(self):
-    """Clear the cached value, forcing re-read from environment on next get()."""
-    self._cached_value = None
-    self._is_cached = False
 
   def __repr__(self):
     if self.templates:

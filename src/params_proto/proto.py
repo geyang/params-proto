@@ -177,7 +177,7 @@ class ProtoWrapper:
       if is_env_var:
         # Resolve env var at decoration time
         # NO auto-inference from parameter name for security reasons
-        env_value = default.get()
+        env_value = default.__get__(None, None)
 
         # Apply type conversion based on dtype (if provided) or annotation
         if env_value is not None:
@@ -801,7 +801,17 @@ def proto(
 
       for name in annotations.keys():
         if hasattr(obj, name):
-          value = getattr(obj, name)
+          # Look up value in class dict hierarchy to bypass descriptors like _EnvVar.__get__
+          value = None
+          for klass in obj.__mro__:
+            if klass is object:
+              continue
+            if name in vars(klass):
+              value = vars(klass)[name]
+              break
+          else:
+            value = getattr(obj, name)
+
           # Check for EnvVar first (before callable check, since _EnvVar has __call__)
           is_env_var = (
             hasattr(value, "__class__") and value.__class__.__name__ == "_EnvVar"
@@ -809,7 +819,7 @@ def proto(
 
           if is_env_var:
             # Resolve env var at decoration time
-            env_value = value.get()
+            env_value = value.__get__(None, None)
             annotation = annotations.get(name, str)
 
             # Apply type conversion based on dtype (if provided) or annotation
@@ -847,6 +857,11 @@ def proto(
               namespace[key] = getattr(obj, key)
           except AttributeError:
             pass
+
+      # Replace _EnvVar objects with resolved values from defaults
+      # This ensures the descriptor doesn't interfere with class attribute access
+      for key, value in defaults.items():
+        namespace[key] = value
 
       # Create new class with metaclass
       new_cls = metaclass(
