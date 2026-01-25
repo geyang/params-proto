@@ -21,7 +21,7 @@ pip install params-proto=={VERSION}
 
 ```bash
 /plugin marketplace add geyang/params-proto
-/plugin install params-proto@geyang/params-proto
+/plugin install params-proto@params-proto
 ```
 
 Now you can convert this function into a CLI program:

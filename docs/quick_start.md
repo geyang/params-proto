@@ -18,7 +18,7 @@ params-proto includes a plugin that helps Claude write better configs and CLIs. 
 
 ```bash
 /plugin marketplace add geyang/params-proto
-/plugin install params-proto@geyang/params-proto
+/plugin install params-proto@params-proto
 ```
 
 The plugin provides a skill that automatically activates when you're working with params-proto code.
