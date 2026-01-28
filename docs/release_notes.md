@@ -2,6 +2,14 @@
 
 This page contains the release history and changelog for params-proto.
 
+## Version 3.1.2 (2025-01-27)
+
+### 📚 Documentation
+
+- **Claude Code Plugin**: Fixed install command format in plugin documentation
+
+---
+
 ## Version 3.1.1 (2025-01-25)
 
 ### 🐛 Bug Fixes
