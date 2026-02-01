@@ -61,10 +61,11 @@ def main(model: Model):
 ```
 
 ```python
-# Pattern 3: Optional simple parameters (workaround)
-# Note: Optional[str] is not fully supported; use str with default instead
+# Pattern 3: Optional simple parameters
+from typing import Optional
+
 @proto.cli
-def process(checkpoint: str = None, batch_size: int = 32):
+def process(checkpoint: Optional[str] = None, batch_size: int = 32):
     pass
 
 # CLI: python process.py --checkpoint model.pt
@@ -134,17 +135,18 @@ if __name__ == "__main__":
 `Optional[T]` is for parameters that **may or may not be provided**:
 
 ```python
+from typing import Optional
+
 @proto.cli
 def train(
-    checkpoint: str = None,      # Works (workaround)
-    # checkpoint: Optional[str] = None,  # ⚠️ Doesn't fully work yet
+    checkpoint: Optional[str] = None,  # Optional with None default
     epochs: int = 10,
 ):
     """Train model."""
     pass
 ```
 
-**Expected CLI usage:**
+**CLI usage:**
 
 ```bash
 python train.py --checkpoint model.pt       # Provide value
@@ -152,21 +154,15 @@ python train.py                             # Omit for None default
 python train.py --checkpoint model.pt --epochs 50
 ```
 
-```{note}
-**Current limitation:** `Optional[str]`, `Optional[int]`, etc. are not fully supported.
-Use regular parameters with defaults as a workaround:
+Both `Optional[str]` and `str = None` work equivalently:
 
 ```python
-# ✓ Works
+# Both work
 @proto.cli
-def train(checkpoint: str = None, epochs: int = 10):
-    pass
+def train(checkpoint: Optional[str] = None): ...
 
-# ⚠️ Doesn't work yet
 @proto.cli
-def train(checkpoint: Optional[str] = None, epochs: int = 10):
-    pass
-```
+def train(checkpoint: str = None): ...
 ```
 
 ## Key Differences
@@ -174,8 +170,8 @@ def train(checkpoint: Optional[str] = None, epochs: int = 10):
 | Type | Purpose | CLI Syntax | When to Use |
 |------|---------|-----------|-------------|
 | `Union[ClassA, ClassB]` | Choose which class instance | `--param:ClassName` or positional | Multiple configurations (optimizers, models, etc.) |
-| `Optional[str]` | Value may or may not be provided | `--param value` | Optional simple parameters (**currently use workaround**) |
-| `str` with default | Same as Optional | `--param value` | Simple optional parameters (**recommended workaround**) |
+| `Optional[str]` | Value may or may not be provided | `--param value` | Optional simple parameters |
+| `str = None` | Same as Optional | `--param value` | Alternative syntax for optional parameters |
 
 ## Syntax Variations
 
