@@ -10,7 +10,7 @@ description: |
   (6) Work with Union types for subcommand-like CLI patterns
 ---
 
-# params-proto v3.2.0
+# params-proto v3.2.1
 
 Declarative hyperparameter management for ML experiments with automatic CLI generation.
 

@@ -816,3 +816,141 @@ class TestProtoPrefixRequiresPrefix:
     # Unprefixed should error for @proto.prefix class
     result = run_cli(script, ["train-config", "--epochs", "200"], expect_error=True)
     assert "unrecognized argument" in result["stderr"]
+
+
+class TestPositionalArgsInSubcommands:
+  """Test positional arguments captured by subcommand fields.
+
+  This tests the pattern: myapp add my-env/v1.2.3
+  Where 'add' is the subcommand and 'my-env/v1.2.3' is captured by the
+  subcommand's first required field.
+  """
+
+  def test_positional_arg_captured_by_subcommand_field(self, run_cli):
+    """Test positional arg after subcommand name is captured."""
+    script = dedent("""
+      from dataclasses import dataclass
+      from params_proto import proto
+
+      @dataclass
+      class AddCommand:
+          env: str  # Required field, no default
+
+      @dataclass
+      class RemoveCommand:
+          env: str  # Required field
+
+      @proto.cli
+      def main(command: AddCommand | RemoveCommand):
+          print(f"command={command.__class__.__name__}")
+          print(f"env={command.env}")
+
+      if __name__ == "__main__":
+          main()
+      """)
+
+    # Positional arg after subcommand should be captured by 'env' field
+    result = run_cli(script, ["add", "my-env/v1.2.3"])
+    lines = result["stdout"].strip().split("\n")
+    assert lines[0] == "command=AddCommand"
+    assert lines[1] == "env=my-env/v1.2.3"
+
+    result = run_cli(script, ["remove", "old-env/v0.9.0"])
+    lines = result["stdout"].strip().split("\n")
+    assert lines[0] == "command=RemoveCommand"
+    assert lines[1] == "env=old-env/v0.9.0"
+
+  def test_multiple_positional_args_in_subcommand(self, run_cli):
+    """Test multiple positional args captured by subcommand fields."""
+    script = dedent("""
+      from dataclasses import dataclass
+      from params_proto import proto
+
+      @dataclass
+      class InstallCommand:
+          package: str  # Required, first positional
+          version: str  # Required, second positional
+
+      @proto.cli
+      def main(command: InstallCommand):
+          print(f"package={command.package}")
+          print(f"version={command.version}")
+
+      if __name__ == "__main__":
+          main()
+      """)
+
+    result = run_cli(script, ["install", "requests", "2.28.0"])
+    lines = result["stdout"].strip().split("\n")
+    assert lines[0] == "package=requests"
+    assert lines[1] == "version=2.28.0"
+
+  def test_positional_with_named_args(self, run_cli):
+    """Test mixing positional and named args in subcommand."""
+    script = dedent("""
+      from dataclasses import dataclass
+      from params_proto import proto
+
+      @dataclass
+      class CloneCommand:
+          url: str  # Required positional
+          depth: int = 0  # Optional with default
+
+      @proto.cli
+      def main(command: CloneCommand):
+          print(f"url={command.url}")
+          print(f"depth={command.depth}")
+
+      if __name__ == "__main__":
+          main()
+      """)
+
+    # Positional url, named depth
+    result = run_cli(script, ["clone", "https://github.com/test", "--depth", "1"])
+    lines = result["stdout"].strip().split("\n")
+    assert lines[0] == "url=https://github.com/test"
+    assert lines[1] == "depth=1"
+
+  def test_positional_arg_missing_should_error(self, run_cli):
+    """Test that missing required positional arg errors."""
+    script = dedent("""
+      from dataclasses import dataclass
+      from params_proto import proto
+
+      @dataclass
+      class AddCommand:
+          env: str  # Required field
+
+      @proto.cli
+      def main(command: AddCommand):
+          print(f"env={command.env}")
+
+      if __name__ == "__main__":
+          main()
+      """)
+
+    # Missing required positional should error
+    result = run_cli(script, ["add"], expect_error=True)
+    assert result["returncode"] != 0
+
+  def test_extra_positional_should_error(self, run_cli):
+    """Test that extra unrecognized positional args error."""
+    script = dedent("""
+      from dataclasses import dataclass
+      from params_proto import proto
+
+      @dataclass
+      class AddCommand:
+          env: str  # Required field
+
+      @proto.cli
+      def main(command: AddCommand):
+          print(f"env={command.env}")
+
+      if __name__ == "__main__":
+          main()
+      """)
+
+    # Extra positional arg should error
+    result = run_cli(script, ["add", "env1", "extra-arg"], expect_error=True)
+    assert result["returncode"] != 0

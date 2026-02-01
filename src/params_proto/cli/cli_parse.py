@@ -57,6 +57,32 @@ def _normalize_class_name(class_name: str) -> str:
   return class_name.replace("-", "").replace("_", "").lower()
 
 
+def _get_required_fields(cls) -> List[str]:
+  """Get list of required field names (fields without defaults) in order."""
+  import dataclasses
+
+  required = []
+
+  # Check if it's a dataclass
+  if dataclasses.is_dataclass(cls):
+    for field in dataclasses.fields(cls):
+      has_default = (
+        field.default is not dataclasses.MISSING
+        or field.default_factory is not dataclasses.MISSING
+      )
+      if not has_default:
+        required.append(field.name)
+  else:
+    # For regular classes, check annotations and class-level defaults
+    annotations = getattr(cls, "__annotations__", {})
+    for name in annotations:
+      if not hasattr(cls, name):
+        # No class-level default
+        required.append(name)
+
+  return required
+
+
 def _match_class_by_name(name: str, classes: list) -> Union[type, None]:
   """Match a string to one of the Union classes.
 
@@ -187,6 +213,8 @@ def parse_cli_args(wrapper) -> Dict[str, Any]:
   positional_values = []
   union_selections = {}  # param_name -> selected_class
   union_attrs = {}  # (param_name, attr_name) -> value
+  union_positional = {}  # param_name -> [positional_args] for subcommand fields
+  current_union_param = None  # Track which union we're collecting positionals for
 
   args = sys.argv[1:]
   i = 0
@@ -377,12 +405,18 @@ def parse_cli_args(wrapper) -> Dict[str, Any]:
           selected_class = _match_class_by_name(arg, union_classes)
           if selected_class:
             union_selections[param_name] = selected_class
+            current_union_param = param_name  # Track for following positionals
+            union_positional[param_name] = []
             matched_union = True
             i += 1
             break
 
       if not matched_union:
-        positional_values.append(arg)
+        # If we have a current union, add positional to its list
+        if current_union_param is not None:
+          union_positional[current_union_param].append(arg)
+        else:
+          positional_values.append(arg)
         i += 1
 
   # Assign positional arguments to required parameters
@@ -433,6 +467,33 @@ def parse_cli_args(wrapper) -> Dict[str, Any]:
           # No annotations, treat as string
           attrs[attr_name] = value_str
 
+    # Assign positional args to required fields of the selected class
+    if param_name in union_positional and union_positional[param_name]:
+      positionals = union_positional[param_name]
+      required_fields = _get_required_fields(selected_class)
+
+      for field_idx, field_name in enumerate(required_fields):
+        if field_name in attrs:
+          # Already set by named arg, skip
+          continue
+        if field_idx < len(positionals):
+          # Get type annotation for conversion
+          if hasattr(selected_class, "__annotations__"):
+            field_type = selected_class.__annotations__.get(field_name, str)
+            try:
+              attrs[field_name] = _convert_type(positionals[field_idx], field_type)
+            except (ValueError, TypeError):
+              raise SystemExit(
+                f"error: invalid value for {field_name}: {positionals[field_idx]}"
+              )
+          else:
+            attrs[field_name] = positionals[field_idx]
+
+      # Check for extra positional args
+      if len(positionals) > len(required_fields):
+        extra = positionals[len(required_fields):]
+        raise SystemExit(f"error: unrecognized arguments: {' '.join(extra)}")
+
     # If selected_class is a proto.prefix singleton, merge its overrides
     from params_proto.proto import _SINGLETONS, ptype
 
@@ -446,6 +507,14 @@ def parse_cli_args(wrapper) -> Dict[str, Any]:
             if key not in attrs:  # Only use override if not explicitly set via CLI
               attrs[key] = value
         break
+
+    # Check for missing required fields
+    required_fields = _get_required_fields(selected_class)
+    for field_name in required_fields:
+      if field_name not in attrs:
+        raise SystemExit(
+          f"error: {selected_class.__name__} requires argument: {field_name}"
+        )
 
     # Instantiate the class with collected attributes
     try:

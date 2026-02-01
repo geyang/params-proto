@@ -2,6 +2,22 @@
 
 This page contains the release history and changelog for params-proto.
 
+## Version 3.2.1 (2025-02-01)
+
+### 🐛 Bug Fixes
+
+- **Positional Arguments in Subcommands**: Fixed positional arguments being silently ignored after subcommand name
+  - Before: `myapp add my-env/v1.2.3` → positional arg silently dropped
+  - After: `myapp add my-env/v1.2.3` → positional arg captured by subcommand's required field
+  - Enables CLI patterns like `pip install requests`, `cargo add serde`
+  - Raises clear error for extra unrecognized positional arguments
+
+### 📚 Documentation
+
+- Fixed outdated notes claiming `Optional[str]` was not supported (it works)
+
+---
+
 ## Version 3.2.0 (2025-02-01)
 
 ### ✨ Features
