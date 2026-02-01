@@ -143,6 +143,77 @@ class ParameterIterator:
     """Return number of configs (materializes list)."""
     return len(self.list)
 
+  def save(self, filename="sweep.jsonl", overwrite=True, verbose=True):
+    """
+    Save parameter configurations to JSONL file.
+
+    Args:
+        filename: Path to output file (str or PathLike)
+        overwrite: If True, overwrite existing file; if False, append
+        verbose: If True, print save confirmation
+
+    Example:
+        configs = piter @ {"lr": [0.001, 0.01]} * {"batch_size": [32, 64]}
+        configs.save("experiment.jsonl")
+    """
+    import json
+    import os
+    from urllib import parse
+
+    # Convert Path objects to string
+    filename_str = os.fspath(filename) if hasattr(os, "fspath") else str(filename)
+    configs = self.list
+
+    with open(filename_str, "w" if overwrite else "a+") as f:
+      for item in configs:
+        f.write(json.dumps(item) + "\n")
+
+    if verbose:
+      try:
+        from termcolor import colored as c
+
+        print(
+          c("saved", "blue"),
+          c(len(configs), "green"),
+          c("items to", "blue"),
+          filename_str,
+          ".",
+          "file://" + parse.quote(os.path.realpath(filename_str)),
+        )
+      except ImportError:
+        print(f"Saved {len(configs)} items to {filename_str}")
+
+  @staticmethod
+  def load(filename="sweep.jsonl"):
+    """
+    Load parameter configurations from JSONL file.
+
+    Args:
+        filename: Path to input file (str or PathLike)
+
+    Returns:
+        ParameterIterator with loaded configurations
+
+    Example:
+        configs = ParameterIterator.load("experiment.jsonl")
+        for config in configs:
+            run_experiment(**config)
+    """
+    import json
+    import os
+
+    # Convert Path objects to string
+    filename_str = os.fspath(filename) if hasattr(os, "fspath") else str(filename)
+
+    configs = []
+    with open(filename_str, "r") as f:
+      for line in f:
+        line = line.strip()
+        if line and not line.startswith("//"):
+          configs.append(json.loads(line))
+
+    return ParameterIterator(iter(configs))
+
 
 class PiterFactory:
   """

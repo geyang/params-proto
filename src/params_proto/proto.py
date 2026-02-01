@@ -669,20 +669,32 @@ class ptype(type):
 
     # Get the original class
     original_cls = type.__getattribute__(cls, "__proto_original_class__")
-
-    # Create instance
-    instance = object.__new__(original_cls)
-
-    # Set attributes
     annotations = getattr(cls, "__proto_annotations__", {})
-    for name in annotations.keys():
-      if name in final_kwargs:
-        setattr(instance, name, final_kwargs[name])
-      elif hasattr(cls, "__proto_defaults__") and name in cls.__proto_defaults__:
-        setattr(instance, name, cls.__proto_defaults__[name])
-      else:
-        # Required field
-        setattr(instance, name, None)
+
+    # Check if this is a dataclass (has generated __init__ that accepts kwargs)
+    is_dataclass = hasattr(original_cls, "__dataclass_fields__")
+
+    if is_dataclass:
+      # For dataclasses: use the constructor directly
+      instance = original_cls(**final_kwargs)
+    else:
+      # For regular classes: create instance and set attributes manually
+      instance = object.__new__(original_cls)
+      for name in annotations.keys():
+        if name in final_kwargs:
+          setattr(instance, name, final_kwargs[name])
+        elif hasattr(cls, "__proto_defaults__") and name in cls.__proto_defaults__:
+          setattr(instance, name, cls.__proto_defaults__[name])
+        else:
+          # Required field
+          setattr(instance, name, None)
+      # Call __post_init__ if defined (dataclasses call it in __init__)
+      if hasattr(instance, '__post_init__'):
+        instance.__post_init__()
+
+    # Update the instance's class to the decorated class
+    # This allows isinstance(instance, DecoratedClass) to work
+    object.__setattr__(instance, "__class__", cls)
 
     # Copy methods from original class and wrap to return self
     for name in dir(original_cls):
@@ -721,10 +733,6 @@ class ptype(type):
         return wrapper
 
       setattr(instance, name, make_wrapper(method))
-
-    # Call __post_init__ if defined (like dataclasses)
-    if hasattr(instance, '__post_init__'):
-      instance.__post_init__()
 
     return instance
 
@@ -1012,6 +1020,10 @@ def cli(obj: None = None, *, prog: str = None) -> Callable[[F], F]:
 def cli(obj: Any = None, *, prog: str = None):
   """
   Set up an object as a CLI entry point.
+
+  By default, subcommand attributes don't require prefix (--epochs works).
+  If the subcommand class is decorated with @proto.prefix, prefix is required
+  (--config.epochs).
 
   Args:
       obj: The class, function, or Union type to setup as CLI.

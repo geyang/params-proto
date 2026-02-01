@@ -164,6 +164,23 @@ def parse_cli_args(wrapper) -> Dict[str, Any]:
         is_bool = annotation == bool
         prefix_params[kebab_key] = (singleton, param_name, annotation, is_bool)
 
+  # Build unprefixed union attribute map for classes NOT decorated with @proto.prefix
+  # Maps attr-name -> (union_param_name, attr_name_underscore)
+  # Classes in _SINGLETONS are @proto.prefix decorated and require prefixed attrs
+  unprefixed_attrs = {}
+  for kebab_name, (param_name, union_classes) in union_params.items():
+    for cls in union_classes:
+      # Skip if class is a @proto.prefix singleton (requires prefixed attrs)
+      is_prefix_class = cls in _SINGLETONS.values()
+      if is_prefix_class:
+        continue
+      if hasattr(cls, "__annotations__"):
+        for attr_name in cls.__annotations__:
+          kebab_attr = attr_name.replace("_", "-")
+          # Map to the union param (first one wins if multiple unions have same attr)
+          if kebab_attr not in unprefixed_attrs:
+            unprefixed_attrs[kebab_attr] = (param_name, attr_name)
+
   # Parse arguments
   result = {}
   prefix_values = {}  # (singleton, param_name) -> value
@@ -334,6 +351,17 @@ def parse_cli_args(wrapper) -> Dict[str, Any]:
 
             prefix_values[(singleton, param_name)] = value
             i += 2
+        continue
+
+      # Check unprefixed union attrs when cli_prefix=False
+      if key in unprefixed_attrs:
+        union_param_name, attr_name = unprefixed_attrs[key]
+        # Get the value
+        if i + 1 >= len(args):
+          raise SystemExit(f"error: argument --{key} requires a value")
+        value_str = args[i + 1]
+        union_attrs[(union_param_name, attr_name)] = value_str
+        i += 2
         continue
 
       # Unknown argument

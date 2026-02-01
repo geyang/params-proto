@@ -2,6 +2,33 @@
 
 This page contains the release history and changelog for params-proto.
 
+## Version 3.2.0 (2025-02-01)
+
+### ✨ Features
+
+- **Unprefixed CLI Subcommand Attributes**: Subcommand attributes no longer require prefix by default
+  - Old: `python train.py train-config --config.epochs 200`
+  - New: `python train.py train-config --epochs 200`
+  - Prefixed syntax still works for backwards compatibility
+
+- **`@proto.prefix` Controls CLI Prefix Requirement**: Classes decorated with `@proto.prefix` require prefixed CLI syntax
+  - Regular dataclasses: `--epochs 200` (unprefixed)
+  - `@proto.prefix` classes: `--config.epochs 200` (prefixed required)
+
+### 🐛 Bug Fixes
+
+- **`isinstance()` for `@proto.prefix` Instances**: Fixed `isinstance(instance, DecoratedClass)` returning `False`
+  - Instances of `@proto.prefix` decorated classes now correctly pass isinstance checks
+  - Enables proper type checking in Union subcommand handlers
+
+### 🧪 Testing
+
+- Added comprehensive nested CLI subcommand tests (`test_nested_cli.py`)
+- Added parallel test execution with `pytest-xdist`
+- Run tests in parallel: `pytest -n auto`
+
+---
+
 ## Version 3.1.2 (2025-01-27)
 
 ### 📚 Documentation

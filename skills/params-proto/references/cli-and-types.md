@@ -309,9 +309,39 @@ def main(mode: Train | Evaluate):
 ```
 
 ```bash
-python main.py train --lr 0.01
+# v3.2.0+: Attributes are unprefixed by default
+python main.py train --lr 0.01 --epochs 50
 python main.py evaluate --checkpoint best.pt
-# Also: --mode:train, --mode:Train, --mode:perspective-camera
+
+# Prefixed syntax still works (backwards compatible)
+python main.py --mode:train --mode.lr 0.01
+```
+
+### @proto.prefix Classes Require Prefixed Syntax
+
+When a Union class is decorated with `@proto.prefix`, its attributes require prefixed CLI syntax:
+
+```python
+@proto.prefix  # Requires prefixed syntax
+@dataclass
+class Train:
+    lr: float = 0.001
+
+@dataclass  # Regular dataclass - unprefixed works
+class Evaluate:
+    checkpoint: str = "model.pt"
+
+@proto.cli
+def main(mode: Train | Evaluate):
+    ...
+```
+
+```bash
+# Train is @proto.prefix - requires prefix
+python main.py train --mode.lr 0.01
+
+# Evaluate is regular - unprefixed works
+python main.py evaluate --checkpoint best.pt
 ```
 
 ### Enum Types

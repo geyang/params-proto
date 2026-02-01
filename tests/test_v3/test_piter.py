@@ -375,3 +375,124 @@ def test_piter_special_characters_in_keys():
       "training.optimizer.lr": 0.001,
       "data/path": "/path1"
   }
+
+
+def test_piter_save(tmp_path):
+  """Test saving ParameterIterator to JSONL file."""
+  configs = piter @ {"lr": [0.001, 0.01]} * {"batch_size": [32, 64]}
+
+  sweep_file = tmp_path / "test.jsonl"
+  configs.save(sweep_file, verbose=False)
+
+  # Verify file contents
+  with open(sweep_file) as f:
+    lines = f.readlines()
+
+  assert len(lines) == 4  # 2 x 2 Cartesian product
+
+  import json
+  saved_configs = [json.loads(line) for line in lines]
+  assert saved_configs[0] == {"lr": 0.001, "batch_size": 32}
+  assert saved_configs[1] == {"lr": 0.001, "batch_size": 64}
+  assert saved_configs[2] == {"lr": 0.01, "batch_size": 32}
+  assert saved_configs[3] == {"lr": 0.01, "batch_size": 64}
+
+
+def test_piter_load(tmp_path):
+  """Test loading ParameterIterator from JSONL file."""
+  # Create a JSONL file manually
+  sweep_file = tmp_path / "test.jsonl"
+  with open(sweep_file, "w") as f:
+    f.write('{"lr": 0.001, "batch_size": 32}\n')
+    f.write('{"lr": 0.01, "batch_size": 64}\n')
+
+  # Load using ParameterIterator.load
+  loaded = ParameterIterator.load(sweep_file)
+
+  config_list = list(loaded)
+  assert len(config_list) == 2
+  assert config_list[0] == {"lr": 0.001, "batch_size": 32}
+  assert config_list[1] == {"lr": 0.01, "batch_size": 64}
+
+
+def test_piter_save_and_load_roundtrip(tmp_path):
+  """Test save and load roundtrip preserves data."""
+  # Create complex configs with operators
+  configs = piter @ {"lr": [0.001, 0.01]} * {"batch_size": [32, 64]} % {"seed": 42}
+  original_list = configs.to_list()
+
+  # Save
+  sweep_file = tmp_path / "roundtrip.jsonl"
+  configs.save(sweep_file, verbose=False)
+
+  # Load
+  loaded = ParameterIterator.load(sweep_file)
+  loaded_list = loaded.to_list()
+
+  # Compare
+  assert len(loaded_list) == len(original_list)
+  for orig, loaded_item in zip(original_list, loaded_list):
+    assert orig == loaded_item
+
+
+def test_piter_save_append_mode(tmp_path):
+  """Test save with append mode."""
+  sweep_file = tmp_path / "append.jsonl"
+
+  # First save
+  configs1 = piter @ {"lr": [0.001, 0.01]}
+  configs1.save(sweep_file, overwrite=True, verbose=False)
+
+  # Append
+  configs2 = piter @ {"lr": [0.1, 1.0]}
+  configs2.save(sweep_file, overwrite=False, verbose=False)
+
+  # Load all
+  loaded = ParameterIterator.load(sweep_file)
+  config_list = list(loaded)
+
+  assert len(config_list) == 4
+  assert config_list[0] == {"lr": 0.001}
+  assert config_list[1] == {"lr": 0.01}
+  assert config_list[2] == {"lr": 0.1}
+  assert config_list[3] == {"lr": 1.0}
+
+
+def test_piter_load_with_comments(tmp_path):
+  """Test that load ignores comment lines (lines starting with //)."""
+  sweep_file = tmp_path / "with_comments.jsonl"
+  with open(sweep_file, "w") as f:
+    f.write('// This is a comment\n')
+    f.write('{"lr": 0.001}\n')
+    f.write('// Another comment\n')
+    f.write('{"lr": 0.01}\n')
+
+  loaded = ParameterIterator.load(sweep_file)
+  config_list = list(loaded)
+
+  assert len(config_list) == 2
+  assert config_list[0] == {"lr": 0.001}
+  assert config_list[1] == {"lr": 0.01}
+
+
+def test_piter_load_operations_on_loaded(tmp_path):
+  """Test that loaded ParameterIterator supports all operations."""
+  sweep_file = tmp_path / "base.jsonl"
+  with open(sweep_file, "w") as f:
+    f.write('{"lr": 0.001}\n')
+    f.write('{"lr": 0.01}\n')
+
+  loaded = ParameterIterator.load(sweep_file)
+
+  # Test product
+  product_result = loaded * {"batch_size": [32, 64]}
+  assert len(list(product_result)) == 4
+
+  # Test override
+  override_result = loaded % {"seed": 42}
+  config_list = list(override_result)
+  assert all(c["seed"] == 42 for c in config_list)
+
+  # Test repeat
+  repeat_result = loaded ** 3
+  assert len(list(repeat_result)) == 6

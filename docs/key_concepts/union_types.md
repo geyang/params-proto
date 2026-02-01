@@ -36,8 +36,13 @@ class SGD:
 def train(optimizer: Adam | SGD, epochs: int = 10):
     pass
 
-# CLI: python train.py --optimizer:Adam --optimizer.lr 0.01
-# CLI: python train.py adam --epochs 50
+# CLI: python train.py adam --lr 0.01 --epochs 50
+# CLI: python train.py sgd --momentum 0.95
+```
+
+```{note}
+**Version 3.2.0+**: Subcommand attributes are **unprefixed by default**.
+Use `--lr` instead of `--optimizer.lr`. The prefixed syntax still works for backwards compatibility.
 ```
 
 ```python
@@ -51,8 +56,8 @@ class Model:
 def main(model: Model):
     pass
 
-# CLI: python main.py --model:Model --model.hidden-size 512
-# CLI: python main.py model
+# CLI: python main.py model --hidden-size 512
+# CLI: python main.py model --name vit
 ```
 
 ```python
@@ -75,17 +80,17 @@ Use Union types when you need to **select which class to instantiate**. This cre
 First, let's see how users interact with this from the command line:
 
 ```bash
-# Positional selection (simplest)
-python render.py perspective-camera --output scene.png
-
-# Named selection (explicit)
-python render.py --camera:perspective-camera
-
-# With attribute overrides
-python render.py perspective-camera --camera.fov 45 --camera.aspect 1.77
+# Positional selection with unprefixed attrs (v3.2.0+)
+python render.py perspective-camera --fov 45 --aspect 1.77
 
 # Alternative class
-python render.py --camera:OrthographicCamera --camera.scale 2.0
+python render.py orthographic-camera --scale 2.0
+
+# With shared parameters
+python render.py perspective-camera --output scene.png
+
+# Prefixed syntax still works (backwards compatible)
+python render.py --camera:perspective-camera --camera.fov 45
 ```
 
 Now the implementation:
@@ -121,7 +126,7 @@ if __name__ == "__main__":
 **How it works:**
 - `camera` is a **required parameter** with Union type
 - params-proto instantiates the selected class
-- Each class has its own parameter namespace (`--camera.fov`, `--camera.aspect`, etc.)
+- Attributes are unprefixed by default (`--fov`, `--aspect`)
 - Use `isinstance()` to dispatch on the selected type
 
 ## Optional[T]: Simple Optional Parameters
@@ -180,10 +185,10 @@ def train(checkpoint: Optional[str] = None, epochs: int = 10):
 --camera:PerspectiveCamera      # Exact match
 --camera:perspective-camera     # kebab-case
 --camera:perspectivecamera      # lowercase
-perspective-camera              # Positional
+perspective-camera              # Positional (recommended)
 ```
 
-**Attribute overrides** (kebab-case conversion):
+**Attribute overrides** (v3.2.0+: unprefixed by default):
 
 ```python
 @dataclass
@@ -191,9 +196,35 @@ class Config:
     batch_size: int = 32          # Python: snake_case
     learning_rate: float = 0.001
 
-# CLI uses kebab-case
+# CLI uses kebab-case (unprefixed by default)
+--batch-size 64
+--learning-rate 0.01
+
+# Prefixed syntax still works
 --config.batch-size 64
 --config.learning-rate 0.01
+```
+
+### Using `@proto.prefix` for Required Prefixes
+
+If you want to **require** prefixed syntax for a class (e.g., for disambiguation), decorate it with `@proto.prefix`:
+
+```python
+@proto.prefix  # Now requires --config.batch-size syntax
+@dataclass
+class Config:
+    batch_size: int = 32
+
+@dataclass
+class Model:
+    batch_size: int = 16  # Same attr name, no conflict
+
+@proto.cli
+def train(config: Config, model: Model):
+    pass
+
+# CLI: Config requires prefix, Model doesn't
+# python train.py config model --config.batch-size 64 --batch-size 32
 ```
 
 ## Examples
@@ -203,9 +234,11 @@ class Config:
 Command-line usage:
 
 ```bash
-# Choose optimizer and override defaults
-python train.py adam --optimizer.lr 0.01
-python train.py sgd --optimizer.momentum 0.95
+# Choose optimizer and override defaults (unprefixed)
+python train.py adam --lr 0.01
+python train.py sgd --momentum 0.95
+
+# Prefixed syntax also works
 python train.py --optimizer:Adam --optimizer.beta1 0.95
 ```
 
@@ -237,10 +270,10 @@ def train(optimizer: Adam | SGD):  # Union type selector
 Command-line usage:
 
 ```bash
-# Positional class selection
-python connect.py database-config --db.host prod.example.com --db.port 3306
+# Positional class selection with unprefixed attrs
+python connect.py database-config --host prod.example.com --port 3306
 
-# Or named selection
+# Or named selection with prefixed attrs
 python connect.py --db:DatabaseConfig --db.user root
 ```
 
@@ -264,11 +297,11 @@ def connect(db: DatabaseConfig):  # Single class (still uses Union mechanism)
 Command-line usage:
 
 ```bash
-# Union option + shared parameters
-python render.py perspective-camera --output scene.png --verbose
+# Union option + shared parameters (unprefixed)
+python render.py perspective-camera --fov 45 --output scene.png --verbose
 
 # Different union option with overrides
-python render.py --camera:OrthographicCamera --camera.scale 2.0 --verbose
+python render.py orthographic-camera --scale 2.0 --verbose
 
 # Help shows all options
 python render.py --help
@@ -302,6 +335,47 @@ def render(
 ```
 
 **Key point:** Union parameters are **required**, while other parameters can be optional with defaults.
+
+### Example 4: @proto.prefix Classes Require Prefixed Syntax
+
+When a Union class is decorated with `@proto.prefix`, its CLI attributes require prefixed syntax:
+
+```python
+@proto.prefix  # Requires prefixed syntax
+@dataclass
+class Train:
+    lr: float = 0.001
+    epochs: int = 100
+
+@dataclass  # Regular dataclass - unprefixed works
+class Evaluate:
+    checkpoint: str = "model.pt"
+
+@proto.cli
+def main(mode: Train | Evaluate):
+    if isinstance(mode, Train):
+        print(f"Training: lr={mode.lr}, epochs={mode.epochs}")
+    else:
+        print(f"Evaluating: {mode.checkpoint}")
+
+if __name__ == "__main__":
+    main()
+```
+
+Command-line usage:
+
+```bash
+# Train is @proto.prefix - requires prefixed syntax
+python main.py train --mode.lr 0.01 --mode.epochs 50
+
+# Evaluate is regular dataclass - unprefixed works
+python main.py evaluate --checkpoint best.pt
+```
+
+This is useful when:
+- You have multiple Union params with overlapping attribute names
+- You want explicit namespacing for clarity
+- You're using the class as a singleton config elsewhere
 
 ## Related
 

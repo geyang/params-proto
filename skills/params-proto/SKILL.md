@@ -10,14 +10,14 @@ description: |
   (6) Work with Union types for subcommand-like CLI patterns
 ---
 
-# params-proto v3.1.1
+# params-proto v3.2.0
 
 Declarative hyperparameter management for ML experiments with automatic CLI generation.
 
 ## Installation
 
 ```bash
-pip install params-proto==3.1.1
+pip install params-proto==3.2.0
 ```
 
 ## Three Decorators
