@@ -1,6 +1,6 @@
 {
   "name": "params-proto",
-  "version": "3.0.0",
+  "version": "3.2.0",
   "description": "Declarative hyperparameter management skills for ML/AI experiments",
   "author": {
     "name": "Ge Yang"
