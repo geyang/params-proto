@@ -2,6 +2,21 @@
 
 This page contains the release history and changelog for params-proto.
 
+## Version 3.2.3 (2025-02-04)
+
+### 🐛 Bug Fixes
+
+- **Context Manager Protocol**: Fixed regression where `__enter__` and `__exit__` methods were stripped from `@proto` and `@proto.prefix` decorated classes
+  - Classes implementing context managers now work correctly with `with` statements
+  - Also preserves other user-defined protocol methods: `__call__`, `__iter__`, `__next__`, `__getitem__`, `__len__`, etc.
+  - Root cause: method copying skipped all dunder methods, but should preserve user-defined ones
+
+### 🧪 Testing
+
+- Added comprehensive tests for context manager and other Python protocol preservation
+
+---
+
 ## Version 3.2.2 (2025-02-03)
 
 ### 🐛 Bug Fixes

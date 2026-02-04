@@ -698,9 +698,22 @@ class ptype(type):
 
     # Copy methods from original class and wrap to return self
     for name in dir(original_cls):
-      # Skip dunder methods and proto fields (fields are handled above)
-      if name.startswith("__") or name in annotations:
+      # Skip proto fields (fields are handled above)
+      if name in annotations:
         continue
+
+      # For dunder methods, only copy user-defined ones (not inherited from object/type)
+      if name.startswith("__"):
+        # Check if this dunder method is user-defined (not from object or type)
+        is_user_defined = False
+        for klass in original_cls.__mro__:
+          if klass is object or klass is type:
+            break
+          if name in klass.__dict__:
+            is_user_defined = True
+            break
+        if not is_user_defined:
+          continue
 
       # Check raw descriptor in MRO to detect staticmethod/classmethod (handles inheritance)
       raw_attr = None
