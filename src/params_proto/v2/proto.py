@@ -8,7 +8,13 @@ from types import BuiltinFunctionType, SimpleNamespace
 from warnings import warn
 
 from expandvars import expandvars
-from waterbear import Bear
+try:
+    from waterbear import Bear
+except ImportError:
+    raise ImportError(
+        "params_proto.v2 requires waterbear. Install it with: pip install waterbear\n"
+        "Note: The v3 API (from params_proto import proto) does not require waterbear."
+    )
 
 from params_proto.parse_env_template import all_available
 from params_proto.v2.utils import dot_to_deps

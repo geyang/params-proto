@@ -1,6 +1,6 @@
 [project]
 name = "params-proto"
-version = "3.2.1"
+version = "3.2.2"
 description = "Modern Hyper Parameter Management for Machine Learning"
 authors = [
     { name = "Ge Yang" }
@@ -32,7 +32,6 @@ classifiers = [
 ]
 
 dependencies = [
-    "waterbear>=2.6.8",
     "argparse",
     "argcomplete",
     "expandvars",

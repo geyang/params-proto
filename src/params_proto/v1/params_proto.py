@@ -17,7 +17,13 @@ import inspect
 import re
 from typing import Callable, TypeVar, Union
 
-from waterbear import DefaultBear
+try:
+    from waterbear import DefaultBear
+except ImportError:
+    raise ImportError(
+        "params_proto.v1 requires waterbear. Install it with: pip install waterbear\n"
+        "Note: The v3 API (from params_proto import proto) does not require waterbear."
+    )
 
 
 def _strtobool(val):

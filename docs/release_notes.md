@@ -2,6 +2,21 @@
 
 This page contains the release history and changelog for params-proto.
 
+## Version 3.2.2 (2025-02-03)
+
+### 🐛 Bug Fixes
+
+- **`super()` in `@proto` Methods**: Fixed `super()` calls failing with `TypeError: super(type, obj): obj must be an instance or subtype of type`
+  - Methods using `super()` in `@proto` or `@proto.prefix` decorated classes now work correctly
+  - Root cause: decorated class was recreated as sibling instead of subclass of original
+  - Fix: decorated class is now a proper subclass, preserving the MRO chain
+
+- **`@proto` Inheriting from `@proto`**: Fixed `TypeError: duplicate base class ptype` when a `@proto` class inherits from another `@proto` class
+  - Nested `@proto` inheritance now works correctly
+  - Metaclass merging skips duplicate `ptype` bases
+
+---
+
 ## Version 3.2.1 (2025-02-01)
 
 ### 🐛 Bug Fixes

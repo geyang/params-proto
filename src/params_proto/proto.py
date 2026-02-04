@@ -844,10 +844,15 @@ def proto(
       # Handle existing metaclass
       existing_meta = type(obj)
       if existing_meta is not type:
-        # Merge with existing metaclass
-        class MergedMeta(existing_meta, ptype):
-          pass
-        metaclass = MergedMeta
+        # Check if existing metaclass is already ptype or a subclass of ptype
+        if issubclass(existing_meta, ptype):
+          # Already using ptype, no need to merge
+          metaclass = existing_meta
+        else:
+          # Merge with existing metaclass
+          class MergedMeta(existing_meta, ptype):
+            pass
+          metaclass = MergedMeta
       else:
         metaclass = ptype
 
@@ -872,9 +877,12 @@ def proto(
         namespace[key] = value
 
       # Create new class with metaclass
+      # IMPORTANT: Use (obj,) as bases to make new class a SUBCLASS of original.
+      # This ensures super() works correctly - the original class is in the MRO,
+      # so Python's super() validation passes when checking isinstance(self, original_class).
       new_cls = metaclass(
         obj.__name__,
-        obj.__bases__,
+        (obj,),
         namespace
       )
 
