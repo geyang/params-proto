@@ -2,6 +2,24 @@
 
 This page contains the release history and changelog for params-proto.
 
+## Version 3.3.0 (2025-02-04)
+
+### ✨ Features
+
+- **Deep Nested Dot Notation for CLI**: Support for overriding nested dataclass fields via CLI
+  ```bash
+  # Before (not supported):
+  python train.py train-config --model.hidden-size 512  # error
+
+  # Now works:
+  python train.py train-config --epochs 200 --model.hidden-size 512 --model.num-layers 8
+  ```
+  - Recursively detects nested dataclass fields in type annotations
+  - Supports arbitrary nesting depth (e.g., `--model.encoder.layers 12`)
+  - Automatically constructs nested dataclass instances
+
+---
+
 ## Version 3.2.4 (2025-02-04)
 
 ### 🐛 Bug Fixes

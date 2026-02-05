@@ -83,6 +83,101 @@ def _get_required_fields(cls) -> List[str]:
   return required
 
 
+def _is_nested_dataclass(annotation) -> bool:
+  """Check if annotation is a nested dataclass type."""
+  import dataclasses
+
+  # Skip primitive types and common non-dataclass types
+  if annotation in {int, str, float, bool, list, dict, tuple, set, Path, type(None)}:
+    return False
+
+  # Check if it's a type and a dataclass
+  if isinstance(annotation, type) and dataclasses.is_dataclass(annotation):
+    return True
+
+  return False
+
+
+def _get_nested_attrs(cls, prefix: str = "") -> Dict[str, tuple]:
+  """Recursively get all nested dataclass attributes.
+
+  Returns dict mapping dotted-kebab-name -> (dotted_underscore_path, leaf_type)
+
+  Example for TrainConfig with nested ModelConfig:
+    {
+      "model.hidden-size": ("model.hidden_size", int),
+      "model.num-layers": ("model.num_layers", int),
+    }
+  """
+  import dataclasses
+
+  result = {}
+  annotations = getattr(cls, "__annotations__", {})
+
+  for attr_name, attr_type in annotations.items():
+    kebab_attr = attr_name.replace("_", "-")
+    full_kebab = f"{prefix}{kebab_attr}" if prefix else kebab_attr
+    full_underscore = f"{prefix.replace('-', '_')}{attr_name}" if prefix else attr_name
+
+    if _is_nested_dataclass(attr_type):
+      # Recursively get nested attributes
+      nested = _get_nested_attrs(attr_type, prefix=f"{full_kebab}.")
+      result.update(nested)
+    else:
+      # Leaf attribute
+      result[full_kebab] = (full_underscore, attr_type)
+
+  return result
+
+
+def _set_nested_value(d: dict, path: str, value: Any) -> None:
+  """Set a value in a nested dict using dot notation path.
+
+  Example: _set_nested_value({}, "model.hidden_size", 512)
+           Results in {"model": {"hidden_size": 512}}
+  """
+  parts = path.split(".")
+  current = d
+  for part in parts[:-1]:
+    if part not in current:
+      current[part] = {}
+    current = current[part]
+  current[parts[-1]] = value
+
+
+def _build_nested_instance(cls, flat_attrs: dict, nested_attrs: dict):
+  """Build a dataclass instance with nested dataclass fields.
+
+  Args:
+      cls: The dataclass class to instantiate
+      flat_attrs: Dict of top-level attribute values
+      nested_attrs: Dict of nested dicts for nested dataclass fields
+
+  Returns:
+      Instance of cls with nested dataclasses properly constructed
+  """
+  import dataclasses
+
+  final_attrs = dict(flat_attrs)
+  annotations = getattr(cls, "__annotations__", {})
+
+  for attr_name, attr_type in annotations.items():
+    if attr_name in nested_attrs and _is_nested_dataclass(attr_type):
+      # Recursively build nested dataclass
+      nested_data = nested_attrs[attr_name]
+      # Separate flat and nested for the nested class
+      nested_flat = {}
+      nested_nested = {}
+      for k, v in nested_data.items():
+        if isinstance(v, dict):
+          nested_nested[k] = v
+        else:
+          nested_flat[k] = v
+      final_attrs[attr_name] = _build_nested_instance(attr_type, nested_flat, nested_nested)
+
+  return cls(**final_attrs)
+
+
 def _match_class_by_name(name: str, classes: list) -> Union[type, None]:
   """Match a string to one of the Union classes.
 
@@ -193,6 +288,7 @@ def parse_cli_args(wrapper) -> Dict[str, Any]:
   # Build unprefixed union attribute map for classes NOT decorated with @proto.prefix
   # Maps attr-name -> (union_param_name, attr_name_underscore)
   # Classes in _SINGLETONS are @proto.prefix decorated and require prefixed attrs
+  # Also includes nested dataclass attributes (e.g., "model.hidden-size")
   unprefixed_attrs = {}
   for kebab_name, (param_name, union_classes) in union_params.items():
     for cls in union_classes:
@@ -201,11 +297,19 @@ def parse_cli_args(wrapper) -> Dict[str, Any]:
       if is_prefix_class:
         continue
       if hasattr(cls, "__annotations__"):
-        for attr_name in cls.__annotations__:
+        for attr_name, attr_type in cls.__annotations__.items():
           kebab_attr = attr_name.replace("_", "-")
           # Map to the union param (first one wins if multiple unions have same attr)
           if kebab_attr not in unprefixed_attrs:
             unprefixed_attrs[kebab_attr] = (param_name, attr_name)
+
+          # Check for nested dataclass and add its attributes
+          if _is_nested_dataclass(attr_type):
+            nested_attrs = _get_nested_attrs(attr_type, prefix=f"{kebab_attr}.")
+            for nested_kebab, (nested_path, nested_type) in nested_attrs.items():
+              full_path = f"{attr_name}.{nested_path.split('.', 1)[1] if '.' in nested_path else nested_path}"
+              if nested_kebab not in unprefixed_attrs:
+                unprefixed_attrs[nested_kebab] = (param_name, full_path)
 
   # Parse arguments
   result = {}
@@ -451,21 +555,65 @@ def parse_cli_args(wrapper) -> Dict[str, Any]:
   # Instantiate Union classes with collected attributes
   for param_name, selected_class in union_selections.items():
     # Collect attributes for this Union parameter
-    attrs = {}
-    for (union_param, attr_name), value_str in union_attrs.items():
+    # Separate flat (top-level) and nested attributes
+    flat_attrs = {}
+    nested_attrs = {}  # For nested dataclass fields
+
+    for (union_param, attr_path), value_str in union_attrs.items():
       if union_param == param_name:
-        # Get the type annotation for this attribute
-        if hasattr(selected_class, "__annotations__"):
-          attr_type = selected_class.__annotations__.get(attr_name, str)
-          try:
-            attrs[attr_name] = _convert_type(value_str, attr_type)
-          except (ValueError, TypeError):
-            raise SystemExit(
-              f"error: invalid value for --{param_name.replace('_', '-')}.{attr_name.replace('_', '-')}: {value_str}"
-            )
+        # Check if this is a nested path (contains dots)
+        if "." in attr_path:
+          # Nested attribute like "model.hidden_size"
+          parts = attr_path.split(".")
+          top_level = parts[0]
+          rest_path = ".".join(parts[1:])
+
+          # Get the type of the nested field
+          if hasattr(selected_class, "__annotations__"):
+            top_type = selected_class.__annotations__.get(top_level)
+            if top_type and _is_nested_dataclass(top_type):
+              # Find the leaf type by traversing the path
+              current_type = top_type
+              for part in parts[1:]:
+                if hasattr(current_type, "__annotations__"):
+                  current_type = current_type.__annotations__.get(part, str)
+                else:
+                  current_type = str
+                  break
+
+              try:
+                value = _convert_type(value_str, current_type)
+              except (ValueError, TypeError):
+                raise SystemExit(
+                  f"error: invalid value for --{attr_path.replace('_', '-')}: {value_str}"
+                )
+
+              # Store in nested structure
+              if top_level not in nested_attrs:
+                nested_attrs[top_level] = {}
+              _set_nested_value(nested_attrs[top_level], rest_path, value)
+              continue
+
+          # Fallback: treat as string
+          if top_level not in nested_attrs:
+            nested_attrs[top_level] = {}
+          _set_nested_value(nested_attrs[top_level], rest_path, value_str)
         else:
-          # No annotations, treat as string
-          attrs[attr_name] = value_str
+          # Top-level attribute
+          if hasattr(selected_class, "__annotations__"):
+            attr_type = selected_class.__annotations__.get(attr_path, str)
+            try:
+              flat_attrs[attr_path] = _convert_type(value_str, attr_type)
+            except (ValueError, TypeError):
+              raise SystemExit(
+                f"error: invalid value for --{param_name.replace('_', '-')}.{attr_path.replace('_', '-')}: {value_str}"
+              )
+          else:
+            # No annotations, treat as string
+            flat_attrs[attr_path] = value_str
+
+    # Merge flat_attrs into attrs for compatibility with existing code
+    attrs = flat_attrs
 
     # Assign positional args to required fields of the selected class
     if param_name in union_positional and union_positional[param_name]:
@@ -508,17 +656,21 @@ def parse_cli_args(wrapper) -> Dict[str, Any]:
               attrs[key] = value
         break
 
-    # Check for missing required fields
+    # Check for missing required fields (only check top-level, nested have defaults)
     required_fields = _get_required_fields(selected_class)
     for field_name in required_fields:
-      if field_name not in attrs:
+      if field_name not in attrs and field_name not in nested_attrs:
         raise SystemExit(
           f"error: {selected_class.__name__} requires argument: {field_name}"
         )
 
     # Instantiate the class with collected attributes
     try:
-      instance = selected_class(**attrs)
+      if nested_attrs:
+        # Build with nested dataclass support
+        instance = _build_nested_instance(selected_class, attrs, nested_attrs)
+      else:
+        instance = selected_class(**attrs)
       result[param_name] = instance
     except TypeError as e:
       raise SystemExit(f"error: failed to instantiate {selected_class.__name__}: {e}")

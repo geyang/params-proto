@@ -171,7 +171,7 @@ class TestThreeLayerNesting:
           main()
       """)
 
-    # Try to override nested model config via deep dot notation
+    # Override nested model config via deep dot notation
     # Plain dataclasses use unprefixed syntax (--epochs, not --config.epochs)
     # Only @proto.prefix decorated classes require prefixed syntax
     result = run_cli(
@@ -180,25 +180,18 @@ class TestThreeLayerNesting:
         "train-config",  # subcommand name (kebab-case)
         "--epochs",
         "200",
-        "--model.hidden_size",
+        "--model.hidden-size",
         "512",
-        "--model.num_layers",
+        "--model.num-layers",
         "8",
       ],
-      expect_error=True,  # Deep nested dot notation may not be supported yet
     )
 
-    # Check if it succeeded or failed
-    if result["returncode"] == 0:
-      lines = result["stdout"].strip().split("\n")
-      assert lines[0] == "epochs=200"
-      assert lines[1] == "model.hidden_size=512"
-      assert lines[2] == "model.num_layers=8"
-    else:
-      # If it failed, this documents the current limitation
-      pytest.skip(
-        "Deep nested dot notation (--model.hidden_size) not yet supported"
-      )
+    assert result["returncode"] == 0, f"CLI failed: {result['stderr']}"
+    lines = result["stdout"].strip().split("\n")
+    assert lines[0] == "epochs=200"
+    assert lines[1] == "model.hidden_size=512"
+    assert lines[2] == "model.num_layers=8"
 
 
 class TestThreeLayerUnionNesting:
