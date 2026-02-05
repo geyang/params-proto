@@ -169,12 +169,60 @@ Numbers remain in both the parameter name and the CLI argument, making it easy t
 
 ---
 
+## Nested Dataclass Configuration
+
+Override fields in nested dataclasses using dot notation:
+
+```python
+from dataclasses import dataclass, field
+
+@dataclass
+class ModelConfig:
+  hidden_size: int = 256
+  num_layers: int = 4
+
+@dataclass
+class TrainConfig:
+  epochs: int = 100
+  model: ModelConfig = field(default_factory=ModelConfig)
+
+@proto.cli
+def main(config: TrainConfig):
+  """Train with nested config."""
+  print(f"epochs={config.epochs}")
+  print(f"model.hidden_size={config.model.hidden_size}")
+```
+
+**CLI usage:**
+
+```bash
+# Override top-level and nested fields
+python train.py train-config --epochs 200 --model.hidden-size 512 --model.num-layers 8
+```
+
+**Output:**
+
+```
+epochs=200
+model.hidden_size=512
+model.num_layers=8
+```
+
+### Benefits
+
+- **Deep nesting** - Works with arbitrary nesting depth (`--model.encoder.layers`)
+- **Type conversion** - Nested fields are converted to their annotated types
+- **Kebab-case** - Use `--model.hidden-size` (kebab) for `hidden_size` (snake)
+
+---
+
 ## Quick Pattern Reference
 
 | Pattern | When to Use | Example |
 |---------|------------|---------|
 | **Basic CLI** | Simple scripts with few parameters | `@proto.cli def train(lr: float = 0.001)` |
 | **Grouped Options** | Many related parameters | Use `@proto.prefix` classes for organization |
+| **Nested Configs** | Hierarchical configuration | Use nested dataclasses with dot notation |
 | **Custom Program Name** | Wrapped scripts or clarity | `@proto.cli(prog="my-tool")` |
 | **Testing** | Verify help output | Access `__help_str__` attribute |
 
