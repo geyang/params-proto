@@ -150,13 +150,15 @@ class TestProtoPrefixWithMethods:
 
     obj = Config()
 
-    # Classmethod should have access to config attributes via instance
+    # Classmethod should have access to config attributes via class
     assert obj.get_lr() == 0.01
 
-    # Note: classmethods on instances are bound to the instance,
-    # so they see instance attributes (not class-level updates)
-    obj.lr = 0.001
-    assert obj.get_lr() == 0.001
+    # Note: classmethods receive the class (cls), not instance,
+    # so they see class-level values (standard Python behavior)
+    obj.lr = 0.001  # Instance attribute
+    assert obj.get_lr() == 0.01  # Still sees class default
+    Config.lr = 0.002  # Class attribute
+    assert obj.get_lr() == 0.002  # Now sees class update
 
   def test_proto_prefix_with_instance_method(self):
     """Test @proto.prefix on class with regular instance method."""

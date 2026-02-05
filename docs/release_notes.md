@@ -8,8 +8,12 @@ This page contains the release history and changelog for params-proto.
 
 - **Context Manager Protocol**: Fixed regression where `__enter__` and `__exit__` methods were stripped from `@proto` and `@proto.prefix` decorated classes
   - Classes implementing context managers now work correctly with `with` statements
-  - Also preserves other user-defined protocol methods: `__call__`, `__iter__`, `__next__`, `__getitem__`, `__len__`, etc.
-  - Root cause: method copying skipped all dunder methods, but should preserve user-defined ones
+  - Also preserves all user-defined protocol methods: `__call__`, `__iter__`, `__next__`, `__getitem__`, `__len__`, etc.
+
+- **Simplified Implementation**: Removed method wrapping that caused issues
+  - Decorated class is now a proper subclass of the original, so methods are inherited naturally
+  - No more wrapping of methods to return `self` - use explicit `return self` if needed
+  - Standard Python semantics: classmethods receive `cls`, not bound to instance
 
 ### 🧪 Testing
 

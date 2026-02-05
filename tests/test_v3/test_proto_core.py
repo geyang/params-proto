@@ -71,7 +71,8 @@ def test_canonical_usage():
   Nerf.lr = 0.001
 
   # main function
-  nerf = Nerf().main()
+  nerf = Nerf()
+  nerf.main()
   assert nerf.seed == 100, "should be overriden"
   assert nerf.lr == 0.001, "should be overriden"
 

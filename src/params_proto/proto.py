@@ -694,58 +694,8 @@ class ptype(type):
 
     # Update the instance's class to the decorated class
     # This allows isinstance(instance, DecoratedClass) to work
+    # Since cls is a subclass of original_cls, methods are inherited naturally
     object.__setattr__(instance, "__class__", cls)
-
-    # Copy methods from original class and wrap to return self
-    for name in dir(original_cls):
-      # Skip proto fields (fields are handled above)
-      if name in annotations:
-        continue
-
-      # For dunder methods, only copy user-defined ones (not inherited from object/type)
-      if name.startswith("__"):
-        # Check if this dunder method is user-defined (not from object or type)
-        is_user_defined = False
-        for klass in original_cls.__mro__:
-          if klass is object or klass is type:
-            break
-          if name in klass.__dict__:
-            is_user_defined = True
-            break
-        if not is_user_defined:
-          continue
-
-      # Check raw descriptor in MRO to detect staticmethod/classmethod (handles inheritance)
-      raw_attr = None
-      for klass in original_cls.__mro__:
-        if name in klass.__dict__:
-          raw_attr = klass.__dict__[name]
-          break
-
-      attr = getattr(original_cls, name)
-
-      # Only process actual methods (staticmethod, classmethod, or function)
-      if isinstance(raw_attr, staticmethod):
-        # For staticmethod, use directly (no binding needed)
-        method = attr
-      elif isinstance(raw_attr, classmethod) or inspect.isfunction(raw_attr) or inspect.ismethod(attr):
-        # For instance methods and classmethods, bind to instance
-        # Note: classmethods bound to instance is intentional for @proto
-        # semantics where instances have all attributes accessible
-        method = attr.__get__(instance, original_cls)
-      else:
-        # Not a method (e.g., _EnvVar, property, or other callable), skip
-        continue
-
-      # Wrap it to return self if it returns None
-      def make_wrapper(m):
-        def wrapper(*args, **kwargs):
-          result = m(*args, **kwargs)
-          return instance if result is None else result
-
-        return wrapper
-
-      setattr(instance, name, make_wrapper(method))
 
     return instance
 
@@ -869,30 +819,32 @@ def proto(
       else:
         metaclass = ptype
 
-      # Recreate the class with ptype as its metaclass
-      # Collect class namespace (attributes and methods)
-      namespace = {}
-      for key in dir(obj):
-        if not key.startswith("__") or key in ("__annotations__", "__module__", "__qualname__", "__doc__"):
-          try:
-            # Use __dict__ to preserve classmethod/staticmethod descriptors
-            # getattr() would return bound methods instead of descriptors
-            if key in obj.__dict__:
-              namespace[key] = obj.__dict__[key]
-            else:
-              namespace[key] = getattr(obj, key)
-          except AttributeError:
-            pass
+      # Create new class with metaclass as subclass of original
+      # Since new class inherits from obj, methods are inherited naturally.
+      # We only need to provide:
+      # - Module/qualname metadata
+      # - Annotations (so annotated fields are visible on the class)
+      # - Resolved default values (with EnvVars resolved)
+      namespace = {
+        "__module__": obj.__module__,
+        "__qualname__": obj.__qualname__,
+        "__doc__": obj.__doc__,
+        "__annotations__": annotations,
+      }
 
-      # Replace _EnvVar objects with resolved values from defaults
-      # This ensures the descriptor doesn't interfere with class attribute access
-      for key, value in defaults.items():
-        namespace[key] = value
+      # Add resolved default values (EnvVars are already resolved in defaults dict)
+      # Also set None for annotated fields without defaults so they're accessible
+      for key in annotations.keys():
+        if key in defaults:
+          namespace[key] = defaults[key]
+        else:
+          namespace[key] = None
 
-      # Create new class with metaclass
-      # IMPORTANT: Use (obj,) as bases to make new class a SUBCLASS of original.
-      # This ensures super() works correctly - the original class is in the MRO,
-      # so Python's super() validation passes when checking isinstance(self, original_class).
+      # Create new class as SUBCLASS of original.
+      # This ensures:
+      # 1. super() works correctly (original class is in MRO)
+      # 2. Methods, staticmethods, classmethods are inherited naturally
+      # 3. isinstance(instance, DecoratedClass) works
       new_cls = metaclass(
         obj.__name__,
         (obj,),
